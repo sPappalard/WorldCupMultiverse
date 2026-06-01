@@ -1,0 +1,3132 @@
+{
+  "_meta": {
+    "description": "Forma recente e rendimento knockout per le 48+1 squadre Mondiali 2026.",
+    "formMatches": 30,
+    "formCutoff": "2026-03-31",
+    "knockoutSince": 1994,
+    "knockoutNote": "Rendimento nelle fasi finali dei tornei major dal 1994 (W/D/L effettivi dal dataset storico)",
+    "historyNote": "Punteggio storia nazionale: titoli vinti nella storia completa del torneo (fonte: Wikipedia/FIFA/UEFA/CONMEBOL/CAF)",
+    "source": "Kaggle International football results 1872-2026",
+    "generatedAt": "2026-06-01",
+    "knockoutHierarchy": [
+      {
+        "label": "🌍 Mondiali FIFA",
+        "weight": 10.0
+      },
+      {
+        "label": "🇪🇺 UEFA Euro",
+        "weight": 5.0
+      },
+      {
+        "label": "🌎 Copa América",
+        "weight": 5.0
+      },
+      {
+        "label": "🌍 AFCON",
+        "weight": 3.0
+      },
+      {
+        "label": "🌏 AFC Asian Cup",
+        "weight": 3.0
+      },
+      {
+        "label": "🏆 Confederations Cup",
+        "weight": 2.5
+      },
+      {
+        "label": "🌎 CONCACAF Gold Cup",
+        "weight": 2.0
+      },
+      {
+        "label": "🇪🇺 UEFA Nations League",
+        "weight": 1.5
+      },
+      {
+        "label": "🌎 CONCACAF Nations League",
+        "weight": 1.5
+      },
+      {
+        "label": "🏅 Olimpiadi",
+        "weight": 1.5
+      },
+      {
+        "label": "🌍 Arab Cup",
+        "weight": 1.0
+      },
+      {
+        "label": "🌍 Gulf Cup",
+        "weight": 1.0
+      }
+    ]
+  },
+  "teams": {
+    "MEX": {
+      "form": {
+        "score": 62,
+        "w": 15,
+        "d": 9,
+        "l": 6,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 52,
+        "w": 41,
+        "d": 24,
+        "l": 31,
+        "n": 96,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 11,
+            "d": 9,
+            "l": 11,
+            "n": 31,
+            "score": 50,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "w": 18,
+            "d": 12,
+            "l": 15,
+            "n": 45,
+            "score": 53,
+            "editions": 2,
+            "semiFinals": 1,
+            "finals": 1,
+            "titles": 0
+          },
+          {
+            "label": "🌎 CONCACAF Nations League",
+            "weight": 1.5,
+            "w": 12,
+            "d": 3,
+            "l": 5,
+            "n": 20,
+            "score": 68,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 11,
+        "byTournament": [
+          {
+            "label": "🌎 CONCACAF Gold Cup",
+            "weight": 2.0,
+            "titles": 9,
+            "finals": 14,
+            "score": 100
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "RSA": {
+      "form": {
+        "score": 60,
+        "w": 13,
+        "d": 13,
+        "l": 4,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 44,
+        "w": 2,
+        "d": 4,
+        "l": 3,
+        "n": 9,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 2,
+            "d": 4,
+            "l": 3,
+            "n": 9,
+            "score": 44,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 3,
+        "byTournament": [
+          {
+            "label": "🌍 AFCON",
+            "weight": 3.0,
+            "titles": 1,
+            "finals": 2,
+            "score": 16
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "KOR": {
+      "form": {
+        "score": 70,
+        "w": 17,
+        "d": 9,
+        "l": 4,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 46,
+        "w": 29,
+        "d": 21,
+        "l": 23,
+        "n": 73,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 7,
+            "d": 9,
+            "l": 14,
+            "n": 30,
+            "score": 38,
+            "editions": 1,
+            "semiFinals": 1,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "w": 22,
+            "d": 12,
+            "l": 9,
+            "n": 43,
+            "score": 65,
+            "editions": 6,
+            "semiFinals": 5,
+            "finals": 1,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 11,
+        "byTournament": [
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "titles": 2,
+            "finals": 5,
+            "score": 68
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "CZE": {
+      "form": {
+        "score": 55,
+        "w": 15,
+        "d": 9,
+        "l": 6,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 45,
+        "w": 23,
+        "d": 8,
+        "l": 26,
+        "n": 57,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 1,
+            "d": 0,
+            "l": 2,
+            "n": 3,
+            "score": 33,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "w": 12,
+            "d": 5,
+            "l": 15,
+            "n": 32,
+            "score": 45,
+            "editions": 2,
+            "semiFinals": 1,
+            "finals": 1,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 10,
+            "d": 3,
+            "l": 9,
+            "n": 22,
+            "score": 52,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 17,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 15.0,
+            "titles": 0,
+            "finals": 2,
+            "score": 9
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "titles": 1,
+            "finals": 2,
+            "score": 28
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "CAN": {
+      "form": {
+        "score": 55,
+        "w": 13,
+        "d": 12,
+        "l": 5,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 35,
+        "w": 12,
+        "d": 3,
+        "l": 10,
+        "n": 25,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 0,
+            "d": 0,
+            "l": 3,
+            "n": 3,
+            "score": 0,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "w": 1,
+            "d": 3,
+            "l": 2,
+            "n": 6,
+            "score": 42,
+            "editions": 1,
+            "semiFinals": 1,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌎 CONCACAF Nations League",
+            "weight": 1.5,
+            "w": 11,
+            "d": 0,
+            "l": 5,
+            "n": 16,
+            "score": 69,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 2,
+        "byTournament": [
+          {
+            "label": "🌎 CONCACAF Gold Cup",
+            "weight": 2.0,
+            "titles": 1,
+            "finals": 2,
+            "score": 12
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "BIH": {
+      "form": {
+        "score": 43,
+        "w": 8,
+        "d": 6,
+        "l": 16,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 38,
+        "w": 7,
+        "d": 7,
+        "l": 11,
+        "n": 25,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 1,
+            "d": 0,
+            "l": 2,
+            "n": 3,
+            "score": 33,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 6,
+            "d": 7,
+            "l": 9,
+            "n": 22,
+            "score": 43,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 0,
+        "byTournament": [],
+        "_zeroReason": "Nessun titolo né finale in tornei major"
+      }
+    },
+    "QAT": {
+      "form": {
+        "score": 51,
+        "w": 11,
+        "d": 9,
+        "l": 10,
+        "n": 30,
+        "lastDate": "2025-12-07"
+      },
+      "knockout": {
+        "score": 46,
+        "w": 43,
+        "d": 32,
+        "l": 38,
+        "n": 113,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 0,
+            "d": 0,
+            "l": 3,
+            "n": 3,
+            "score": 0,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "w": 0,
+            "d": 1,
+            "l": 2,
+            "n": 3,
+            "score": 17,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "w": 15,
+            "d": 7,
+            "l": 9,
+            "n": 31,
+            "score": 60,
+            "editions": 2,
+            "semiFinals": 0,
+            "finals": 2,
+            "titles": 2
+          },
+          {
+            "label": "🌍 Arab Cup",
+            "weight": 1.0,
+            "w": 7,
+            "d": 2,
+            "l": 4,
+            "n": 13,
+            "score": 62,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌍 Gulf Cup",
+            "weight": 1.0,
+            "w": 21,
+            "d": 22,
+            "l": 20,
+            "n": 63,
+            "score": 51,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 8,
+        "byTournament": [
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "titles": 2,
+            "finals": 2,
+            "score": 46
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "SUI": {
+      "form": {
+        "score": 56,
+        "w": 11,
+        "d": 13,
+        "l": 6,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 49,
+        "w": 21,
+        "d": 23,
+        "l": 26,
+        "n": 70,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 9,
+            "d": 6,
+            "l": 8,
+            "n": 23,
+            "score": 52,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "w": 5,
+            "d": 11,
+            "l": 7,
+            "n": 23,
+            "score": 46,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 7,
+            "d": 6,
+            "l": 11,
+            "n": 24,
+            "score": 42,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 0,
+        "byTournament": [],
+        "_zeroReason": "Nessun titolo né finale in tornei major"
+      }
+    },
+    "BRA": {
+      "form": {
+        "score": 51,
+        "w": 12,
+        "d": 10,
+        "l": 8,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 75,
+        "w": 71,
+        "d": 24,
+        "l": 15,
+        "n": 110,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 32,
+            "d": 8,
+            "l": 8,
+            "n": 48,
+            "score": 75,
+            "editions": 4,
+            "semiFinals": 1,
+            "finals": 3,
+            "titles": 2
+          },
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "w": 39,
+            "d": 16,
+            "l": 7,
+            "n": 62,
+            "score": 76,
+            "editions": 8,
+            "semiFinals": 1,
+            "finals": 7,
+            "titles": 5
+          }
+        ]
+      },
+      "history": {
+        "score": 95,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 15.0,
+            "titles": 5,
+            "finals": 8,
+            "score": 100
+          },
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "titles": 9,
+            "finals": 14,
+            "score": 54
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "MAR": {
+      "form": {
+        "score": 91,
+        "w": 26,
+        "d": 4,
+        "l": 0,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 41,
+        "w": 12,
+        "d": 6,
+        "l": 8,
+        "n": 26,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 4,
+            "d": 4,
+            "l": 8,
+            "n": 16,
+            "score": 38,
+            "editions": 1,
+            "semiFinals": 1,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌍 Arab Cup",
+            "weight": 1.0,
+            "w": 8,
+            "d": 2,
+            "l": 0,
+            "n": 10,
+            "score": 90,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 5,
+        "byTournament": [
+          {
+            "label": "🌍 AFCON",
+            "weight": 3.0,
+            "titles": 1,
+            "finals": 5,
+            "score": 25
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "HAI": {
+      "form": {
+        "score": 61,
+        "w": 14,
+        "d": 8,
+        "l": 8,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 48,
+        "w": 11,
+        "d": 7,
+        "l": 5,
+        "n": 23,
+        "byTournament": [
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "w": 0,
+            "d": 0,
+            "l": 3,
+            "n": 3,
+            "score": 0,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌎 CONCACAF Nations League",
+            "weight": 1.5,
+            "w": 11,
+            "d": 7,
+            "l": 2,
+            "n": 20,
+            "score": 72,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 0,
+        "byTournament": [],
+        "_zeroReason": "Nessun titolo né finale in tornei major"
+      }
+    },
+    "SCO": {
+      "form": {
+        "score": 49,
+        "w": 9,
+        "d": 6,
+        "l": 15,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 35,
+        "w": 14,
+        "d": 7,
+        "l": 15,
+        "n": 36,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 0,
+            "d": 1,
+            "l": 2,
+            "n": 3,
+            "score": 17,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "w": 1,
+            "d": 3,
+            "l": 5,
+            "n": 9,
+            "score": 28,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 13,
+            "d": 3,
+            "l": 8,
+            "n": 24,
+            "score": 60,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 0,
+        "byTournament": [],
+        "_zeroReason": "Nessun titolo né finale in tornei major"
+      }
+    },
+    "USA": {
+      "form": {
+        "score": 51,
+        "w": 14,
+        "d": 4,
+        "l": 12,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 40,
+        "w": 27,
+        "d": 10,
+        "l": 28,
+        "n": 65,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 6,
+            "d": 8,
+            "l": 13,
+            "n": 27,
+            "score": 37,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "w": 6,
+            "d": 1,
+            "l": 11,
+            "n": 18,
+            "score": 36,
+            "editions": 1,
+            "semiFinals": 1,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌎 CONCACAF Nations League",
+            "weight": 1.5,
+            "w": 15,
+            "d": 1,
+            "l": 4,
+            "n": 20,
+            "score": 78,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 9,
+        "byTournament": [
+          {
+            "label": "🌎 CONCACAF Gold Cup",
+            "weight": 2.0,
+            "titles": 7,
+            "finals": 12,
+            "score": 81
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "PAR": {
+      "form": {
+        "score": 49,
+        "w": 10,
+        "d": 9,
+        "l": 11,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 44,
+        "w": 16,
+        "d": 26,
+        "l": 24,
+        "n": 66,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 4,
+            "d": 6,
+            "l": 6,
+            "n": 16,
+            "score": 44,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "w": 12,
+            "d": 20,
+            "l": 18,
+            "n": 50,
+            "score": 44,
+            "editions": 6,
+            "semiFinals": 5,
+            "finals": 1,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 5,
+        "byTournament": [
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "titles": 2,
+            "finals": 5,
+            "score": 14
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "AUS": {
+      "form": {
+        "score": 74,
+        "w": 20,
+        "d": 5,
+        "l": 5,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 43,
+        "w": 19,
+        "d": 8,
+        "l": 16,
+        "n": 43,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 4,
+            "d": 3,
+            "l": 10,
+            "n": 17,
+            "score": 32,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "w": 15,
+            "d": 5,
+            "l": 6,
+            "n": 26,
+            "score": 67,
+            "editions": 2,
+            "semiFinals": 0,
+            "finals": 2,
+            "titles": 1
+          }
+        ]
+      },
+      "history": {
+        "score": 6,
+        "byTournament": [
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "titles": 1,
+            "finals": 2,
+            "score": 30
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "TUR": {
+      "form": {
+        "score": 71,
+        "w": 17,
+        "d": 5,
+        "l": 8,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 48,
+        "w": 22,
+        "d": 9,
+        "l": 23,
+        "n": 54,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 4,
+            "d": 1,
+            "l": 2,
+            "n": 7,
+            "score": 64,
+            "editions": 1,
+            "semiFinals": 1,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "w": 7,
+            "d": 2,
+            "l": 14,
+            "n": 23,
+            "score": 35,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 11,
+            "d": 6,
+            "l": 7,
+            "n": 24,
+            "score": 58,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 2,
+        "byTournament": [
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "titles": 0,
+            "finals": 1,
+            "score": 6
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "GER": {
+      "form": {
+        "score": 72,
+        "w": 18,
+        "d": 6,
+        "l": 6,
+        "n": 30,
+        "lastDate": "2026-03-30"
+      },
+      "knockout": {
+        "score": 69,
+        "w": 56,
+        "d": 27,
+        "l": 25,
+        "n": 108,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 29,
+            "d": 6,
+            "l": 9,
+            "n": 44,
+            "score": 73,
+            "editions": 4,
+            "semiFinals": 2,
+            "finals": 2,
+            "titles": 1
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "w": 19,
+            "d": 9,
+            "l": 10,
+            "n": 38,
+            "score": 62,
+            "editions": 4,
+            "semiFinals": 2,
+            "finals": 2,
+            "titles": 1
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 8,
+            "d": 12,
+            "l": 6,
+            "n": 26,
+            "score": 54,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 93,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 15.0,
+            "titles": 4,
+            "finals": 8,
+            "score": 87
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "titles": 3,
+            "finals": 6,
+            "score": 84
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "CUW": {
+      "form": {
+        "score": 64,
+        "w": 12,
+        "d": 10,
+        "l": 8,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 47,
+        "w": 7,
+        "d": 3,
+        "l": 8,
+        "n": 18,
+        "byTournament": [
+          {
+            "label": "🌎 CONCACAF Nations League",
+            "weight": 1.5,
+            "w": 7,
+            "d": 3,
+            "l": 8,
+            "n": 18,
+            "score": 47,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 0,
+        "byTournament": [],
+        "_zeroReason": "Nessun titolo né finale in tornei major"
+      }
+    },
+    "CIV": {
+      "form": {
+        "score": 76,
+        "w": 20,
+        "d": 5,
+        "l": 5,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 39,
+        "w": 3,
+        "d": 1,
+        "l": 5,
+        "n": 9,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 3,
+            "d": 1,
+            "l": 5,
+            "n": 9,
+            "score": 39,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 9,
+        "byTournament": [
+          {
+            "label": "🌍 AFCON",
+            "weight": 3.0,
+            "titles": 3,
+            "finals": 7,
+            "score": 50
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "ECU": {
+      "form": {
+        "score": 55,
+        "w": 11,
+        "d": 15,
+        "l": 4,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 37,
+        "w": 12,
+        "d": 13,
+        "l": 29,
+        "n": 54,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 5,
+            "d": 2,
+            "l": 6,
+            "n": 13,
+            "score": 46,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "w": 7,
+            "d": 11,
+            "l": 23,
+            "n": 41,
+            "score": 30,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 1,
+        "byTournament": [
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "titles": 0,
+            "finals": 1,
+            "score": 1
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "NED": {
+      "form": {
+        "score": 70,
+        "w": 17,
+        "d": 9,
+        "l": 4,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 69,
+        "w": 50,
+        "d": 23,
+        "l": 21,
+        "n": 94,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 22,
+            "d": 8,
+            "l": 5,
+            "n": 35,
+            "score": 74,
+            "editions": 3,
+            "semiFinals": 2,
+            "finals": 1,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "w": 15,
+            "d": 6,
+            "l": 10,
+            "n": 31,
+            "score": 58,
+            "editions": 2,
+            "semiFinals": 2,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 13,
+            "d": 9,
+            "l": 6,
+            "n": 28,
+            "score": 62,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 21,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 15.0,
+            "titles": 0,
+            "finals": 3,
+            "score": 13
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "titles": 1,
+            "finals": 2,
+            "score": 28
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "JPN": {
+      "form": {
+        "score": 78,
+        "w": 22,
+        "d": 4,
+        "l": 4,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 51,
+        "w": 37,
+        "d": 18,
+        "l": 20,
+        "n": 75,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 7,
+            "d": 6,
+            "l": 12,
+            "n": 25,
+            "score": 40,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "w": 0,
+            "d": 3,
+            "l": 3,
+            "n": 6,
+            "score": 25,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "w": 30,
+            "d": 9,
+            "l": 5,
+            "n": 44,
+            "score": 78,
+            "editions": 5,
+            "semiFinals": 1,
+            "finals": 4,
+            "titles": 3
+          }
+        ]
+      },
+      "history": {
+        "score": 16,
+        "byTournament": [
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "titles": 4,
+            "finals": 5,
+            "score": 100
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "SWE": {
+      "form": {
+        "score": 47,
+        "w": 15,
+        "d": 4,
+        "l": 11,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 51,
+        "w": 22,
+        "d": 16,
+        "l": 24,
+        "n": 62,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 8,
+            "d": 7,
+            "l": 5,
+            "n": 20,
+            "score": 57,
+            "editions": 1,
+            "semiFinals": 1,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "w": 5,
+            "d": 6,
+            "l": 9,
+            "n": 20,
+            "score": 40,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 9,
+            "d": 3,
+            "l": 10,
+            "n": 22,
+            "score": 48,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 5,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 15.0,
+            "titles": 0,
+            "finals": 1,
+            "score": 4
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "TUN": {
+      "form": {
+        "score": 72,
+        "w": 15,
+        "d": 10,
+        "l": 5,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 29,
+        "w": 7,
+        "d": 5,
+        "l": 12,
+        "n": 24,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 2,
+            "d": 4,
+            "l": 9,
+            "n": 15,
+            "score": 27,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌍 Arab Cup",
+            "weight": 1.0,
+            "w": 5,
+            "d": 1,
+            "l": 3,
+            "n": 9,
+            "score": 61,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 4,
+        "byTournament": [
+          {
+            "label": "🌍 AFCON",
+            "weight": 3.0,
+            "titles": 1,
+            "finals": 4,
+            "score": 22
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "BEL": {
+      "form": {
+        "score": 60,
+        "w": 14,
+        "d": 9,
+        "l": 7,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 62,
+        "w": 36,
+        "d": 9,
+        "l": 24,
+        "n": 69,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 14,
+            "d": 6,
+            "l": 6,
+            "n": 26,
+            "score": 65,
+            "editions": 1,
+            "semiFinals": 1,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "w": 9,
+            "d": 1,
+            "l": 7,
+            "n": 17,
+            "score": 56,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 13,
+            "d": 2,
+            "l": 11,
+            "n": 26,
+            "score": 54,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 2,
+        "byTournament": [
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "titles": 0,
+            "finals": 1,
+            "score": 6
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "EGY": {
+      "form": {
+        "score": 69,
+        "w": 16,
+        "d": 10,
+        "l": 4,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 13,
+        "w": 3,
+        "d": 4,
+        "l": 5,
+        "n": 12,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 0,
+            "d": 0,
+            "l": 3,
+            "n": 3,
+            "score": 0,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌍 Arab Cup",
+            "weight": 1.0,
+            "w": 3,
+            "d": 4,
+            "l": 2,
+            "n": 9,
+            "score": 56,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 16,
+        "byTournament": [
+          {
+            "label": "🌍 AFCON",
+            "weight": 3.0,
+            "titles": 7,
+            "finals": 11,
+            "score": 100
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "IRN": {
+      "form": {
+        "score": 73,
+        "w": 19,
+        "d": 7,
+        "l": 4,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 49,
+        "w": 27,
+        "d": 14,
+        "l": 14,
+        "n": 55,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 3,
+            "d": 3,
+            "l": 9,
+            "n": 15,
+            "score": 30,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "w": 24,
+            "d": 11,
+            "l": 5,
+            "n": 40,
+            "score": 74,
+            "editions": 4,
+            "semiFinals": 4,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 14,
+        "byTournament": [
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "titles": 3,
+            "finals": 5,
+            "score": 84
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "NZL": {
+      "form": {
+        "score": 66,
+        "w": 13,
+        "d": 5,
+        "l": 12,
+        "n": 30,
+        "lastDate": "2026-03-30"
+      },
+      "knockout": {
+        "score": 50,
+        "w": 0,
+        "d": 3,
+        "l": 0,
+        "n": 3,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 0,
+            "d": 3,
+            "l": 0,
+            "n": 3,
+            "score": 50,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 0,
+        "byTournament": [],
+        "_zeroReason": "Nessun titolo né finale in tornei major"
+      }
+    },
+    "ESP": {
+      "form": {
+        "score": 86,
+        "w": 22,
+        "d": 7,
+        "l": 1,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 69,
+        "w": 58,
+        "d": 30,
+        "l": 17,
+        "n": 105,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 18,
+            "d": 10,
+            "l": 7,
+            "n": 35,
+            "score": 66,
+            "editions": 1,
+            "semiFinals": 0,
+            "finals": 1,
+            "titles": 1
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "w": 24,
+            "d": 11,
+            "l": 5,
+            "n": 40,
+            "score": 74,
+            "editions": 4,
+            "semiFinals": 1,
+            "finals": 3,
+            "titles": 3
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 16,
+            "d": 9,
+            "l": 5,
+            "n": 30,
+            "score": 68,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 43,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 15.0,
+            "titles": 1,
+            "finals": 1,
+            "score": 17
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "titles": 4,
+            "finals": 5,
+            "score": 94
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "CPV": {
+      "form": {
+        "score": 67,
+        "w": 14,
+        "d": 9,
+        "l": 7,
+        "n": 30,
+        "lastDate": "2026-03-30"
+      },
+      "knockout": {
+        "score": 50,
+        "w": 0,
+        "d": 0,
+        "l": 0,
+        "n": 0,
+        "byTournament": []
+      },
+      "history": {
+        "score": 0,
+        "byTournament": [],
+        "_zeroReason": "Nessun titolo né finale in tornei major"
+      }
+    },
+    "KSA": {
+      "form": {
+        "score": 48,
+        "w": 12,
+        "d": 6,
+        "l": 12,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 42,
+        "w": 66,
+        "d": 27,
+        "l": 47,
+        "n": 140,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 4,
+            "d": 2,
+            "l": 13,
+            "n": 19,
+            "score": 26,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "w": 15,
+            "d": 7,
+            "l": 13,
+            "n": 35,
+            "score": 53,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌍 Arab Cup",
+            "weight": 1.0,
+            "w": 11,
+            "d": 3,
+            "l": 6,
+            "n": 20,
+            "score": 62,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌍 Gulf Cup",
+            "weight": 1.0,
+            "w": 36,
+            "d": 15,
+            "l": 15,
+            "n": 66,
+            "score": 66,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 13,
+        "byTournament": [
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "titles": 3,
+            "finals": 4,
+            "score": 77
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "URU": {
+      "form": {
+        "score": 49,
+        "w": 11,
+        "d": 13,
+        "l": 6,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 57,
+        "w": 35,
+        "d": 25,
+        "l": 23,
+        "n": 83,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 10,
+            "d": 5,
+            "l": 7,
+            "n": 22,
+            "score": 57,
+            "editions": 1,
+            "semiFinals": 1,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "w": 25,
+            "d": 20,
+            "l": 16,
+            "n": 61,
+            "score": 57,
+            "editions": 7,
+            "semiFinals": 4,
+            "finals": 3,
+            "titles": 2
+          }
+        ]
+      },
+      "history": {
+        "score": 55,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 15.0,
+            "titles": 2,
+            "finals": 2,
+            "score": 35
+          },
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "titles": 15,
+            "finals": 17,
+            "score": 82
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "FRA": {
+      "form": {
+        "score": 72,
+        "w": 18,
+        "d": 7,
+        "l": 5,
+        "n": 30,
+        "lastDate": "2026-03-29"
+      },
+      "knockout": {
+        "score": 69,
+        "w": 58,
+        "d": 27,
+        "l": 21,
+        "n": 106,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 24,
+            "d": 9,
+            "l": 6,
+            "n": 39,
+            "score": 73,
+            "editions": 4,
+            "semiFinals": 0,
+            "finals": 4,
+            "titles": 2
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "w": 18,
+            "d": 13,
+            "l": 8,
+            "n": 39,
+            "score": 63,
+            "editions": 4,
+            "semiFinals": 2,
+            "finals": 2,
+            "titles": 1
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 16,
+            "d": 5,
+            "l": 7,
+            "n": 28,
+            "score": 66,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 50,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 15.0,
+            "titles": 2,
+            "finals": 3,
+            "score": 39
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "titles": 2,
+            "finals": 3,
+            "score": 50
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "SEN": {
+      "form": {
+        "score": 83,
+        "w": 22,
+        "d": 6,
+        "l": 2,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 54,
+        "w": 5,
+        "d": 3,
+        "l": 4,
+        "n": 12,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 5,
+            "d": 3,
+            "l": 4,
+            "n": 12,
+            "score": 54,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 4,
+        "byTournament": [
+          {
+            "label": "🌍 AFCON",
+            "weight": 3.0,
+            "titles": 1,
+            "finals": 3,
+            "score": 19
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "IRQ": {
+      "form": {
+        "score": 63,
+        "w": 17,
+        "d": 5,
+        "l": 8,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 56,
+        "w": 35,
+        "d": 23,
+        "l": 25,
+        "n": 83,
+        "byTournament": [
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "w": 17,
+            "d": 6,
+            "l": 13,
+            "n": 36,
+            "score": 56,
+            "editions": 2,
+            "semiFinals": 1,
+            "finals": 1,
+            "titles": 1
+          },
+          {
+            "label": "🌍 Arab Cup",
+            "weight": 1.0,
+            "w": 4,
+            "d": 3,
+            "l": 3,
+            "n": 10,
+            "score": 55,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌍 Gulf Cup",
+            "weight": 1.0,
+            "w": 14,
+            "d": 14,
+            "l": 9,
+            "n": 37,
+            "score": 57,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 6,
+        "byTournament": [
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "titles": 1,
+            "finals": 2,
+            "score": 30
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "NOR": {
+      "form": {
+        "score": 82,
+        "w": 19,
+        "d": 5,
+        "l": 6,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 55,
+        "w": 17,
+        "d": 8,
+        "l": 9,
+        "n": 34,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 2,
+            "d": 3,
+            "l": 2,
+            "n": 7,
+            "score": 50,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "w": 1,
+            "d": 1,
+            "l": 1,
+            "n": 3,
+            "score": 50,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 14,
+            "d": 4,
+            "l": 6,
+            "n": 24,
+            "score": 67,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 0,
+        "byTournament": [],
+        "_zeroReason": "Nessun titolo né finale in tornei major"
+      }
+    },
+    "ARG": {
+      "form": {
+        "score": 72,
+        "w": 23,
+        "d": 3,
+        "l": 4,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 70,
+        "w": 59,
+        "d": 23,
+        "l": 17,
+        "n": 99,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 23,
+            "d": 8,
+            "l": 9,
+            "n": 40,
+            "score": 68,
+            "editions": 2,
+            "semiFinals": 0,
+            "finals": 2,
+            "titles": 1
+          },
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "w": 36,
+            "d": 15,
+            "l": 8,
+            "n": 59,
+            "score": 74,
+            "editions": 7,
+            "semiFinals": 1,
+            "finals": 6,
+            "titles": 2
+          }
+        ]
+      },
+      "history": {
+        "score": 82,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 15.0,
+            "titles": 3,
+            "finals": 6,
+            "score": 65
+          },
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "titles": 16,
+            "finals": 28,
+            "score": 100
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "ALG": {
+      "form": {
+        "score": 80,
+        "w": 22,
+        "d": 5,
+        "l": 3,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 35,
+        "w": 7,
+        "d": 6,
+        "l": 4,
+        "n": 17,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 1,
+            "d": 2,
+            "l": 4,
+            "n": 7,
+            "score": 29,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌍 Arab Cup",
+            "weight": 1.0,
+            "w": 6,
+            "d": 4,
+            "l": 0,
+            "n": 10,
+            "score": 80,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 3,
+        "byTournament": [
+          {
+            "label": "🌍 AFCON",
+            "weight": 3.0,
+            "titles": 1,
+            "finals": 2,
+            "score": 16
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "AUT": {
+      "form": {
+        "score": 68,
+        "w": 19,
+        "d": 5,
+        "l": 6,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 40,
+        "w": 14,
+        "d": 10,
+        "l": 17,
+        "n": 41,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 0,
+            "d": 2,
+            "l": 1,
+            "n": 3,
+            "score": 33,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "w": 4,
+            "d": 2,
+            "l": 8,
+            "n": 14,
+            "score": 36,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 10,
+            "d": 6,
+            "l": 8,
+            "n": 24,
+            "score": 54,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 2,
+        "byTournament": [
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "titles": 0,
+            "finals": 1,
+            "score": 6
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "JOR": {
+      "form": {
+        "score": 56,
+        "w": 12,
+        "d": 10,
+        "l": 8,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 62,
+        "w": 20,
+        "d": 8,
+        "l": 10,
+        "n": 38,
+        "byTournament": [
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "w": 10,
+            "d": 7,
+            "l": 5,
+            "n": 22,
+            "score": 61,
+            "editions": 1,
+            "semiFinals": 0,
+            "finals": 1,
+            "titles": 0
+          },
+          {
+            "label": "🌍 Arab Cup",
+            "weight": 1.0,
+            "w": 10,
+            "d": 1,
+            "l": 5,
+            "n": 16,
+            "score": 66,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 1,
+        "byTournament": [
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "titles": 0,
+            "finals": 1,
+            "score": 7
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "POR": {
+      "form": {
+        "score": 68,
+        "w": 18,
+        "d": 7,
+        "l": 5,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 59,
+        "w": 48,
+        "d": 23,
+        "l": 23,
+        "n": 94,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 11,
+            "d": 6,
+            "l": 9,
+            "n": 26,
+            "score": 54,
+            "editions": 1,
+            "semiFinals": 1,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "w": 20,
+            "d": 10,
+            "l": 10,
+            "n": 40,
+            "score": 62,
+            "editions": 4,
+            "semiFinals": 2,
+            "finals": 2,
+            "titles": 1
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 17,
+            "d": 7,
+            "l": 4,
+            "n": 28,
+            "score": 73,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 9,
+        "byTournament": [
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "titles": 1,
+            "finals": 2,
+            "score": 28
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "COD": {
+      "form": {
+        "score": 74,
+        "w": 18,
+        "d": 7,
+        "l": 5,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 50,
+        "w": 0,
+        "d": 0,
+        "l": 0,
+        "n": 0,
+        "byTournament": []
+      },
+      "history": {
+        "score": 6,
+        "byTournament": [
+          {
+            "label": "🌍 AFCON",
+            "weight": 3.0,
+            "titles": 2,
+            "finals": 4,
+            "score": 31
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "UZB": {
+      "form": {
+        "score": 69,
+        "w": 16,
+        "d": 12,
+        "l": 2,
+        "n": 30,
+        "lastDate": "2026-03-30"
+      },
+      "knockout": {
+        "score": 56,
+        "w": 15,
+        "d": 7,
+        "l": 11,
+        "n": 33,
+        "byTournament": [
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "w": 15,
+            "d": 7,
+            "l": 11,
+            "n": 33,
+            "score": 56,
+            "editions": 1,
+            "semiFinals": 1,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 1,
+        "byTournament": [
+          {
+            "label": "🌏 AFC Asian Cup",
+            "weight": 3.0,
+            "titles": 0,
+            "finals": 1,
+            "score": 7
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "COL": {
+      "form": {
+        "score": 54,
+        "w": 17,
+        "d": 6,
+        "l": 7,
+        "n": 30,
+        "lastDate": "2026-03-29"
+      },
+      "knockout": {
+        "score": 60,
+        "w": 39,
+        "d": 13,
+        "l": 23,
+        "n": 75,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 8,
+            "d": 1,
+            "l": 6,
+            "n": 15,
+            "score": 57,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "w": 31,
+            "d": 12,
+            "l": 17,
+            "n": 60,
+            "score": 62,
+            "editions": 8,
+            "semiFinals": 6,
+            "finals": 2,
+            "titles": 1
+          }
+        ]
+      },
+      "history": {
+        "score": 3,
+        "byTournament": [
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "titles": 1,
+            "finals": 2,
+            "score": 7
+          },
+          {
+            "label": "🌎 CONCACAF Gold Cup",
+            "weight": 2.0,
+            "titles": 0,
+            "finals": 1,
+            "score": 2
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "ENG": {
+      "form": {
+        "score": 80,
+        "w": 18,
+        "d": 6,
+        "l": 6,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 60,
+        "w": 40,
+        "d": 29,
+        "l": 22,
+        "n": 91,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 14,
+            "d": 10,
+            "l": 9,
+            "n": 33,
+            "score": 58,
+            "editions": 1,
+            "semiFinals": 1,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "w": 16,
+            "d": 13,
+            "l": 5,
+            "n": 34,
+            "score": 66,
+            "editions": 4,
+            "semiFinals": 2,
+            "finals": 2,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 10,
+            "d": 6,
+            "l": 8,
+            "n": 24,
+            "score": 54,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 22,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 15.0,
+            "titles": 1,
+            "finals": 1,
+            "score": 17
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "titles": 0,
+            "finals": 2,
+            "score": 12
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "CRO": {
+      "form": {
+        "score": 70,
+        "w": 17,
+        "d": 6,
+        "l": 7,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 55,
+        "w": 32,
+        "d": 21,
+        "l": 28,
+        "n": 81,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 13,
+            "d": 8,
+            "l": 9,
+            "n": 30,
+            "score": 57,
+            "editions": 3,
+            "semiFinals": 2,
+            "finals": 1,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "w": 9,
+            "d": 8,
+            "l": 8,
+            "n": 25,
+            "score": 52,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 10,
+            "d": 5,
+            "l": 11,
+            "n": 26,
+            "score": 48,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 7,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 15.0,
+            "titles": 0,
+            "finals": 1,
+            "score": 4
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "titles": 0,
+            "finals": 1,
+            "score": 6
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "GHA": {
+      "form": {
+        "score": 63,
+        "w": 10,
+        "d": 7,
+        "l": 13,
+        "n": 30,
+        "lastDate": "2026-03-30"
+      },
+      "knockout": {
+        "score": 43,
+        "w": 5,
+        "d": 3,
+        "l": 7,
+        "n": 15,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 5,
+            "d": 3,
+            "l": 7,
+            "n": 15,
+            "score": 43,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 11,
+        "byTournament": [
+          {
+            "label": "🌍 AFCON",
+            "weight": 3.0,
+            "titles": 4,
+            "finals": 8,
+            "score": 63
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "PAN": {
+      "form": {
+        "score": 67,
+        "w": 15,
+        "d": 7,
+        "l": 8,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 34,
+        "w": 14,
+        "d": 3,
+        "l": 15,
+        "n": 32,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 0,
+            "d": 0,
+            "l": 3,
+            "n": 3,
+            "score": 0,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌎 Copa América",
+            "weight": 5.0,
+            "w": 3,
+            "d": 0,
+            "l": 4,
+            "n": 7,
+            "score": 43,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          },
+          {
+            "label": "🌎 CONCACAF Nations League",
+            "weight": 1.5,
+            "w": 11,
+            "d": 3,
+            "l": 8,
+            "n": 22,
+            "score": 57,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 1,
+        "byTournament": [
+          {
+            "label": "🌎 CONCACAF Gold Cup",
+            "weight": 2.0,
+            "titles": 0,
+            "finals": 2,
+            "score": 5
+          }
+        ],
+        "_zeroReason": null
+      }
+    },
+    "ITA": {
+      "form": {
+        "score": 64,
+        "w": 17,
+        "d": 6,
+        "l": 7,
+        "n": 30,
+        "lastDate": "2026-03-31"
+      },
+      "knockout": {
+        "score": 64,
+        "w": 45,
+        "d": 31,
+        "l": 19,
+        "n": 95,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 10.0,
+            "w": 14,
+            "d": 9,
+            "l": 6,
+            "n": 29,
+            "score": 64,
+            "editions": 2,
+            "semiFinals": 0,
+            "finals": 2,
+            "titles": 1
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "w": 18,
+            "d": 13,
+            "l": 7,
+            "n": 38,
+            "score": 64,
+            "editions": 4,
+            "semiFinals": 1,
+            "finals": 3,
+            "titles": 1
+          },
+          {
+            "label": "🇪🇺 UEFA Nations League",
+            "weight": 1.5,
+            "w": 13,
+            "d": 9,
+            "l": 6,
+            "n": 28,
+            "score": 62,
+            "editions": 0,
+            "semiFinals": 0,
+            "finals": 0,
+            "titles": 0
+          }
+        ]
+      },
+      "history": {
+        "score": 80,
+        "byTournament": [
+          {
+            "label": "🌍 Mondiali FIFA",
+            "weight": 15.0,
+            "titles": 4,
+            "finals": 6,
+            "score": 78
+          },
+          {
+            "label": "🇪🇺 UEFA Euro",
+            "weight": 5.0,
+            "titles": 2,
+            "finals": 4,
+            "score": 56
+          }
+        ],
+        "_zeroReason": null
+      }
+    }
+  }
+}

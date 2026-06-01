@@ -1,0 +1,74 @@
+import { useEffect, useState } from 'react';
+import type { Team, ModelParams, H2HRecord, TeamStats } from '../engine/types';
+
+export interface AppData {
+  teams: Team[];
+  params: ModelParams | null;
+  paramsSource: 'bayesian' | 'elo-fallback';
+  h2h: Map<string, H2HRecord>;
+  teamStats: Map<string, TeamStats>;
+}
+
+/** Carica teams.json e (se presente) model-params.json statici. */
+export function useData(): { data: AppData | null; error: string | null } {
+  const [data, setData] = useState<AppData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const teamsRes = await fetch(`${import.meta.env.BASE_URL}data/teams.json`);
+        const teamsJson = await teamsRes.json();
+        const teams: Team[] = teamsJson.teams;
+
+        let params: ModelParams | null = null;
+        let paramsSource: AppData['paramsSource'] = 'elo-fallback';
+        try {
+          const pRes = await fetch(`${import.meta.env.BASE_URL}data/model-params.json`);
+          if (pRes.ok) {
+            params = await pRes.json();
+            paramsSource = 'bayesian';
+          }
+        } catch {
+          // model-params.json non ancora generato → fallback Elo
+        }
+
+        // Carica H2H (generato da model/build_h2h.py)
+        const h2h = new Map<string, import('../engine/types').H2HRecord>();
+        try {
+          const hRes = await fetch(`${import.meta.env.BASE_URL}data/h2h.json`);
+          if (hRes.ok) {
+            const hJson = await hRes.json();
+            for (const [k, v] of Object.entries(hJson.h2h)) {
+              h2h.set(k, v as import('../engine/types').H2HRecord);
+            }
+          }
+        } catch {
+          // h2h.json non presente → nessun aggiustamento storico
+        }
+
+        // Carica team-stats.json (generato da model/build_team_stats.py)
+        const teamStats = new Map<string, TeamStats>();
+        try {
+          const sRes = await fetch(`${import.meta.env.BASE_URL}data/team-stats.json`);
+          if (sRes.ok) {
+            const sJson = await sRes.json();
+            for (const [k, v] of Object.entries(sJson.teams)) {
+              teamStats.set(k, v as TeamStats);
+            }
+          }
+        } catch { /* opzionale */ }
+
+        if (!cancelled) setData({ teams, params, paramsSource, h2h, teamStats });
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return { data, error };
+}

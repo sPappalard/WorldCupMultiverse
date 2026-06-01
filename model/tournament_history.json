@@ -1,0 +1,228 @@
+{
+  "_meta": {
+    "description": "Dati storici ufficiali curati manualmente. Fonte: Wikipedia, FIFA, UEFA, CONMEBOL, CAF.",
+    "fields": {
+      "winner": "vincitore",
+      "runnerUp": "finalista perdente",
+      "semis": "le due squadre eliminate in semifinale (3°/4° posto)",
+      "ids": "codici squadra usati in teams.json"
+    },
+    "sections": {
+      "tournaments": "Edizioni dal 1994 in poi — usate per il Rendimento Campionati (W/D/L nelle fasi finali)",
+      "allTimeTitles": "Titoli vinti nella storia completa di ogni torneo — usati per il Punteggio Storia"
+    }
+  },
+  "allTimeTitles": {
+    "🌍 Mondiali FIFA": {
+      "note": "Fonte: Wikipedia List of FIFA World Cup finals. Solo le 49 squadre dei Mondiali 2026.",
+      "titles": {
+        "BRA": 5,
+        "GER": 4,
+        "ITA": 4,
+        "ARG": 3,
+        "FRA": 2,
+        "URU": 2,
+        "ENG": 1,
+        "ESP": 1
+      },
+      "finals": {
+        "BRA": 8, "GER": 8, "ITA": 6, "ARG": 6, "NED": 3,
+        "FRA": 3, "CRO": 1, "URU": 2, "HUN": 2, "CZE": 2,
+        "ESP": 1, "ENG": 1, "SWE": 1
+      }
+    },
+    "🇪🇺 UEFA Euro": {
+      "note": "Fonte: Wikipedia List of UEFA European Championship finals. Solo squadre partecipanti.",
+      "titles": {
+        "ESP": 4,
+        "GER": 3,
+        "FRA": 2,
+        "ITA": 2,
+        "POR": 1,
+        "NED": 1,
+        "CZE": 1
+      },
+      "finals": {
+        "ESP": 5, "GER": 6, "FRA": 3, "ITA": 4, "POR": 2,
+        "NED": 2, "CZE": 2, "ENG": 2, "BEL": 1, "DEN": 1,
+        "GRE": 1, "CRO": 1, "TUR": 1, "AUT": 1, "YUG": 1,
+        "URS": 1
+      }
+    },
+    "🌎 Copa América": {
+      "note": "Fonte: Wikipedia Copa América. Solo squadre partecipanti ai Mondiali 2026.",
+      "titles": {
+        "ARG": 16,
+        "URU": 15,
+        "BRA": 9,
+        "PAR": 2,
+        "PER": 2,
+        "CHI": 2,
+        "COL": 1,
+        "BOL": 1,
+        "ECU": 0
+      },
+      "finals": {
+        "ARG": 28, "URU": 17, "BRA": 14, "PAR": 5,
+        "PER": 4, "CHI": 4, "COL": 2, "BOL": 2, "ECU": 1
+      }
+    },
+    "🌍 AFCON": {
+      "note": "Fonte: Wikipedia Africa Cup of Nations. Solo squadre partecipanti ai Mondiali 2026.",
+      "titles": {
+        "EGY": 7,
+        "CMR": 5,
+        "GHA": 4,
+        "NGA": 3,
+        "CIV": 3,
+        "SEN": 1,
+        "TUN": 1,
+        "ALG": 1,
+        "MAR": 1,
+        "RSA": 1,
+        "COD": 2
+      },
+      "finals": {
+        "EGY": 11, "CMR": 8, "GHA": 8, "NGA": 7, "CIV": 7,
+        "MAR": 5, "SEN": 3, "TUN": 4, "ALG": 2, "RSA": 2,
+        "COD": 4, "BFA": 2, "MLI": 2, "ZAM": 2
+      }
+    },
+    "🌏 AFC Asian Cup": {
+      "note": "Fonte: Wikipedia AFC Asian Cup. Solo squadre partecipanti ai Mondiali 2026.",
+      "titles": {
+        "JPN": 4,
+        "IRN": 3,
+        "KSA": 3,
+        "KOR": 2,
+        "QAT": 2,
+        "IRQ": 1,
+        "AUS": 1,
+        "UZB": 0
+      },
+      "finals": {
+        "JPN": 5, "IRN": 5, "KSA": 4, "KOR": 5, "QAT": 2,
+        "IRQ": 2, "AUS": 2, "CHN": 2, "UZB": 1, "JOR": 1
+      }
+    },
+    "🌎 CONCACAF Gold Cup": {
+      "note": "Fonte: Wikipedia CONCACAF Gold Cup. Solo squadre partecipanti ai Mondiali 2026.",
+      "titles": {
+        "MEX": 9,
+        "USA": 7,
+        "CAN": 1,
+        "PAN": 0,
+        "HAI": 0
+      },
+      "finals": {
+        "MEX": 14, "USA": 12, "CAN": 2, "HON": 1, "JAM": 2,
+        "PAN": 2, "CRC": 2, "TRI": 1, "GUA": 1, "COL": 1
+      }
+    }
+  },
+  "tournaments": {
+    "🌍 Mondiali FIFA": {
+      "editions": [
+        { "year": 1994, "winner": "BRA", "runnerUp": "ITA", "semis": ["SWE", "BUL"] },
+        { "year": 1998, "winner": "FRA", "runnerUp": "BRA", "semis": ["CRO", "NED"] },
+        { "year": 2002, "winner": "BRA", "runnerUp": "GER", "semis": ["TUR", "KOR"] },
+        { "year": 2006, "winner": "ITA", "runnerUp": "FRA", "semis": ["GER", "POR"] },
+        { "year": 2010, "winner": "ESP", "runnerUp": "NED", "semis": ["GER", "URU"] },
+        { "year": 2014, "winner": "GER", "runnerUp": "ARG", "semis": ["NED", "BRA"] },
+        { "year": 2018, "winner": "FRA", "runnerUp": "CRO", "semis": ["BEL", "ENG"] },
+        { "year": 2022, "winner": "ARG", "runnerUp": "FRA", "semis": ["CRO", "MAR"] }
+      ]
+    },
+    "🇪🇺 UEFA Euro": {
+      "editions": [
+        { "year": 1996, "winner": "GER", "runnerUp": "CZE", "semis": ["FRA", "ENG"] },
+        { "year": 2000, "winner": "FRA", "runnerUp": "ITA", "semis": ["NED", "POR"] },
+        { "year": 2004, "winner": "GRE", "runnerUp": "POR", "semis": ["CZE", "ENG"] },
+        { "year": 2008, "winner": "ESP", "runnerUp": "GER", "semis": ["RUS", "ITA"] },
+        { "year": 2012, "winner": "ESP", "runnerUp": "ITA", "semis": ["GER", "POR"] },
+        { "year": 2016, "winner": "POR", "runnerUp": "FRA", "semis": ["GER", "WAL"] },
+        { "year": 2021, "winner": "ITA", "runnerUp": "ENG", "semis": ["ESP", "DEN"] },
+        { "year": 2024, "winner": "ESP", "runnerUp": "ENG", "semis": ["FRA", "NED"] }
+      ]
+    },
+    "🌎 Copa América": {
+      "editions": [
+        { "year": 1995, "winner": "URU", "runnerUp": "BRA", "semis": ["COL", "PAR"] },
+        { "year": 1997, "winner": "BRA", "runnerUp": "BOL", "semis": ["COL", "PAR"] },
+        { "year": 1999, "winner": "BRA", "runnerUp": "URU", "semis": ["COL", "PAR"] },
+        { "year": 2001, "winner": "COL", "runnerUp": "MEX", "semis": ["HON", "BRA"] },
+        { "year": 2004, "winner": "BRA", "runnerUp": "ARG", "semis": ["URU", "PAR"] },
+        { "year": 2007, "winner": "BRA", "runnerUp": "ARG", "semis": ["URU", "PAR"] },
+        { "year": 2011, "winner": "URU", "runnerUp": "PAR", "semis": ["PER", "COL"] },
+        { "year": 2015, "winner": "CHI", "runnerUp": "ARG", "semis": ["PER", "MEX"] },
+        { "year": 2016, "winner": "CHI", "runnerUp": "ARG", "semis": ["USA", "COL"] },
+        { "year": 2019, "winner": "BRA", "runnerUp": "PER", "semis": ["CHI", "ARG"] },
+        { "year": 2021, "winner": "ARG", "runnerUp": "BRA", "semis": ["COL", "URU"] },
+        { "year": 2024, "winner": "ARG", "runnerUp": "COL", "semis": ["URU", "CAN"] }
+      ]
+    },
+    "🌍 AFCON": {
+      "editions": [
+        { "year": 1994, "winner": "NGA", "runnerUp": "ZAM", "semis": ["CIV", "MLI"] },
+        { "year": 1996, "winner": "RSA", "runnerUp": "TUN", "semis": ["ZAM", "GHA"] },
+        { "year": 1998, "winner": "EGY", "runnerUp": "RSA", "semis": ["COD", "BFA"] },
+        { "year": 2000, "winner": "CMR", "runnerUp": "NGA", "semis": ["TUN", "RSA"] },
+        { "year": 2002, "winner": "CMR", "runnerUp": "SEN", "semis": ["MLI", "NGA"] },
+        { "year": 2004, "winner": "TUN", "runnerUp": "MAR", "semis": ["NGA", "SEN"] },
+        { "year": 2006, "winner": "EGY", "runnerUp": "CIV", "semis": ["NGA", "SEN"] },
+        { "year": 2008, "winner": "EGY", "runnerUp": "CMR", "semis": ["GHA", "CIV"] },
+        { "year": 2010, "winner": "EGY", "runnerUp": "GHA", "semis": ["NGA", "ALG"] },
+        { "year": 2012, "winner": "ZAM", "runnerUp": "CIV", "semis": ["MLI", "GHA"] },
+        { "year": 2013, "winner": "NGA", "runnerUp": "BFA", "semis": ["MLI", "GHA"] },
+        { "year": 2015, "winner": "CIV", "runnerUp": "GHA", "semis": ["DRC", "COD"] },
+        { "year": 2017, "winner": "CMR", "runnerUp": "EGY", "semis": ["GHA", "BFA"] },
+        { "year": 2019, "winner": "ALG", "runnerUp": "SEN", "semis": ["NGA", "TUN"] },
+        { "year": 2021, "winner": "SEN", "runnerUp": "EGY", "semis": ["BFA", "CMR"] },
+        { "year": 2023, "winner": "CIV", "runnerUp": "NGA", "semis": ["COD", "RSA"] }
+      ]
+    },
+    "🏆 Confederations Cup": {
+      "editions": [
+        { "year": 1997, "winner": "BRA", "runnerUp": "AUS", "semis": ["URU", "CZE"] },
+        { "year": 1999, "winner": "MEX", "runnerUp": "BRA", "semis": ["USA", "SAU"] },
+        { "year": 2001, "winner": "FRA", "runnerUp": "JPN", "semis": ["AUS", "BRA"] },
+        { "year": 2003, "winner": "FRA", "runnerUp": "CMR", "semis": ["TUR", "COL"] },
+        { "year": 2005, "winner": "BRA", "runnerUp": "ARG", "semis": ["GER", "MEX"] },
+        { "year": 2009, "winner": "BRA", "runnerUp": "USA", "semis": ["ESP", "RSA"] },
+        { "year": 2013, "winner": "BRA", "runnerUp": "ESP", "semis": ["URU", "ITA"] },
+        { "year": 2017, "winner": "GER", "runnerUp": "CHI", "semis": ["MEX", "POR"] }
+      ]
+    },
+    "🌏 AFC Asian Cup": {
+      "editions": [
+        { "year": 1996, "winner": "SAU", "runnerUp": "UAE", "semis": ["IRN", "KOR"] },
+        { "year": 2000, "winner": "JPN", "runnerUp": "SAU", "semis": ["KOR", "CHN"] },
+        { "year": 2004, "winner": "JPN", "runnerUp": "CHN", "semis": ["IRN", "BHR"] },
+        { "year": 2007, "winner": "IRQ", "runnerUp": "SAU", "semis": ["KOR", "JPN"] },
+        { "year": 2011, "winner": "JPN", "runnerUp": "AUS", "semis": ["KOR", "UZB"] },
+        { "year": 2015, "winner": "AUS", "runnerUp": "KOR", "semis": ["UAE", "IRQ"] },
+        { "year": 2019, "winner": "QAT", "runnerUp": "JPN", "semis": ["IRN", "UAE"] },
+        { "year": 2023, "winner": "QAT", "runnerUp": "JOR", "semis": ["IRN", "KOR"] }
+      ]
+    },
+    "🌎 CONCACAF Gold Cup": {
+      "editions": [
+        { "year": 1996, "winner": "MEX", "runnerUp": "BRA", "semis": ["USA", "GUA"] },
+        { "year": 1998, "winner": "MEX", "runnerUp": "USA", "semis": ["JPN", "JAM"] },
+        { "year": 2000, "winner": "CAN", "runnerUp": "COL", "semis": ["TRI", "USA"] },
+        { "year": 2002, "winner": "USA", "runnerUp": "CRC", "semis": ["MEX", "CAN"] },
+        { "year": 2003, "winner": "MEX", "runnerUp": "BRA", "semis": ["USA", "CRC"] },
+        { "year": 2005, "winner": "USA", "runnerUp": "PAN", "semis": ["HON", "JAM"] },
+        { "year": 2007, "winner": "USA", "runnerUp": "MEX", "semis": ["GUA", "CAN"] },
+        { "year": 2009, "winner": "MEX", "runnerUp": "USA", "semis": ["HON", "GUA"] },
+        { "year": 2011, "winner": "MEX", "runnerUp": "USA", "semis": ["PAN", "HON"] },
+        { "year": 2013, "winner": "USA", "runnerUp": "PAN", "semis": ["HON", "MEX"] },
+        { "year": 2015, "winner": "MEX", "runnerUp": "JAM", "semis": ["USA", "PAN"] },
+        { "year": 2017, "winner": "USA", "runnerUp": "JAM", "semis": ["MEX", "CRC"] },
+        { "year": 2019, "winner": "MEX", "runnerUp": "USA", "semis": ["HAI", "PAN"] },
+        { "year": 2021, "winner": "USA", "runnerUp": "MEX", "semis": ["QAT", "CRC"] },
+        { "year": 2023, "winner": "MEX", "runnerUp": "PAN", "semis": ["USA", "JAM"] }
+      ]
+    }
+  }
+}

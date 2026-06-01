@@ -1,0 +1,7 @@
+# Pipeline offline di stima bayesiana + validazione (build-time, NON in produzione).
+# Testato con Python 3.11–3.13. NB: PyMC potrebbe non avere ancora wheel per 3.14.
+pymc>=5.10
+arviz>=0.17
+numpy>=1.26
+pandas>=2.1
+scipy>=1.11

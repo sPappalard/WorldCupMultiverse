@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Python
+model/.venv/
+model/__pycache__/
+*.pyc
+
+# Editor / OS
+.DS_Store
+.vscode/
+*.log
+
+# Local env
+.env
+.env.local
+
+# Claude Code local state
+.claude/
