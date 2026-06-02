@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { whatIfFactors } from '../../config';
 import type { Team } from '../../engine/types';
 import type { Scenario, AppliedFactor } from '../scenario';
@@ -11,6 +12,7 @@ interface Props {
 /** Pannello dei fattori what-if (§7). Il flagship Italia è separato sopra. */
 export function WhatIfPanel({ scenario, teams, onChange }: Props) {
   const activeTeams = teams.filter((t) => t.active);
+  const teamsById = new Map(activeTeams.map((t) => [t.id, t]));
   const flagship = whatIfFactors.find((f) => f.flagship)!;
   const others = whatIfFactors.filter((f) => !f.flagship);
 
@@ -19,15 +21,22 @@ export function WhatIfPanel({ scenario, teams, onChange }: Props) {
     if (exists) {
       onChange({ ...scenario, factors: scenario.factors.filter((f) => f.id !== id) });
     } else {
-      const firstTeam = activeTeams[0]?.id;
-      onChange({ ...scenario, factors: [...scenario.factors, { id, teamId: firstTeam }] });
+      onChange({ ...scenario, factors: [...scenario.factors, { id, teamIds: [] }] });
     }
   };
 
-  const setFactorTeam = (id: AppliedFactor['id'], teamId: string) => {
+  /** Aggiunge/rimuove una squadra dalla lista del fattore. */
+  const toggleFactorTeam = (id: AppliedFactor['id'], teamId: string) => {
     onChange({
       ...scenario,
-      factors: scenario.factors.map((f) => (f.id === id ? { ...f, teamId } : f)),
+      factors: scenario.factors.map((f) => {
+        if (f.id !== id) return f;
+        const current = f.teamIds ?? [];
+        const next = current.includes(teamId)
+          ? current.filter((t) => t !== teamId)
+          : [...current, teamId];
+        return { ...f, teamIds: next };
+      }),
     });
   };
 
@@ -53,7 +62,8 @@ export function WhatIfPanel({ scenario, teams, onChange }: Props) {
 
       <h3>Altri scenari what-if</h3>
       <p className="small muted">
-        Euristiche giocose, separate dal motore predittivo. Impilabili.
+        Euristiche giocose, separate dal motore predittivo. Impilabili. Puoi
+        applicare ogni scenario a più squadre.
       </p>
 
       <div className="factors">
@@ -61,6 +71,7 @@ export function WhatIfPanel({ scenario, teams, onChange }: Props) {
           .filter((f) => !f.isSlider)
           .map((f) => {
             const applied = scenario.factors.find((a) => a.id === f.id);
+            const selected = applied?.teamIds ?? [];
             return (
               <div key={f.id} className={`factor ${applied ? 'active' : ''}`}>
                 <label className="factor-head">
@@ -73,19 +84,33 @@ export function WhatIfPanel({ scenario, teams, onChange }: Props) {
                     {f.emoji} {f.label}
                   </span>
                 </label>
-                {applied && f.needsTeam && (
-                  <select
-                    value={applied.teamId}
-                    onChange={(e) => setFactorTeam(f.id, e.target.value)}
-                  >
-                    {activeTeams.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
                 <p className="small muted factor-desc">{f.description}</p>
+
+                {applied && f.needsTeam && (
+                  <div className="wf-teams">
+                    {selected.length > 0 && (
+                      <div className="wf-selected">
+                        {selected.map((tid) => (
+                          <button
+                            key={tid}
+                            type="button"
+                            className="wf-chip"
+                            onClick={() => toggleFactorTeam(f.id, tid)}
+                            title="Rimuovi"
+                          >
+                            <span className={`fi fi-${teamsById.get(tid)?.flag}`} aria-hidden />
+                            {teamsById.get(tid)?.name ?? tid}
+                            <span className="wf-chip-x">×</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <TeamAdder
+                      teams={activeTeams.filter((t) => !selected.includes(t.id))}
+                      onAdd={(tid) => toggleFactorTeam(f.id, tid)}
+                    />
+                  </div>
+                )}
               </div>
             );
           })}
@@ -107,5 +132,30 @@ export function WhatIfPanel({ scenario, teams, onChange }: Props) {
         </div>
       </div>
     </div>
+  );
+}
+
+/** Dropdown "aggiungi squadra" che si resetta dopo ogni selezione. */
+function TeamAdder({ teams, onAdd }: { teams: Team[]; onAdd: (id: string) => void }) {
+  const [val, setVal] = useState('');
+  if (teams.length === 0) return null;
+  return (
+    <select
+      className="wf-add"
+      value={val}
+      onChange={(e) => {
+        if (e.target.value) {
+          onAdd(e.target.value);
+          setVal('');
+        }
+      }}
+    >
+      <option value="">+ Aggiungi squadra…</option>
+      {teams.map((t) => (
+        <option key={t.id} value={t.id}>
+          {t.name}
+        </option>
+      ))}
+    </select>
   );
 }

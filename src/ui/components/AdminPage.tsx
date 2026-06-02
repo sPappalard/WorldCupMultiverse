@@ -11,7 +11,19 @@ import { config } from '../../config';
 interface Props {
   modulators: ModulatorConfig;
   onChange: (m: ModulatorConfig) => void;
+  /** Applica i pesi correnti e apre la classifica forza nella pagina Squadre. */
+  onGenerateRanking?: (m: ModulatorConfig) => void;
 }
+
+/** Sezioni del pannello, per la navigazione ad ancore. */
+const ADM_SECTIONS = [
+  { id: 'adm-sec-lambda', label: '🎯 Modulatori λ' },
+  { id: 'adm-sec-h2h', label: '📋 Storico H2H' },
+  { id: 'adm-sec-home', label: '🏟️ Vantaggio campo' },
+  { id: 'adm-sec-ko', label: '🟣 Esperienza KO' },
+  { id: 'adm-sec-whatif', label: '🔮 What-if' },
+  { id: 'adm-sec-ranking', label: '🏆 Classifica forza' },
+];
 
 /** Converte un coefficiente log-lambda in percentuale di variazione gol. */
 function toGolPct(coeff: number, maxAdj: number): string {
@@ -29,6 +41,7 @@ const DEFAULTS: ModulatorConfig = {
   homeAdvBoost: config.modulators.homeAdvBoost,
   h2hMaxBoost: config.modulators.h2hMaxBoost,
   lambdaShrink: config.modulators.lambdaShrink,
+  whatIf: { ...config.modulators.whatIf },
 };
 
 interface SliderProps {
@@ -44,11 +57,13 @@ interface SliderProps {
   onChange: (v: number) => void;
   onReset: () => void;
   defaultValue: number;
+  /** Override del testo a sinistra (default: "coeff: X.XXX"). */
+  valueLabel?: React.ReactNode;
 }
 
 function ModSlider({
   label, description, value, min, max, step,
-  effectLabel, effectValue, color, onChange, onReset, defaultValue,
+  effectLabel, effectValue, color, onChange, onReset, defaultValue, valueLabel,
 }: SliderProps) {
   const pct = ((value - min) / (max - min)) * 100;
   const isModified = Math.abs(value - defaultValue) > 1e-6;
@@ -75,7 +90,7 @@ function ModSlider({
         />
         <div className="adm-slider-vals">
           <span className="adm-val-current" style={{ color }}>
-            coeff: <strong>{value.toFixed(3)}</strong>
+            {valueLabel ?? <>coeff: <strong>{value.toFixed(3)}</strong></>}
           </span>
           <span className="adm-val-effect">
             {effectLabel}: <strong>{effectValue}</strong>
@@ -159,7 +174,7 @@ function LiveExample({ mod }: { mod: ModulatorConfig }) {
   );
 }
 
-export function AdminPage({ modulators, onChange }: Props) {
+export function AdminPage({ modulators, onChange, onGenerateRanking }: Props) {
   const [localMod, setLocalMod] = useState<ModulatorConfig>({ ...modulators });
   const [applied, setApplied] = useState(false);
 
@@ -174,6 +189,11 @@ export function AdminPage({ modulators, onChange }: Props) {
       }
       return next;
     });
+    setApplied(false);
+  }, []);
+
+  const updateWhatIf = useCallback((key: keyof ModulatorConfig['whatIf'], value: number) => {
+    setLocalMod((prev) => ({ ...prev, whatIf: { ...prev.whatIf, [key]: value } }));
     setApplied(false);
   }, []);
 
@@ -207,10 +227,19 @@ export function AdminPage({ modulators, onChange }: Props) {
         </div>
       </div>
 
+      {/* Navigazione rapida tra le sezioni */}
+      <nav className="adm-nav">
+        {ADM_SECTIONS.map((s) => (
+          <a key={s.id} href={`#${s.id}`} className="adm-nav-link">
+            {s.label}
+          </a>
+        ))}
+      </nav>
+
       <div className="adm-sections">
 
         {/* SEZIONE 1: Modulatori su ogni partita */}
-        <section className="adm-section">
+        <section className="adm-section" id="adm-sec-lambda">
           <h3 className="adm-section-title">
             🎯 Modulatori λ — agiscono su <em>ogni</em> partita
           </h3>
@@ -273,7 +302,7 @@ export function AdminPage({ modulators, onChange }: Props) {
         </section>
 
         {/* SEZIONE 2: Scontri diretti H2H */}
-        <section className="adm-section">
+        <section className="adm-section" id="adm-sec-h2h">
           <h3 className="adm-section-title">
             📋 Storico H2H — agisce su <em>coppie con almeno 3 precedenti</em>
           </h3>
@@ -298,7 +327,7 @@ export function AdminPage({ modulators, onChange }: Props) {
         </section>
 
         {/* SEZIONE 3: Vantaggio campo */}
-        <section className="adm-section">
+        <section className="adm-section" id="adm-sec-home">
           <h3 className="adm-section-title">
             🏟️ Vantaggio campo — agisce su <em>ogni partita delle 3 ospitanti</em>
           </h3>
@@ -322,7 +351,7 @@ export function AdminPage({ modulators, onChange }: Props) {
         </section>
 
         {/* SEZIONE 4: Esperienza KO */}
-        <section className="adm-section">
+        <section className="adm-section" id="adm-sec-ko">
           <h3 className="adm-section-title">
             🟣 Esperienza/Maturità — agisce <em>solo sui rigori KO</em>
           </h3>
@@ -374,6 +403,91 @@ export function AdminPage({ modulators, onChange }: Props) {
               <span>100% Knockout →</span>
             </div>
           </div>
+        </section>
+
+        {/* SEZIONE 5: Pesi degli scenari what-if */}
+        <section className="adm-section" id="adm-sec-whatif">
+          <h3 className="adm-section-title">
+            🔮 Scenari what-if — <em>magnitudine degli effetti</em>
+          </h3>
+          <p className="adm-section-desc">
+            Quanto ogni scenario sposta la forza della squadra selezionata, in
+            punti Elo-equivalenti. Valori negativi indeboliscono, positivi
+            rafforzano. Si applicano alle squadre scelte nel pannello what-if.
+          </p>
+
+          <ModSlider
+            label="🚑 Assenza di un big"
+            description="Una stella out (es. infortunio dell'ultimo minuto). Indebolisce la squadra."
+            value={localMod.whatIf.missingStar}
+            min={-120} max={0} step={5}
+            valueLabel={<>valore: <strong>{localMod.whatIf.missingStar} pt</strong></>}
+            effectLabel="forza squadra"
+            effectValue={`${localMod.whatIf.missingStar} pt Elo`}
+            color="#f59e0b"
+            onChange={(v) => updateWhatIf('missingStar', v)}
+            onReset={() => updateWhatIf('missingStar', DEFAULTS.whatIf.missingStar)}
+            defaultValue={DEFAULTS.whatIf.missingStar}
+          />
+          <ModSlider
+            label="🩼 Infortuni a 2–3 titolari"
+            description="Più assenze pesanti. Riduzione maggiore della forza della squadra."
+            value={localMod.whatIf.injuries}
+            min={-160} max={0} step={5}
+            valueLabel={<>valore: <strong>{localMod.whatIf.injuries} pt</strong></>}
+            effectLabel="forza squadra"
+            effectValue={`${localMod.whatIf.injuries} pt Elo`}
+            color="#ef4444"
+            onChange={(v) => updateWhatIf('injuries', v)}
+            onReset={() => updateWhatIf('injuries', DEFAULTS.whatIf.injuries)}
+            defaultValue={DEFAULTS.whatIf.injuries}
+          />
+          <ModSlider
+            label="🔥 Rientro / stato di grazia"
+            description="Un big torna al top o la squadra è in forma smagliante. Piccolo bonus."
+            value={localMod.whatIf.starReturn}
+            min={0} max={80} step={5}
+            valueLabel={<>valore: <strong>+{localMod.whatIf.starReturn} pt</strong></>}
+            effectLabel="forza squadra"
+            effectValue={`+${localMod.whatIf.starReturn} pt Elo`}
+            color="#22c55e"
+            onChange={(v) => updateWhatIf('starReturn', v)}
+            onReset={() => updateWhatIf('starReturn', DEFAULTS.whatIf.starReturn)}
+            defaultValue={DEFAULTS.whatIf.starReturn}
+          />
+          <ModSlider
+            label="🟥 Squalifica chiave"
+            description="Un titolare squalificato. Penalità una-tantum sulla forza."
+            value={localMod.whatIf.suspension}
+            min={-120} max={0} step={5}
+            valueLabel={<>valore: <strong>{localMod.whatIf.suspension} pt</strong></>}
+            effectLabel="forza squadra"
+            effectValue={`${localMod.whatIf.suspension} pt Elo`}
+            color="#f97316"
+            onChange={(v) => updateWhatIf('suspension', v)}
+            onReset={() => updateWhatIf('suspension', DEFAULTS.whatIf.suspension)}
+            defaultValue={DEFAULTS.whatIf.suspension}
+          />
+        </section>
+
+        {/* SEZIONE 6: Genera classifica forza */}
+        <section className="adm-section" id="adm-sec-ranking">
+          <h3 className="adm-section-title">
+            🏆 Classifica forza — <em>squadre ordinate per punteggio</em>
+          </h3>
+          <p className="adm-section-desc">
+            Genera la lista delle 48 squadre con un <strong>Punteggio Forza</strong> (0–100)
+            che tiene conto di tutto: parametri del modello, Elo, valore rosa, forma e
+            tutti i pesi qui sopra. La lista si apre nella pagina <strong>Squadre</strong>,
+            ordinata per forza; clicca una squadra per i dettagli (incluso il win-rate
+            medio contro tutte le altre).
+          </p>
+          <button
+            className="adm-btn-apply adm-btn-apply--big"
+            onClick={() => onGenerateRanking?.(localMod)}
+          >
+            🏆 Genera classifica forza con questi pesi
+          </button>
         </section>
 
         {/* Anteprima effetti live */}

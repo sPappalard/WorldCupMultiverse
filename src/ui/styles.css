@@ -134,6 +134,25 @@ body {
 .factor input[type=range] { width: 100%; }
 .chaos-val { margin-left: auto; font-weight: 700; color: var(--accent2); }
 
+/* What-if multi-squadra */
+.wf-teams { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.wf-selected { display: flex; flex-wrap: wrap; gap: 5px; }
+.wf-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(70,211,154,0.14); border: 1px solid var(--accent);
+  color: var(--text); border-radius: 999px; padding: 3px 8px;
+  font-size: 0.76rem; cursor: pointer; transition: background 0.12s;
+}
+.wf-chip:hover { background: rgba(255,107,107,0.18); border-color: #ff6b6b; }
+.wf-chip .fi { width: 16px; height: 11px; border-radius: 2px; }
+.wf-chip-x { font-weight: 700; opacity: 0.7; margin-left: 2px; }
+.wf-add {
+  width: 100%; padding: 6px 8px; border-radius: 7px;
+  background: var(--panel); color: var(--text); border: 1px solid var(--border);
+  font-size: 0.82rem; cursor: pointer;
+}
+.wf-add:focus { outline: none; border-color: var(--accent); }
+
 .resim, .reset {
   width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);
   background: var(--panel2); color: var(--text); cursor: pointer; margin-bottom: 8px;
@@ -236,6 +255,20 @@ body {
 .badge { font-size: 0.68rem; padding: 2px 8px; border-radius: 999px; font-weight: 700; }
 .badge-host  { background: rgba(255,209,102,0.2); color: var(--accent2); }
 .badge-italy { background: var(--italy); color: #fff; }
+.badge-strength { font-variant-numeric: tabular-nums; }
+.badge-strength.tier-elite     { background: rgba(70,211,154,0.22); color: #46d39a; }
+.badge-strength.tier-top       { background: rgba(74,158,255,0.2);  color: #4a9eff; }
+.badge-strength.tier-contender { background: rgba(255,209,102,0.2); color: var(--accent2); }
+.badge-strength.tier-solid     { background: rgba(159,179,200,0.15); color: var(--muted); }
+.badge-strength.tier-outsider  { background: rgba(255,100,100,0.12); color: #ff8585; }
+
+.tc-rank {
+  flex: none; width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--panel2); border: 1px solid var(--border);
+  font-size: 0.78rem; font-weight: 800; color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
 
 .tc-stats { display: flex; flex-direction: column; gap: 4px; }
 .stat-row { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; }
@@ -344,6 +377,25 @@ body {
 .adm-title { font-size: 1.4rem; font-weight: 700; color: var(--text); margin: 0 0 8px; }
 .adm-subtitle { font-size: 0.85rem; color: var(--muted); margin: 0 0 16px; line-height: 1.5; }
 .adm-header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* Navigazione rapida tra sezioni (sticky) */
+.adm-nav {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 10px 0; margin-bottom: 20px;
+  background: linear-gradient(160deg, var(--bg), var(--bg2));
+  border-bottom: 1px solid var(--border);
+}
+.adm-nav-link {
+  font-size: 0.78rem; padding: 5px 11px; border-radius: 999px;
+  background: var(--panel2); border: 1px solid var(--border);
+  color: var(--muted); text-decoration: none; white-space: nowrap;
+  transition: all 0.15s;
+}
+.adm-nav-link:hover { color: var(--accent); border-color: var(--accent); background: rgba(70,211,154,0.08); }
+
+/* offset per l'ancora (la nav sticky non copre il titolo) */
+.adm-section { scroll-margin-top: 60px; }
 
 .adm-sections { display: flex; flex-direction: column; gap: 28px; }
 

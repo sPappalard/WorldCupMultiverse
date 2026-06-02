@@ -142,6 +142,18 @@ export const config = {
      * passa il girone al 78%, Arabia Saudita al 9%).
      */
     lambdaShrink: 0.28,
+    /**
+     * Magnitudini dei fattori what-if, in punti Elo-equivalenti.
+     * Negativi = indeboliscono la squadra, positivi = la rafforzano.
+     * Gestibili dalla pagina Admin. Default ispirati all'impatto plausibile
+     * di assenze/rientri sulla forza di una nazionale.
+     */
+    whatIf: {
+      missingStar: -40,
+      injuries: -80,
+      starReturn: 30,
+      suspension: -35,
+    },
   },
 };
 
@@ -167,7 +179,11 @@ export interface WhatIfFactorDef {
   flagship?: boolean;
   /** True se richiede di scegliere una squadra target. */
   needsTeam?: boolean;
-  /** Default della magnitudine (punti Elo-equivalenti); null per il caos (slider). */
+  /**
+   * Magnitudine di riferimento (punti Elo-equivalenti). NB: il valore
+   * effettivo usato a runtime viene da config.modulators.whatIf (gestibile
+   * da Admin); questo resta solo come riferimento/documentazione.
+   */
   defaultEloDelta?: number;
   /** True se è uno slider 0–100 (fattore caos). */
   isSlider?: boolean;

@@ -3,7 +3,7 @@
     "description": "Anagrafica + covariate delle 48 squadre dei Mondiali 2026 (sorteggio ufficiale 5 dic 2025) + entry speciale Italia.",
     "eloSnapshot": "2026-06-01",
     "eloSource": "eloratings.net (via international-football.net/elo-ratings-table, snapshot 1 giugno 2026)",
-    "squadValueSource": "Transfermarkt (transfermarkt.us/coppa-del-mondo/teilnehmer/pokalwettbewerb/FIWC), rose ufficiali Mondiali 2026. Aggiornato giugno 2026. In milioni di euro.",
+    "squadValueSource": "Transfermarkt (transfermarkt.us/coppa-del-mondo/teilnehmer/pokalwettbewerb/FIWC), rose ufficiali Mondiali 2026. Aggiornato giugno 2026. In milioni di euro. ECCEZIONE Italia: usiamo il valore della rosa convocata da Gattuso per i playoff qualificazioni (marzo 2026, 28 giocatori, 833.5M, fonte Eurosport), NON gli U21 convocati a giugno 2026 ora che l'Italia è fuori dal Mondiale.",
     "squadValueUnit": "EUR_millions"
   },
   "teams": [
@@ -67,6 +67,6 @@
     { "id": "GHA", "name": "Ghana",           "group": "L", "flag": "gh", "elo": 1503, "squadValue": 235,  "isHost": false, "active": true },
     { "id": "PAN", "name": "Panama",          "group": "L", "flag": "pa", "elo": 1733, "squadValue": 35,   "isHost": false, "active": true },
 
-    { "id": "ITA", "name": "Italia",          "group": "B", "flag": "it", "elo": 1856, "squadValue": 339,  "isHost": false, "active": false, "substituteFor": "BIH" }
+    { "id": "ITA", "name": "Italia",          "group": "B", "flag": "it", "elo": 1856, "squadValue": 834,  "isHost": false, "active": false, "substituteFor": "BIH" }
   ]
 }

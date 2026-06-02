@@ -23,12 +23,28 @@ import { config } from '../config';
 
 const REVEAL_MS = 700; // ritardo tra i round svelati nell'animazione
 
+/** Default dei modulatori, da config (evita duplicazione dei valori). */
+const DEFAULT_MODULATORS: ModulatorConfig = {
+  formCoeff: config.modulators.formCoeff,
+  squadValueCoeff: config.modulators.squadValueCoeff,
+  eloCoeff: config.modulators.eloCoeff,
+  koExperienceCoeff: config.modulators.koExperienceCoeff,
+  koKnockoutWeight: config.modulators.koKnockoutWeight,
+  koHistoryWeight: config.modulators.koHistoryWeight,
+  homeAdvBoost: config.modulators.homeAdvBoost,
+  h2hMaxBoost: config.modulators.h2hMaxBoost,
+  lambdaShrink: config.modulators.lambdaShrink,
+  whatIf: { ...config.modulators.whatIf },
+};
+
 type AppTab = 'simulator' | 'matchup' | 'teams' | 'admin';
 
 export function App() {
   const [tab, setTab] = useState<AppTab>('simulator');
   const { data, error } = useData();
   const [modulators, setModulators] = useState<ModulatorConfig | undefined>(undefined);
+  /** Quando true, la pagina Squadre apre ordinata per Punteggio Forza. */
+  const [rankByStrength, setRankByStrength] = useState(false);
   const [scenario, setScenario] = useState<Scenario>(() =>
     scenarioFromUrl(new URLSearchParams(window.location.search).get('s')),
   );
@@ -52,7 +68,7 @@ export function App() {
     revealTimers.current.forEach(clearTimeout);
     revealTimers.current = [];
 
-    const partial = scenarioToSimInput(scenario, data.teams);
+    const partial = scenarioToSimInput(scenario, data.teams, modulators);
     const base: SimInput = {
       teams: data.teams,
       params: data.params,
@@ -206,24 +222,22 @@ export function App() {
           params={data.params}
           paramsSource={data.paramsSource}
           teamStats={data.teamStats}
+          modulators={modulators ?? DEFAULT_MODULATORS}
+          rankByStrength={rankByStrength}
+          onConsumeRankByStrength={() => setRankByStrength(false)}
         />
       )}
 
       {tab === 'admin' && (
         <AdminPage
-          modulators={modulators ?? {
-            formCoeff: 0.02,
-            squadValueCoeff: 0.12,
-            eloCoeff: 0.12,
-            koExperienceCoeff: 0.08,
-            koKnockoutWeight: 0.6,
-            koHistoryWeight: 0.4,
-            homeAdvBoost: 0.22,
-            h2hMaxBoost: 0.25,
-            lambdaShrink: 0.28,
-          }}
+          modulators={modulators ?? DEFAULT_MODULATORS}
           onChange={(m) => {
             setModulators(m);
+          }}
+          onGenerateRanking={(m) => {
+            setModulators(m);
+            setRankByStrength(true);
+            setTab('teams');
           }}
         />
       )}
@@ -252,7 +266,7 @@ export function App() {
           <main className="content">
             {!output && (
               <div className="card empty">
-                <p>Premi <strong>Simula</strong> per far girare 10.000 mondiali nel browser.</p>
+                <p>Premi <strong>Simula</strong> per far girare {config.numRuns.toLocaleString('it-IT')} mondiali nel browser.</p>
               </div>
             )}
             {output && (

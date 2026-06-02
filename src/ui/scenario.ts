@@ -4,15 +4,15 @@
  */
 
 import type { SimInput } from '../engine/simulator';
-import type { Team } from '../engine/types';
+import type { Team, ModulatorConfig, WhatIfWeights } from '../engine/types';
 import { config, whatIfFactors, type WhatIfFactorId } from '../config';
 
 /** Una singola istanza di fattore applicata (impilabile). */
 export interface AppliedFactor {
   id: WhatIfFactorId;
-  /** Squadra target (per i fattori needsTeam). */
-  teamId?: string;
-  /** Override di magnitudine (Elo-equivalente); usa default se assente. */
+  /** Squadre target (per i fattori needsTeam). Più squadre = effetto su tutte. */
+  teamIds?: string[];
+  /** Override di magnitudine (Elo-equivalente); usa il peso da Admin se assente. */
   eloDelta?: number;
 }
 
@@ -32,23 +32,47 @@ function eloDeltaToStrength(eloDelta: number): { attack: number; defense: number
   return { attack: edge * attackShare, defense: edge * (1 - attackShare) };
 }
 
-/** Traduce lo scenario UI in input pronti per simulate(). */
-export function scenarioToSimInput(scenario: Scenario, teams: Team[]): Partial<SimInput> {
+/** Magnitudine (Elo-equivalente) di default di un fattore, dai pesi Admin. */
+function factorDefaultDelta(id: WhatIfFactorId, weights: WhatIfWeights): number {
+  switch (id) {
+    case 'missingStar': return weights.missingStar;
+    case 'injuries': return weights.injuries;
+    case 'starReturn': return weights.starReturn;
+    case 'suspension': return weights.suspension;
+    default: return 0;
+  }
+}
+
+/**
+ * Traduce lo scenario UI in input pronti per simulate().
+ * @param modulators i modulatori effettivi (per leggere i pesi what-if da Admin).
+ */
+export function scenarioToSimInput(
+  scenario: Scenario,
+  teams: Team[],
+  modulators?: ModulatorConfig,
+): Partial<SimInput> {
   const substitutions: Record<string, string> = {};
   if (scenario.italy) substitutions.BIH = 'ITA';
 
+  const weights = modulators?.whatIf ?? config.modulators.whatIf;
   const overrides: Record<string, { attack: number; defense: number }> = {};
   for (const f of scenario.factors) {
     const def = whatIfFactors.find((d) => d.id === f.id);
     if (!def || def.isSlider || def.flagship) continue;
-    if (!f.teamId) continue;
-    const eloDelta = f.eloDelta ?? def.defaultEloDelta ?? 0;
+    const teamIds = f.teamIds ?? [];
+    if (teamIds.length === 0) continue;
+    const eloDelta = f.eloDelta ?? factorDefaultDelta(f.id, weights);
     const d = eloDeltaToStrength(eloDelta);
-    const prev = overrides[f.teamId] ?? { attack: 0, defense: 0 };
-    overrides[f.teamId] = {
-      attack: prev.attack + d.attack,
-      defense: prev.defense + d.defense,
-    };
+    // Lo stesso fattore si applica a ogni squadra selezionata; più fattori
+    // sulla stessa squadra si sommano (impilabili).
+    for (const teamId of teamIds) {
+      const prev = overrides[teamId] ?? { attack: 0, defense: 0 };
+      overrides[teamId] = {
+        attack: prev.attack + d.attack,
+        defense: prev.defense + d.defense,
+      };
+    }
   }
   void teams;
   return {
@@ -60,14 +84,14 @@ export function scenarioToSimInput(scenario: Scenario, teams: Team[]): Partial<S
 
 // --- URL encoding (compatto, leggibile-ish) ---
 // formato: ?s=<italy:0|1>.<chaos>.<factor1>~<factor2>...
-// factor: id:teamId:eloDelta
+// factor: id:teamId1-teamId2-...:eloDelta
 
 export function scenarioToUrl(scenario: Scenario): string {
   const parts = [
     scenario.italy ? '1' : '0',
     String(scenario.chaos),
     scenario.factors
-      .map((f) => `${f.id}:${f.teamId ?? ''}:${f.eloDelta ?? ''}`)
+      .map((f) => `${f.id}:${(f.teamIds ?? []).join('-')}:${f.eloDelta ?? ''}`)
       .join('~'),
   ];
   return parts.join('.');
@@ -81,10 +105,14 @@ export function scenarioFromUrl(s: string | null): Scenario {
       .split('~')
       .filter(Boolean)
       .map((f) => {
-        const [id, teamId, eloDelta] = f.split(':');
+        const [id, teamsPart, eloDelta] = f.split(':');
+        // Retrocompatibilità: i vecchi link avevano una sola squadra senza "-".
+        const teamIds = (teamsPart || '')
+          .split('-')
+          .filter(Boolean);
         return {
           id: id as WhatIfFactorId,
-          teamId: teamId || undefined,
+          teamIds: teamIds.length ? teamIds : undefined,
           eloDelta: eloDelta ? Number(eloDelta) : undefined,
         };
       });

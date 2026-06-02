@@ -402,6 +402,7 @@ export function simulate(input: SimInput): SimulationOutput {
     homeAdvBoost: config.modulators.homeAdvBoost,
     h2hMaxBoost: config.modulators.h2hMaxBoost,
     lambdaShrink: config.modulators.lambdaShrink,
+    whatIf: config.modulators.whatIf,
   };
 
   // Applica override homeAdv dall'Admin (sovrascrive il valore dal fit bayesiano).

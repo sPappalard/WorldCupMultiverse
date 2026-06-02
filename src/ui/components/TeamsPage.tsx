@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
-import type { Team, H2HRecord, ModelParams, TeamStats } from '../../engine/types';
+import { useEffect, useMemo, useState } from 'react';
+import type { Team, H2HRecord, ModelParams, TeamStats, ModulatorConfig } from '../../engine/types';
+import { computeStrengthScores, type TeamStrengthScore } from '../../engine/strengthScore';
 
 const LAST_REAL_MATCH_DATE = '31 marzo 2026';
 
@@ -10,9 +11,15 @@ interface Props {
   params: ModelParams | null;
   paramsSource: 'bayesian' | 'elo-fallback';
   teamStats: Map<string, TeamStats>;
+  /** Pesi correnti dei modulatori (per il Punteggio Forza). */
+  modulators: ModulatorConfig;
+  /** Se true, apre la pagina ordinata per Punteggio Forza. */
+  rankByStrength?: boolean;
+  /** Chiamato dopo aver consumato il flag rankByStrength. */
+  onConsumeRankByStrength?: () => void;
 }
 
-type SortKey = 'group' | 'elo' | 'squadValue' | 'attack' | 'defense' | 'form' | 'knockout' | 'history' | 'name';
+type SortKey = 'group' | 'elo' | 'squadValue' | 'attack' | 'defense' | 'form' | 'knockout' | 'history' | 'name' | 'strength';
 
 function h2hKey(a: string, b: string) { return [a, b].sort().join('|'); }
 
@@ -29,6 +36,15 @@ function eloTier(elo: number): { label: string; cls: string } {
   if (elo >= 1820) return { label: 'Contender', cls: 'tier-contender' };
   if (elo >= 1650) return { label: 'Solida', cls: 'tier-solid' };
   return { label: 'Outsider', cls: 'tier-outsider' };
+}
+
+/** Classe colore per il Punteggio Forza (0–100). */
+function strengthScoreTier(s: number): string {
+  if (s >= 80) return 'tier-elite';
+  if (s >= 60) return 'tier-top';
+  if (s >= 40) return 'tier-contender';
+  if (s >= 20) return 'tier-solid';
+  return 'tier-outsider';
 }
 
 function scoreTier(s: number): { label: string; cls: string } {
@@ -82,7 +98,7 @@ function StatRow({ icon, label, value, pct, barCls, pill }: {
   );
 }
 
-export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamStats }: Props) {
+export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamStats, modulators, rankByStrength, onConsumeRankByStrength }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>('group');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -94,6 +110,22 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
   }), [teams, italyActive]);
 
   const allIds = useMemo(() => visibleTeams.map((t) => t.id), [visibleTeams]);
+
+  // Punteggio Forza per ogni squadra, ricalcolato quando cambiano i pesi.
+  const strengthScores = useMemo(() => {
+    const list = computeStrengthScores({
+      teams, params, h2h, teamStats, modulators, includeItaly: italyActive,
+    });
+    return new Map<string, TeamStrengthScore>(list.map((s) => [s.teamId, s]));
+  }, [teams, params, h2h, teamStats, modulators, italyActive]);
+
+  // Se arriviamo dall'Admin con "Genera classifica", ordina per forza.
+  useEffect(() => {
+    if (rankByStrength) {
+      setSortKey('strength');
+      onConsumeRankByStrength?.();
+    }
+  }, [rankByStrength, onConsumeRankByStrength]);
 
   const sorted = useMemo(() => {
     const filtered = visibleTeams.filter((t) =>
@@ -112,10 +144,11 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
         case 'form':      return (sb?.form.score ?? 50) - (sa?.form.score ?? 50);
         case 'knockout':  return (sb?.knockout.score ?? 50) - (sa?.knockout.score ?? 50);
         case 'history':   return (sb?.history.score ?? 0) - (sa?.history.score ?? 0);
+        case 'strength':  return (strengthScores.get(b.id)?.avgWinRate ?? 0) - (strengthScores.get(a.id)?.avgWinRate ?? 0);
         default:          return a.group.localeCompare(b.group) || b.elo - a.elo;
       }
     });
-  }, [visibleTeams, sortKey, search, params, teamStats]);
+  }, [visibleTeams, sortKey, search, params, teamStats, strengthScores]);
 
   const selected     = useMemo(() => selectedId ? visibleTeams.find((t) => t.id === selectedId) ?? null : null, [selectedId, visibleTeams]);
   const selectedGroupTeams = useMemo(() => selected ? visibleTeams.filter((t) => t.group === selected.group) : [], [selected, visibleTeams]);
@@ -137,6 +170,7 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
   }, [selected, allIds, h2h]);
 
   const SORTS: { key: SortKey; label: string; needsParams?: boolean; needsStats?: boolean }[] = [
+    { key: 'strength',   label: '💪 Forza' },
     { key: 'group',      label: 'Girone' },
     { key: 'elo',        label: 'Elo' },
     { key: 'attack',     label: '⚔ Attacco', needsParams: true },
@@ -181,6 +215,8 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
             const tp  = params?.teams[team.id];
             const ts  = teamStats.get(team.id);
             const tier = eloTier(team.elo);
+            const strength = strengthScores.get(team.id);
+            const rank = sortKey === 'strength' ? sorted.indexOf(team) + 1 : null;
 
             return (
               <div key={team.id}
@@ -189,6 +225,7 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
               >
                 {/* Header */}
                 <div className="tc-head">
+                  {rank !== null && <span className="tc-rank">{rank}</span>}
                   <span className="fi tc-flag"
                     style={{ backgroundImage: `url(https://flagcdn.com/w40/${team.flag}.png)` }} />
                   <div className="tc-title">
@@ -196,6 +233,11 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
                     <span className="tc-group-badge">Girone {team.group}</span>
                   </div>
                   <div className="tc-badges">
+                    {strength && (
+                      <span className={`badge badge-strength ${strengthScoreTier(strength.score)}`} title="Punteggio Forza (0–100, tiene conto di tutti i pesi)">
+                        💪 {strength.score}
+                      </span>
+                    )}
                     {team.isHost && <span className="badge badge-host">🏟 Casa</span>}
                     {isItaly     && <span className="badge badge-italy">What-if</span>}
                   </div>
@@ -298,6 +340,38 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
                     : <>⚽ Fallback Elo (modello non fittato)</>}
                 </span>
               </div>
+
+              {/* Punteggio Forza complessivo */}
+              {(() => {
+                const sc = strengthScores.get(selected.id);
+                if (!sc) return null;
+                return (
+                  <>
+                    <h3 className="detail-section">💪 Punteggio Forza (tiene conto di tutto)</h3>
+                    <div className="dp-row dp-highlight">
+                      <div className="dp-half">
+                        <div className="dp-label">Punteggio Forza</div>
+                        <div className="dp-big">{sc.score}<span className="dp-unit">/100</span></div>
+                        <MiniBar pct={sc.score} cls="bar-elo" />
+                        <div className="dp-sub">
+                          Aggrega parametri del modello, Elo, valore rosa, forma e tutti
+                          i pesi correnti dell'Admin.
+                        </div>
+                      </div>
+                      <div className="dp-divider" />
+                      <div className="dp-half">
+                        <div className="dp-label">Win-rate medio vs tutte</div>
+                        <div className="dp-big">{Math.round(sc.avgWinRate * 100)}<span className="dp-unit">%</span></div>
+                        <MiniBar pct={sc.avgWinRate * 100} cls="bar-form" />
+                        <div className="dp-sub">
+                          Probabilità media di battere una qualsiasi delle altre 47 squadre
+                          (incl. <strong>{Math.round(sc.avgNotLoseRate * 100)}%</strong> di non perdere).
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
 
               {/* Parametri simulazione */}
               <h3 className="detail-section">Parametri della simulazione</h3>

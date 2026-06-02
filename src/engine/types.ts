@@ -153,6 +153,16 @@ export interface ModulatorConfig {
    * che le big dominino troppo la distribuzione di vittoria del torneo.
    */
   lambdaShrink: number;
+  /** Magnitudini (Elo-equivalenti) dei fattori what-if, gestibili da Admin. */
+  whatIf: WhatIfWeights;
+}
+
+/** Pesi dei fattori what-if applicabili a una o più squadre. */
+export interface WhatIfWeights {
+  missingStar: number;
+  injuries: number;
+  starReturn: number;
+  suspension: number;
 }
 
 export interface SimulationOutput {

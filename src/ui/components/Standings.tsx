@@ -6,16 +6,27 @@ interface Props {
   italyActive: boolean;
 }
 
-const pct = (x: number) => `${Math.round(x * 100)}%`;
+/**
+ * Percentuale leggibile: per le big arrotonda all'intero, ma per le code
+ * (sotto l'1%) mostra un decimale così non collassano tutte a "0%".
+ * Sotto lo 0.05% mostra "<0.1%" invece di "0.0%".
+ */
+const pct = (x: number) => {
+  const p = x * 100;
+  if (p >= 1) return `${Math.round(p)}%`;
+  if (p >= 0.05) return `${p.toFixed(1)}%`;
+  if (p > 0) return '<0.1%';
+  return '0%';
+};
 
-/** Classifica aggregata: probabilità di vittoria torneo (top 16). */
+/** Classifica aggregata: probabilità di vittoria torneo (top 24). */
 export function Standings({ aggregates, teamsById, italyActive }: Props) {
-  const top = aggregates.filter((a) => a.winProb > 0).slice(0, 16);
+  const top = aggregates.filter((a) => a.winProb > 0).slice(0, 24);
   return (
     <div className="card">
       <h2>Probabilità di vittoria del torneo</h2>
       <p className="muted small">
-        Dall'aggregato delle run Monte Carlo. Percentuali arrotondate.
+        Dall'aggregato delle run Monte Carlo. Sotto l'1% mostriamo un decimale.
       </p>
       <ol className="standings">
         {top.map((a, i) => {

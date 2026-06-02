@@ -294,6 +294,7 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
     homeAdvBoost: config.modulators.homeAdvBoost,
     h2hMaxBoost: config.modulators.h2hMaxBoost,
     lambdaShrink: config.modulators.lambdaShrink,
+    whatIf: config.modulators.whatIf,
   };
 
   const result = useMemo(() => {
