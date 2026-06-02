@@ -6,6 +6,7 @@ interface Props {
   aggregates: TeamAggregate[];
   /** Round attualmente svelato dall'animazione (0 = solo gironi). */
   revealedRound: number;
+  favoriteTeam?: string | null;
 }
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
@@ -14,13 +15,14 @@ const pct = (x: number) => `${Math.round(x * 100)}%`;
  * Tabellone della SINGOLA simulazione d'esempio (spec §8): "una simulazione
  * possibile", distinta dall'aggregato. Accanto a ogni squadra la % aggregata.
  */
-export function Bracket({ sample, teamsById, aggregates, revealedRound }: Props) {
+export function Bracket({ sample, teamsById, aggregates, revealedRound, favoriteTeam }: Props) {
   const winProbById = new Map(aggregates.map((a) => [a.teamId, a.winProb]));
 
   const TeamChip = ({ id, highlight }: { id: string; highlight?: boolean }) => {
     const t = teamsById.get(id);
+    const fav = id === favoriteTeam;
     return (
-      <span className={highlight ? 'chip chip-win' : 'chip'}>
+      <span className={`chip ${highlight ? 'chip-win' : ''} ${fav ? 'chip-fav' : ''}`}>
         <span className={`fi fi-${t?.flag}`} aria-hidden />
         <span className="chip-name">{t?.name ?? id}</span>
         <span className="chip-prob">{pct(winProbById.get(id) ?? 0)}</span>

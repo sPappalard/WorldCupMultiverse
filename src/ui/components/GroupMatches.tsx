@@ -5,23 +5,26 @@ import type { Team } from '../../engine/types';
 interface Props {
   sample: SampleRun;
   teamsById: Map<string, Team>;
+  favoriteTeam?: string | null;
 }
 
 const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 
-function MatchRow({ match, teamsById }: { match: MatchResult; teamsById: Map<string, Team> }) {
+function MatchRow({ match, teamsById, favoriteTeam }: { match: MatchResult; teamsById: Map<string, Team>; favoriteTeam?: string | null }) {
   const home = teamsById.get(match.homeId);
   const away = teamsById.get(match.awayId);
   const probHome = match.winProbHome ?? 0.5;
   const probAway = 1 - probHome;
   const homeWon = match.homeGoals > match.awayGoals;
   const awayWon = match.awayGoals > match.homeGoals;
+  const homeFav = match.homeId === favoriteTeam;
+  const awayFav = match.awayId === favoriteTeam;
 
   return (
     <div className="gm-match">
       {/* Home */}
-      <div className={`gm-team gm-team--home ${homeWon ? 'gm-team--winner' : ''}`}>
+      <div className={`gm-team gm-team--home ${homeWon ? 'gm-team--winner' : ''} ${homeFav ? 'gm-team--fav' : ''}`}>
         <span className={`fi fi-${home?.flag}`} aria-hidden />
         <span className="gm-name">{home?.name ?? match.homeId}</span>
         <span className="gm-prob muted small">{pct(probHome)}</span>
@@ -38,7 +41,7 @@ function MatchRow({ match, teamsById }: { match: MatchResult; teamsById: Map<str
       </div>
 
       {/* Away */}
-      <div className={`gm-team gm-team--away ${awayWon ? 'gm-team--winner' : ''}`}>
+      <div className={`gm-team gm-team--away ${awayWon ? 'gm-team--winner' : ''} ${awayFav ? 'gm-team--fav' : ''}`}>
         <span className="gm-prob muted small">{pct(probAway)}</span>
         <span className="gm-name">{away?.name ?? match.awayId}</span>
         <span className={`fi fi-${away?.flag}`} aria-hidden />
@@ -48,22 +51,23 @@ function MatchRow({ match, teamsById }: { match: MatchResult; teamsById: Map<str
 }
 
 /** Partite di un singolo girone: 6 match (round-robin 4 squadre). */
-function GroupMatchesBlock({ group, matches, teamsById }: {
+function GroupMatchesBlock({ group, matches, teamsById, favoriteTeam }: {
   group: string;
   matches: MatchResult[];
   teamsById: Map<string, Team>;
+  favoriteTeam?: string | null;
 }) {
   return (
     <div className="gm-group">
       <div className="gm-group-title">Girone {group}</div>
       {matches.map((m, i) => (
-        <MatchRow key={i} match={m} teamsById={teamsById} />
+        <MatchRow key={i} match={m} teamsById={teamsById} favoriteTeam={favoriteTeam} />
       ))}
     </div>
   );
 }
 
-export function GroupMatches({ sample, teamsById }: Props) {
+export function GroupMatches({ sample, teamsById, favoriteTeam }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -82,6 +86,7 @@ export function GroupMatches({ sample, teamsById }: Props) {
                 group={g}
                 matches={matches}
                 teamsById={teamsById}
+                favoriteTeam={favoriteTeam}
               />
             );
           })}

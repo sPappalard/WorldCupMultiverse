@@ -19,9 +19,9 @@ import { MatchupPage } from './components/MatchupPage';
 import { TeamsPage } from './components/TeamsPage';
 import { AdminPage } from './components/AdminPage';
 import { SimLoadingOverlay } from './components/SimLoadingOverlay';
+import { Onboarding, type OnboardingResult } from './components/Onboarding';
+import { TournamentCinema } from './components/TournamentCinema';
 import { config } from '../config';
-
-const REVEAL_MS = 700; // ritardo tra i round svelati nell'animazione
 
 /** Default dei modulatori, da config (evita duplicazione dei valori). */
 const DEFAULT_MODULATORS: ModulatorConfig = {
@@ -43,6 +43,12 @@ type AppTab = 'simulator' | 'matchup' | 'teams' | 'admin';
 export function App() {
   const [tab, setTab] = useState<AppTab>('simulator');
   const { data, error } = useData();
+  /** Onboarding: mostrato finché l'utente non completa le scelte iniziali. */
+  const [onboarded, setOnboarded] = useState(
+    () => new URLSearchParams(window.location.search).has('s'), // link condiviso ⇒ salta intro
+  );
+  /** Squadra del cuore: evidenziata in tutta la UI, NON tocca la simulazione. */
+  const [favoriteTeam, setFavoriteTeam] = useState<string | null>(null);
   const [modulators, setModulators] = useState<ModulatorConfig | undefined>(undefined);
   /** Quando true, la pagina Squadre apre ordinata per Punteggio Forza. */
   const [rankByStrength, setRankByStrength] = useState(false);
@@ -52,6 +58,8 @@ export function App() {
   const [output, setOutput] = useState<SimulationOutput | null>(null);
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState(0);
+  /** Quando true, la messa in scena cinematografica copre lo schermo. */
+  const [cinema, setCinema] = useState(false);
   const [revealedRound, setRevealedRound] = useState(-1);
   const revealTimers = useRef<number[]>([]);
   const workerRef = useRef<Worker | null>(null);
@@ -107,12 +115,10 @@ export function App() {
         worker.terminate();
         workerRef.current = null;
 
-        // Anima la rivelazione dei round del tabellone.
-        const rounds = msg.result.sample.knockoutRounds.length;
-        for (let i = 0; i < rounds; i++) {
-          const id = window.setTimeout(() => setRevealedRound(i), i * REVEAL_MS);
-          revealTimers.current.push(id);
-        }
+        // La messa in scena cinematografica racconta la run; il tabellone
+        // statico nella dashboard resta tutto rivelato (il cinema lo precede).
+        setRevealedRound(msg.result.sample.knockoutRounds.length - 1);
+        setCinema(true);
 
         const url = new URL(window.location.href);
         url.searchParams.set('s', scenarioToUrl(scenario));
@@ -140,12 +146,31 @@ export function App() {
     return url.toString();
   }, [scenario]);
 
+  const handleOnboardingComplete = (result: OnboardingResult) => {
+    setScenario(result.scenario);
+    setFavoriteTeam(result.favoriteTeam);
+    setOnboarded(true);
+  };
+
   if (error) return <div className="app"><p className="error">Errore dati: {error}</p></div>;
   if (!data) return <div className="app"><p className="muted">Caricamento dati…</p></div>;
+
+  if (!onboarded) {
+    return <Onboarding teams={data.teams} onComplete={handleOnboardingComplete} />;
+  }
 
   return (
     <div className="app">
       {running && <SimLoadingOverlay progress={progress} numRuns={config.numRuns} />}
+      {cinema && output && (
+        <TournamentCinema
+          sample={output.sample}
+          teamsById={teamsById}
+          favoriteTeam={favoriteTeam}
+          italyActive={scenario.italy}
+          onDone={() => setCinema(false)}
+        />
+      )}
       <nav className="app-tabs">
         <button
           className={`app-tab ${tab === 'simulator' ? 'active' : ''}`}
@@ -171,6 +196,13 @@ export function App() {
         >
           ⚙️ Admin
         </button>
+        <button
+          className="app-tab app-tab--intro"
+          onClick={() => setOnboarded(false)}
+          title="Rivedi la schermata iniziale"
+        >
+          ✨ Intro
+        </button>
       </nav>
 
       <header className="hero">
@@ -192,7 +224,10 @@ export function App() {
             {output && (
               <p className="small muted">
                 {output.numRuns.toLocaleString('it-IT')} run completate.{' '}
-                {scenario.italy && '🇮🇹 Italia inserita nel Girone B.'}
+                {scenario.italy && '🇮🇹 Italia inserita nel Girone B. '}
+                <button className="replay-link" onClick={() => setCinema(true)}>
+                  🎬 Rivedi l’animazione
+                </button>
               </p>
             )}
           </>
@@ -280,16 +315,19 @@ export function App() {
                   aggregates={output.aggregates}
                   teamsById={teamsById}
                   italyActive={scenario.italy}
+                  favoriteTeam={favoriteTeam}
                 />
                 <GroupMatches
                   sample={output.sample}
                   teamsById={teamsById}
+                  favoriteTeam={favoriteTeam}
                 />
                 <Bracket
                   sample={output.sample}
                   teamsById={teamsById}
                   aggregates={output.aggregates}
                   revealedRound={revealedRound}
+                  favoriteTeam={favoriteTeam}
                 />
                 <ShareCard
                   aggregates={output.aggregates}

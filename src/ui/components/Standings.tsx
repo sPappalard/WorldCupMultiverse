@@ -4,6 +4,8 @@ interface Props {
   aggregates: TeamAggregate[];
   teamsById: Map<string, Team>;
   italyActive: boolean;
+  /** Squadra del cuore: evidenziata, senza alcun effetto sul calcolo. */
+  favoriteTeam?: string | null;
 }
 
 /**
@@ -34,7 +36,7 @@ const oddsFromProb = (x: number): string => {
 };
 
 /** Classifica aggregata: probabilità di vittoria torneo (top 24). */
-export function Standings({ aggregates, teamsById, italyActive }: Props) {
+export function Standings({ aggregates, teamsById, italyActive, favoriteTeam }: Props) {
   const top = aggregates.filter((a) => a.winProb > 0).slice(0, 24);
   return (
     <div className="card">
@@ -47,14 +49,23 @@ export function Standings({ aggregates, teamsById, italyActive }: Props) {
         {top.map((a, i) => {
           const t = teamsById.get(a.teamId);
           const isItaly = a.teamId === 'ITA';
+          const isFav = a.teamId === favoriteTeam;
+          const cls = [
+            'standings-row',
+            isItaly && italyActive ? 'italy' : '',
+            isFav ? 'fav' : '',
+          ].filter(Boolean).join(' ');
           return (
             <li
               key={a.teamId}
-              className={isItaly && italyActive ? 'standings-row italy' : 'standings-row'}
+              className={cls}
             >
               <span className="rank">{i + 1}</span>
               <span className={`fi fi-${t?.flag}`} aria-hidden />
-              <span className="team-name">{t?.name ?? a.teamId}</span>
+              <span className="team-name">
+                {t?.name ?? a.teamId}
+                {isFav && <span className="fav-heart" title="La tua squadra del cuore">♥</span>}
+              </span>
               <span className="bar-wrap">
                 <span className="bar" style={{ width: `${a.winProb * 100 * 3}%` }} />
               </span>
