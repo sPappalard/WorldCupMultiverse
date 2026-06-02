@@ -289,6 +289,7 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
     squadValueCoeff: config.modulators.squadValueCoeff,
     eloCoeff: config.modulators.eloCoeff,
     koExperienceCoeff: config.modulators.koExperienceCoeff,
+    koMatchCoeff: config.modulators.koMatchCoeff,
     koKnockoutWeight: config.modulators.koKnockoutWeight,
     koHistoryWeight: config.modulators.koHistoryWeight,
     homeAdvBoost: config.modulators.homeAdvBoost,

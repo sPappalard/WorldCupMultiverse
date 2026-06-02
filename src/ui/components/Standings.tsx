@@ -19,6 +19,20 @@ const pct = (x: number) => {
   return '0%';
 };
 
+/**
+ * Quota decimale in stile bookmaker dalla probabilità del modello.
+ * Applichiamo un margine (overround) ~18% riducendo la prob, così le quote
+ * sono realistiche (un po' più basse di quelle "eque" 1/p). Cappata a 999.
+ */
+const oddsFromProb = (x: number): string => {
+  if (x <= 0) return '—';
+  const margin = 0.85; // riduce la prob → quota più "da banco"
+  const o = 1 / (x * margin);
+  if (o >= 100) return Math.round(o).toString();
+  if (o >= 10) return o.toFixed(1);
+  return o.toFixed(2);
+};
+
 /** Classifica aggregata: probabilità di vittoria torneo (top 24). */
 export function Standings({ aggregates, teamsById, italyActive }: Props) {
   const top = aggregates.filter((a) => a.winProb > 0).slice(0, 24);
@@ -26,7 +40,8 @@ export function Standings({ aggregates, teamsById, italyActive }: Props) {
     <div className="card">
       <h2>Probabilità di vittoria del torneo</h2>
       <p className="muted small">
-        Dall'aggregato delle run Monte Carlo. Sotto l'1% mostriamo un decimale.
+        Dall'aggregato delle run Monte Carlo, calibrato sulle quote bookmaker.
+        Accanto alla %, la quota decimale stile scommessa.
       </p>
       <ol className="standings">
         {top.map((a, i) => {
@@ -43,6 +58,7 @@ export function Standings({ aggregates, teamsById, italyActive }: Props) {
               <span className="bar-wrap">
                 <span className="bar" style={{ width: `${a.winProb * 100 * 3}%` }} />
               </span>
+              <span className="odds" title="Quota decimale (stile bookmaker)">@{oddsFromProb(a.winProb)}</span>
               <span className="prob">{pct(a.winProb)}</span>
             </li>
           );

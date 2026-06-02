@@ -103,7 +103,13 @@ function buildGroups(input: SimInput): Map<string, Team[]> {
   return groups;
 }
 
-/** Pre-calcola la distribuzione di scoreline per ogni coppia rilevante. */
+/**
+ * Pre-calcola le distribuzioni di scoreline per ogni coppia rilevante.
+ * Produce DUE cache:
+ *  - `group`: partite dei gironi (con vantaggio campo per le host)
+ *  - `ko`: partite a eliminazione diretta (niente campo, ma bonus esperienza KO
+ *    sull'intera partita per chi è abituato alle fasi finali)
+ */
 function buildDistCache(
   strengths: Map<string, TeamStrength>,
   globalParams: ModelParams['global'],
@@ -112,14 +118,13 @@ function buildDistCache(
   h2h?: Map<string, H2HRecord>,
   teamStats?: Map<string, TeamStats>,
   modulators?: ModulatorConfig,
-): Map<string, ScorelineDist> {
-  const cache = new Map<string, ScorelineDist>();
+): { group: Map<string, ScorelineDist>; ko: Map<string, ScorelineDist> } {
+  const group = new Map<string, ScorelineDist>();
+  const ko = new Map<string, ScorelineDist>();
   const ids = [...strengths.keys()];
 
   const teamById = new Map(teams.map((t) => [t.id, t]));
 
-  // Fix 1+3: calcola media/sd una volta sola sulle sole squadre ATTIVE.
-  // Esclude Italia inattiva e qualsiasi entry con active=false.
   const activeTeams = teams.filter((t) => t.active);
   const modStats = buildModulatorStats(
     activeTeams.map((t) => t.elo),
@@ -131,26 +136,28 @@ function buildDistCache(
       if (a === b) continue;
       const home = strengths.get(a)!;
       const away = strengths.get(b)!;
-      // Fix 2: vantaggio campo SOLO nei gironi (hostIds), non nelle KO.
-      // Le KO usano lo stesso cache ma le partite secca non hanno una "casa" reale.
-      // Il flag viene passato solo quando la squadra è effettivamente host.
-      const homeAdv = hostIds.has(a);
+      const homeAdv = hostIds.has(a); // vantaggio campo solo nei gironi
       const teamA = teamById.get(a);
       const teamB = teamById.get(b);
-      cache.set(
+      group.set(
         `${a}|${b}`,
         scorelineDist(
-          home, away, globalParams, homeAdv, a, b, h2h,
-          teamStats,
-          teamA?.elo, teamB?.elo,
-          teamA?.squadValue ?? 0, teamB?.squadValue ?? 0,
-          modStats,
-          modulators,
+          home, away, globalParams, homeAdv, a, b, h2h, teamStats,
+          teamA?.elo, teamB?.elo, teamA?.squadValue ?? 0, teamB?.squadValue ?? 0,
+          modStats, modulators,
+        ),
+      );
+      ko.set(
+        `${a}|${b}`,
+        scorelineDist(
+          home, away, globalParams, false, a, b, h2h, teamStats,
+          teamA?.elo, teamB?.elo, teamA?.squadValue ?? 0, teamB?.squadValue ?? 0,
+          modStats, modulators, /* knockout */ true,
         ),
       );
     }
   }
-  return cache;
+  return { group, ko };
 }
 
 function rankGroup(standings: Map<string, GroupStanding>): GroupStanding[] {
@@ -202,7 +209,7 @@ function buildGroupFixtures(
 function runOnce(
   groups: Map<string, Team[]>,
   groupFixtures: Map<string, GroupFixture[]>,
-  cache: Map<string, ScorelineDist>,
+  koCache: Map<string, ScorelineDist>,
   rand: () => number,
   capture: boolean,
   teamStats?: Map<string, TeamStats>,
@@ -305,7 +312,7 @@ function runOnce(
         matches.push({ homeId, awayId, homeGoals: 0, awayGoals: 0, winnerId: w });
         continue;
       }
-      const dist = cache.get(`${homeId}|${awayId}`)!;
+      const dist = koCache.get(`${homeId}|${awayId}`)!;
       const idx = sampleScorelineIndex(dist, rand);
       const hg = (idx / dist.cols) | 0;
       const ag = idx % dist.cols;
@@ -397,6 +404,7 @@ export function simulate(input: SimInput): SimulationOutput {
     squadValueCoeff: config.modulators.squadValueCoeff,
     eloCoeff: config.modulators.eloCoeff,
     koExperienceCoeff: config.modulators.koExperienceCoeff,
+    koMatchCoeff: config.modulators.koMatchCoeff,
     koKnockoutWeight: config.modulators.koKnockoutWeight,
     koHistoryWeight: config.modulators.koHistoryWeight,
     homeAdvBoost: config.modulators.homeAdvBoost,
@@ -408,7 +416,7 @@ export function simulate(input: SimInput): SimulationOutput {
   // Applica override homeAdv dall'Admin (sovrascrive il valore dal fit bayesiano).
   const effectiveGlobalParams = { ...globalParams, homeAdv: modulators.homeAdvBoost };
 
-  const cache = buildDistCache(strengths, effectiveGlobalParams, hostIds, input.teams, input.h2h, input.teamStats, modulators);
+  const { group: groupCache, ko: koCache } = buildDistCache(strengths, effectiveGlobalParams, hostIds, input.teams, input.h2h, input.teamStats, modulators);
 
   const rand = mulberry32(input.seed ?? (Math.random() * 2 ** 32) >>> 0);
 
@@ -425,7 +433,7 @@ export function simulate(input: SimInput): SimulationOutput {
 
   // Pre-risolve le partite dei gironi una volta sola (la composizione non
   // cambia tra run): evita il lookup stringa nel cache nel hot-path.
-  const groupFixtures = buildGroupFixtures(groups, cache);
+  const groupFixtures = buildGroupFixtures(groups, groupCache);
 
   // Riporta il progresso ~100 volte sul totale (granularità 1%).
   const progressStep = Math.max(1, Math.floor(numRuns / 100));
@@ -433,7 +441,7 @@ export function simulate(input: SimInput): SimulationOutput {
   let sample: SampleRun | undefined;
   for (let run = 0; run < numRuns; run++) {
     const capture = run === 0; // prima run = sample animata
-    const { championId, reached, sample: s } = runOnce(groups, groupFixtures, cache, rand, capture, input.teamStats, modulators);
+    const { championId, reached, sample: s } = runOnce(groups, groupFixtures, koCache, rand, capture, input.teamStats, modulators);
     if (capture) sample = s;
 
     wins.set(championId, (wins.get(championId) ?? 0) + 1);

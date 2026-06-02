@@ -90,32 +90,40 @@ export const config = {
 
     /**
      * Valore rosa (z-score normalizzato sulle 48 squadre).
-     * λ *= exp(zValue * squadValueCoeff) → effetto max ~±12% gol.
-     * Alzato da 0.05 a 0.12: calibrato sui benchmark bookmaker giugno 2026
-     * (minimizza RMSE su 9 partite dei gironi con quote note).
+     * λ *= exp(zValue * squadValueCoeff) → effetto max ~±16% gol.
+     * Calibrato sulle quote bookmaker del vincitore Mondiale 2026 (giugno 2026,
+     * tutte e 48 le squadre): minimizza l'RMSE sulla distribuzione di vittoria.
      */
-    squadValueCoeff: 0.12,
+    squadValueCoeff: 0.21,
 
     /**
      * Elo corrente (distanza dalla media in unità di 200 punti).
      * eloAdj = (elo - eloMean) / 200
-     * λ *= exp(eloAdj * eloCoeff) → +13% per +200pt, +27% per +400pt.
-     * Valore intermedio (era 0.25): c'è alta correlazione (0.87) con i
-     * parametri bayesiani — l'Elo li "doppia" parzialmente. A 0.12 si riduce
-     * il double counting mantenendo il correttivo che evita di appiattire
-     * troppo i dominii (il solo bayesiano comprime le differenze).
-     * Trade-off: RMSE vs bookmaker leggermente peggiore di 0.25 (≈9.6 vs
-     * 7.7pp) ma modello più pulito teoricamente.
+     * λ *= exp(eloAdj * eloCoeff) → +10% per +200pt, +22% per +400pt.
+     * A 0.10: c'è alta correlazione (0.87) con i parametri bayesiani — l'Elo li
+     * "doppia" parzialmente, quindi un peso moderato basta. Calibrato insieme
+     * agli altri sulle quote bookmaker 2026.
      */
-    eloCoeff: 0.12,
+    eloCoeff: 0.10,
 
     /**
      * Esperienza/maturità nei rigori KO.
      * koExp = 0.6 * knockout.score + 0.4 * history.score (0–100)
      * expEdge = (koExpCasa - koExpOspite) / 100 * koExperienceCoeff
      * Applicato SOLO ai rigori nelle fasi a eliminazione diretta.
+     * Abbassato da 0.08 a 0.04: a 0.08 l'Argentina (esperienza altissima) era
+     * sovra-pesata vs i bookmaker; 0.04 la riallinea.
      */
-    koExperienceCoeff: 0.08,
+    koExperienceCoeff: 0.04,
+
+    /**
+     * Bonus esperienza KO sull'INTERA partita a eliminazione diretta (non solo
+     * rigori). koMatchEdge = (koExpCasa - koExpOspite) / 100 * koMatchCoeff,
+     * applicato come ±aggiustamento ai λ. Piccolo (max ~±4% gol con gap 100):
+     * chi è abituato alle fasi finali ha un leggero vantaggio nella gara secca,
+     * senza ribaltare i valori. Agisce SOLO dal Round of 32 in poi.
+     */
+    koMatchCoeff: 0.04,
 
     /** Mix knockout/storia per il calcolo dell'esperienza KO. */
     koKnockoutWeight: 0.6,
@@ -135,13 +143,16 @@ export const config = {
     /**
      * Shrinkage dei lambda verso la media della coppia. Aumenta la varianza
      * per-partita così che, su 7 turni, i vantaggi delle big non si compongano
-     * in modo esagerato. Calibrato per avvicinare la distribuzione di vittoria
-     * del torneo ai bookmaker (es. Spagna ~21% invece di 28%, vs ~16-18%
-     * dei bookmaker). Calibrato con simulazione reale: a 0.28 l'RMSE sulla
-     * distribuzione di vittoria scende a ~2pp mantenendo la gerarchia (Spagna
-     * passa il girone al 78%, Arabia Saudita al 9%).
+     * in modo esagerato. Calibrato sulle quote bookmaker del VINCITORE Mondiale
+     * 2026 (tutte e 48 le squadre, giugno 2026). SCELTA DI PRODOTTO: valore
+     * moderato 0.30 invece dell'ottimo statistico (~0.54). A 0.54 le quote
+     * sono più fedeli (RMSE ~0.7pp) MA il torneo diventa irrealistico: una
+     * squadra debole (Elo<1650) raggiunge la semifinale nel ~19% delle run.
+     * A 0.30 quel rischio scende al ~6% (1 su 16, plausibile) con quote ancora
+     * ragionevoli (Spagna ~24%). Preferiamo un tabellone credibile a quote
+     * perfette. Regolabile dall'Admin ("Equilibratore").
      */
-    lambdaShrink: 0.28,
+    lambdaShrink: 0.30,
     /**
      * Magnitudini dei fattori what-if, in punti Elo-equivalenti.
      * Negativi = indeboliscono la squadra, positivi = la rafforzano.

@@ -29,6 +29,7 @@ const DEFAULT_MODULATORS: ModulatorConfig = {
   squadValueCoeff: config.modulators.squadValueCoeff,
   eloCoeff: config.modulators.eloCoeff,
   koExperienceCoeff: config.modulators.koExperienceCoeff,
+  koMatchCoeff: config.modulators.koMatchCoeff,
   koKnockoutWeight: config.modulators.koKnockoutWeight,
   koHistoryWeight: config.modulators.koHistoryWeight,
   homeAdvBoost: config.modulators.homeAdvBoost,
@@ -231,6 +232,10 @@ export function App() {
       {tab === 'admin' && (
         <AdminPage
           modulators={modulators ?? DEFAULT_MODULATORS}
+          teams={data.teams}
+          params={data.params}
+          h2h={data.h2h}
+          teamStats={data.teamStats}
           onChange={(m) => {
             setModulators(m);
           }}

@@ -141,6 +141,8 @@ export interface ModulatorConfig {
   squadValueCoeff: number;
   eloCoeff: number;
   koExperienceCoeff: number;
+  /** Bonus esperienza KO sull'intera partita a eliminazione diretta. */
+  koMatchCoeff: number;
   koKnockoutWeight: number;
   koHistoryWeight: number;
   /** Vantaggio campo in scala log-lambda (sovrascrive globalParams.homeAdv). */

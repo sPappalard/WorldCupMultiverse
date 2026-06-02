@@ -151,6 +151,8 @@ export function scorelineDist(
   awayValue?: number,
   modStats?: ModulatorStats,
   modulators?: ModulatorConfig,
+  /** True nelle fasi a eliminazione diretta: applica il bonus esperienza KO. */
+  knockout?: boolean,
 ): ScorelineDist {
   let lambdaHome = Math.exp(
     g.intercept + home.attack - away.defense + (homeAdvantage ? g.homeAdv : 0),
@@ -170,6 +172,20 @@ export function scorelineDist(
     const adjAway = computeModulatorAdj(awayId, statsMap, modStats, awayElo, awayValue, modulators);
     lambdaHome *= Math.exp(adjHome);
     lambdaAway *= Math.exp(adjAway);
+  }
+
+  // Bonus esperienza KO sull'INTERA partita a eliminazione diretta: chi è
+  // abituato alle fasi finali (storia + rendimento knockout) gioca un po'
+  // meglio la gara secca, non solo i rigori. Piccolo, non ribalta i valori.
+  if (knockout && homeId && awayId && statsMap && modulators) {
+    const sh = statsMap.get(homeId);
+    const sa = statsMap.get(awayId);
+    const koHome = sh ? modulators.koKnockoutWeight * sh.knockout.score + modulators.koHistoryWeight * sh.history.score : 50;
+    const koAway = sa ? modulators.koKnockoutWeight * sa.knockout.score + modulators.koHistoryWeight * sa.history.score : 50;
+    // edge in [-1,1] × coeff → aggiustamento log-λ simmetrico.
+    const edge = ((koHome - koAway) / 100) * modulators.koMatchCoeff;
+    lambdaHome *= Math.exp(edge);
+    lambdaAway *= Math.exp(-edge);
   }
 
   // Shrinkage: tira i due lambda verso la loro media geometrica, riducendo lo

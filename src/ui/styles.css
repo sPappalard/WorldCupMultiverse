@@ -68,6 +68,7 @@ body {
 .team-name { flex: 0 0 130px; }
 .bar-wrap { flex: 1; height: 10px; background: var(--panel2); border-radius: 6px; overflow: hidden; }
 .bar { display: block; height: 100%; background: var(--accent); max-width: 100%; }
+.odds { width: 52px; text-align: right; font-variant-numeric: tabular-nums; color: var(--accent2); font-size: 0.82rem; font-weight: 600; }
 .prob { width: 48px; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* Flags */
@@ -659,6 +660,26 @@ body {
   .mu-scores-grid { grid-template-columns: repeat(2, 1fr); }
   .mu-wdl-prob { font-size: 1.1rem; }
 }
+
+/* ─── Strength pie (composizione punteggio forza) ─── */
+.adm-pie-block { margin-bottom: 18px; padding: 16px; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; }
+.adm-pie-title { font-size: 0.85rem; font-weight: 700; color: var(--text); margin-bottom: 12px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.adm-pie-hint { font-size: 0.68rem; font-weight: 400; color: var(--muted); }
+
+.sp-wrap { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.sp-pie {
+  position: relative; width: 130px; height: 130px; border-radius: 50%; flex: none;
+  transition: background 0.3s; box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+}
+.sp-hole {
+  position: absolute; inset: 28px; border-radius: 50%;
+  background: var(--panel2); border: 1px solid var(--border);
+}
+.sp-legend { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 5px; }
+.sp-legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; }
+.sp-swatch { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.sp-legend-label { flex: 1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-legend-pct { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
 
 /* ─── Sim loading overlay ─── */
 .sim-overlay {

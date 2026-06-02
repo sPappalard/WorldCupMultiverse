@@ -4,15 +4,22 @@
  * o sulla probabilità ai rigori, così è immediato capire cosa si sta cambiando.
  */
 
-import { useState, useCallback } from 'react';
-import type { ModulatorConfig } from '../../engine/types';
+import { useState, useCallback, useMemo } from 'react';
+import type { ModulatorConfig, Team, ModelParams, H2HRecord, TeamStats } from '../../engine/types';
 import { config } from '../../config';
+import { computeStrengthBreakdown } from '../../engine/strengthScore';
+import { StrengthPie } from './StrengthPie';
 
 interface Props {
   modulators: ModulatorConfig;
   onChange: (m: ModulatorConfig) => void;
   /** Applica i pesi correnti e apre la classifica forza nella pagina Squadre. */
   onGenerateRanking?: (m: ModulatorConfig) => void;
+  /** Dati per scomporre il Punteggio Forza nel grafico a torta. */
+  teams: Team[];
+  params: ModelParams | null;
+  h2h: Map<string, H2HRecord>;
+  teamStats: Map<string, TeamStats>;
 }
 
 /** Sezioni del pannello, per la navigazione ad ancore. */
@@ -36,6 +43,7 @@ const DEFAULTS: ModulatorConfig = {
   squadValueCoeff: config.modulators.squadValueCoeff,
   eloCoeff: config.modulators.eloCoeff,
   koExperienceCoeff: config.modulators.koExperienceCoeff,
+  koMatchCoeff: config.modulators.koMatchCoeff,
   koKnockoutWeight: config.modulators.koKnockoutWeight,
   koHistoryWeight: config.modulators.koHistoryWeight,
   homeAdvBoost: config.modulators.homeAdvBoost,
@@ -174,7 +182,7 @@ function LiveExample({ mod }: { mod: ModulatorConfig }) {
   );
 }
 
-export function AdminPage({ modulators, onChange, onGenerateRanking }: Props) {
+export function AdminPage({ modulators, onChange, onGenerateRanking, teams, params, h2h, teamStats }: Props) {
   const [localMod, setLocalMod] = useState<ModulatorConfig>({ ...modulators });
   const [applied, setApplied] = useState(false);
 
@@ -208,6 +216,12 @@ export function AdminPage({ modulators, onChange, onGenerateRanking }: Props) {
   };
 
   const isModified = JSON.stringify(localMod) !== JSON.stringify(DEFAULTS);
+
+  // Scomposizione del Punteggio Forza, reattiva agli slider correnti.
+  const breakdown = useMemo(
+    () => computeStrengthBreakdown({ teams, params, h2h, teamStats, modulators: localMod }),
+    [teams, params, h2h, teamStats, localMod],
+  );
 
   return (
     <div className="adm-page">
@@ -353,17 +367,30 @@ export function AdminPage({ modulators, onChange, onGenerateRanking }: Props) {
         {/* SEZIONE 4: Esperienza KO */}
         <section className="adm-section" id="adm-sec-ko">
           <h3 className="adm-section-title">
-            🟣 Esperienza/Maturità — agisce <em>solo sui rigori KO</em>
+            🟣 Esperienza/Maturità — agisce <em>nelle fasi a eliminazione</em>
           </h3>
           <p className="adm-section-desc">
-            Nelle eliminazioni dirette, quando una partita finisce in parità, la probabilità
-            ai rigori viene corretta dall'esperienza storica. Chi ha più storia nei grandi
-            tornei parte leggermente avvantaggiato.
+            Chi è abituato alle fasi finali (storia + rendimento knockout) ha un leggero
+            vantaggio nelle partite a eliminazione diretta: sia sull'intera gara, sia ai
+            rigori in caso di parità. Effetti piccoli, non ribaltano i valori.
           </p>
 
           <ModSlider
-            label="🟣 Peso esperienza KO"
-            description="Quanto l'esperienza (knockout + storia) sposta la probabilità ai rigori. Unità: punti percentuali assoluti. Con gap massimo (100 pt) e coeff 0.08 → +8pp sulla probabilità base (es. 52% → 60%)."
+            label="🟣 Bonus partita KO"
+            description="Quanto l'esperienza sposta i gol attesi nell'INTERA partita a eliminazione diretta (Round of 32 in poi). Con gap massimo (100 pt) e coeff 0.05 → ~±5% gol per la squadra più esperta."
+            value={localMod.koMatchCoeff}
+            min={0} max={0.15} step={0.005}
+            effectLabel="effetto max sui gol (gap 100 pt)"
+            effectValue={`±${((Math.exp(localMod.koMatchCoeff) - 1) * 100).toFixed(1)}%`}
+            color="#a855f7"
+            onChange={(v) => update('koMatchCoeff', v)}
+            onReset={() => update('koMatchCoeff', DEFAULTS.koMatchCoeff)}
+            defaultValue={DEFAULTS.koMatchCoeff}
+          />
+
+          <ModSlider
+            label="🟣 Bonus rigori KO"
+            description="Quanto l'esperienza sposta la probabilità ai rigori (quando la partita finisce in parità nei 90'). Con gap massimo (100 pt) e coeff 0.08 → +8pp sulla probabilità base (es. 52% → 60%)."
             value={localMod.koExperienceCoeff}
             min={0} max={0.20} step={0.005}
             effectLabel="effetto max (gap exp 100 pt)"
@@ -477,11 +504,21 @@ export function AdminPage({ modulators, onChange, onGenerateRanking }: Props) {
           </h3>
           <p className="adm-section-desc">
             Genera la lista delle 48 squadre con un <strong>Punteggio Forza</strong> (0–100)
-            che tiene conto di tutto: parametri del modello, Elo, valore rosa, forma e
-            tutti i pesi qui sopra. La lista si apre nella pagina <strong>Squadre</strong>,
-            ordinata per forza; clicca una squadra per i dettagli (incluso il win-rate
-            medio contro tutte le altre).
+            che tiene conto di tutto: parametri del modello, Elo, valore rosa, forma,
+            esperienza KO/storia, vantaggio campo e tutti i pesi qui sopra. La lista si
+            apre nella pagina <strong>Squadre</strong>, ordinata per forza; clicca una
+            squadra per i dettagli (incluso il win-rate medio contro tutte le altre).
           </p>
+
+          {/* Torta: quanto pesa ogni componente sul Punteggio Forza */}
+          <div className="adm-pie-block">
+            <div className="adm-pie-title">
+              Composizione del Punteggio Forza
+              <span className="adm-pie-hint">si aggiorna mentre modifichi i pesi</span>
+            </div>
+            <StrengthPie components={breakdown} />
+          </div>
+
           <button
             className="adm-btn-apply adm-btn-apply--big"
             onClick={() => onGenerateRanking?.(localMod)}
