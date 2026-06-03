@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Team, H2HRecord, ModelParams, TeamStats, ModulatorConfig } from '../../engine/types';
 import { computeStrengthScores, type TeamStrengthScore } from '../../engine/strengthScore';
 
@@ -11,34 +11,26 @@ interface Props {
   params: ModelParams | null;
   paramsSource: 'bayesian' | 'elo-fallback';
   teamStats: Map<string, TeamStats>;
-  /** Pesi correnti dei modulatori (per il Punteggio Forza). */
   modulators: ModulatorConfig;
-  /** Se true, apre la pagina ordinata per Punteggio Forza. */
   rankByStrength?: boolean;
-  /** Chiamato dopo aver consumato il flag rankByStrength. */
   onConsumeRankByStrength?: () => void;
 }
 
 type SortKey = 'group' | 'elo' | 'squadValue' | 'attack' | 'defense' | 'form' | 'knockout' | 'history' | 'name' | 'strength';
 
 function h2hKey(a: string, b: string) { return [a, b].sort().join('|'); }
-
-// ─── Scale helpers ────────────────────────────────────────────────────────────
-function eloBar(v: number)  { return Math.max(0, Math.min(100, ((v - 1400) / 800) * 100)); }
-function valueBar(v: number){ return Math.max(0, Math.min(100, (v / 1500) * 100)); }
+function eloBar(v: number)    { return Math.max(0, Math.min(100, ((v - 1400) / 800) * 100)); }
+function valueBar(v: number)  { return Math.max(0, Math.min(100, (v / 1500) * 100)); }
 function strengthBar(v: number){ return Math.max(0, Math.min(100, ((v + 0.6) / 1.8) * 100)); }
 function strengthScore(v: number){ return Math.round(Math.max(0, Math.min(100, ((v + 0.6) / 1.8) * 100))); }
 
-// ─── Label helpers ────────────────────────────────────────────────────────────
 function eloTier(elo: number): { label: string; cls: string } {
-  if (elo >= 2100) return { label: 'Elite', cls: 'tier-elite' };
-  if (elo >= 1950) return { label: 'Top', cls: 'tier-top' };
+  if (elo >= 2100) return { label: 'Elite',    cls: 'tier-elite' };
+  if (elo >= 1950) return { label: 'Top',       cls: 'tier-top' };
   if (elo >= 1820) return { label: 'Contender', cls: 'tier-contender' };
-  if (elo >= 1650) return { label: 'Solida', cls: 'tier-solid' };
-  return { label: 'Outsider', cls: 'tier-outsider' };
+  if (elo >= 1650) return { label: 'Solid',     cls: 'tier-solid' };
+  return               { label: 'Outsider',  cls: 'tier-outsider' };
 }
-
-/** Classe colore per il Punteggio Forza (0–100). */
 function strengthScoreTier(s: number): string {
   if (s >= 80) return 'tier-elite';
   if (s >= 60) return 'tier-top';
@@ -47,61 +39,57 @@ function strengthScoreTier(s: number): string {
   return 'tier-outsider';
 }
 
-function scoreTier(s: number): { label: string; cls: string } {
-  if (s >= 80) return { label: 'Eccellente', cls: 'tier-elite' };
-  if (s >= 65) return { label: 'Alto', cls: 'tier-top' };
-  if (s >= 50) return { label: 'Nella media', cls: 'tier-contender' };
-  if (s >= 35) return { label: 'Sotto media', cls: 'tier-solid' };
-  return { label: 'Debole', cls: 'tier-outsider' };
+/* Valore numerico del sort corrente — mostrato nella card come statistica principale */
+function getSortValue(team: Team, sortKey: SortKey, params: ModelParams | null, teamStats: Map<string, TeamStats>, strengthScores: Map<string, TeamStrengthScore>): { value: string; label: string } | null {
+  const tp = params?.teams[team.id];
+  const ts = teamStats.get(team.id);
+  const sc = strengthScores.get(team.id);
+  switch (sortKey) {
+    case 'strength':   return sc ? { value: String(sc.score), label: 'Forza' } : null;
+    case 'elo':        return { value: String(team.elo), label: 'Elo' };
+    case 'squadValue': return team.squadValue != null ? { value: `€${team.squadValue}M`, label: 'Rosa' } : null;
+    case 'attack':     return tp ? { value: `${strengthScore(tp.attack)}/100`, label: 'Attacco' } : null;
+    case 'defense':    return tp ? { value: `${strengthScore(tp.defense)}/100`, label: 'Difesa' } : null;
+    case 'form':       return ts ? { value: `${Math.round(ts.form.score)}/100`, label: 'Forma' } : null;
+    case 'knockout':   return ts ? { value: `${Math.round(ts.knockout.score)}/100`, label: 'KO Exp' } : null;
+    case 'history':    return ts ? { value: `${Math.round(ts.history.score)}/100`, label: 'Storia' } : null;
+    case 'group':      return { value: `Girone ${team.group}`, label: '' };
+    default:           return null;
+  }
 }
 
-// ─── Mini bar inline ──────────────────────────────────────────────────────────
-function MiniBar({ pct, cls }: { pct: number; cls: string }) {
-  return (
-    <div className="mini-bar-bg">
-      <div className={`mini-bar-fill ${cls}`} style={{ width: `${pct}%` }} />
-    </div>
-  );
-}
-
-// ─── Score pill ───────────────────────────────────────────────────────────────
-function ScorePill({ score, cls }: { score: number; cls: string }) {
-  return <span className={`score-pill ${cls}`}>{score}</span>;
-}
-
-// ─── H2H badge ───────────────────────────────────────────────────────────────
-function H2HBadgeDirect({ rec, teamIsFirstAlpha }: { rec: H2HRecord | null; teamIsFirstAlpha: boolean }) {
+function H2HBadge({ rec, teamIsFirstAlpha }: { rec: H2HRecord | null; teamIsFirstAlpha: boolean }) {
   if (!rec || rec.n === 0) return <span className="h2h-badge h2h-unknown">Nessun precedente</span>;
   const w = teamIsFirstAlpha ? rec.w_a : rec.w_b;
   const l = teamIsFirstAlpha ? rec.w_b : rec.w_a;
   const cls = w > l ? 'h2h-pos' : l > w ? 'h2h-neg' : 'h2h-neutral';
-  return (
-    <span className={`h2h-badge ${cls}`}>
-      {w}V – {rec.d}P – {l}S <span className="h2h-n">({rec.n})</span>
-    </span>
-  );
+  return <span className={`h2h-badge ${cls}`}>{w}V – {rec.d}P – {l}S <span className="h2h-n">({rec.n})</span></span>;
 }
 
-// ─── Compact stat row ─────────────────────────────────────────────────────────
-function StatRow({ icon, label, value, pct, barCls, pill }: {
-  icon: string; label: string; value: string;
-  pct: number; barCls: string; pill?: { score: number; cls: string };
+function DetailStat({ label, value, pct, barCls, sub }: {
+  label: string; value: string; pct?: number; barCls?: string; sub?: string;
 }) {
   return (
-    <div className="stat-row">
-      <span className="stat-icon">{icon}</span>
-      <span className="stat-label">{label}</span>
-      <MiniBar pct={pct} cls={barCls} />
-      <span className="stat-value">{value}</span>
-      {pill && <ScorePill score={pill.score} cls={pill.cls} />}
+    <div className="tpd-stat">
+      <div className="tpd-stat-header">
+        <span className="tpd-stat-label">{label}</span>
+        <span className="tpd-stat-value">{value}</span>
+      </div>
+      {pct !== undefined && barCls && (
+        <div className="tpd-stat-bar-bg">
+          <div className={`tpd-stat-bar-fill ${barCls}`} style={{ width: `${pct}%` }} />
+        </div>
+      )}
+      {sub && <span className="tpd-stat-sub">{sub}</span>}
     </div>
   );
 }
 
 export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamStats, modulators, rankByStrength, onConsumeRankByStrength }: Props) {
-  const [sortKey, setSortKey] = useState<SortKey>('group');
+  const [sortKey, setSortKey] = useState<SortKey>('strength');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
+  const [search, setSearch]   = useState('');
+  const listRef = useRef<HTMLDivElement>(null);
 
   const visibleTeams = useMemo(() => teams.filter((t) => {
     if (!t.active) return italyActive && t.id === 'ITA';
@@ -109,26 +97,19 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
     return true;
   }), [teams, italyActive]);
 
-  const allIds = useMemo(() => visibleTeams.map((t) => t.id), [visibleTeams]);
+  const allIds = useMemo(() => visibleTeams.map(t => t.id), [visibleTeams]);
 
-  // Punteggio Forza per ogni squadra, ricalcolato quando cambiano i pesi.
   const strengthScores = useMemo(() => {
-    const list = computeStrengthScores({
-      teams, params, h2h, teamStats, modulators, includeItaly: italyActive,
-    });
-    return new Map<string, TeamStrengthScore>(list.map((s) => [s.teamId, s]));
+    const list = computeStrengthScores({ teams, params, h2h, teamStats, modulators, includeItaly: italyActive });
+    return new Map<string, TeamStrengthScore>(list.map(s => [s.teamId, s]));
   }, [teams, params, h2h, teamStats, modulators, italyActive]);
 
-  // Se arriviamo dall'Admin con "Genera classifica", ordina per forza.
   useEffect(() => {
-    if (rankByStrength) {
-      setSortKey('strength');
-      onConsumeRankByStrength?.();
-    }
+    if (rankByStrength) { setSortKey('strength'); onConsumeRankByStrength?.(); }
   }, [rankByStrength, onConsumeRankByStrength]);
 
   const sorted = useMemo(() => {
-    const filtered = visibleTeams.filter((t) =>
+    const filtered = visibleTeams.filter(t =>
       t.name.toLowerCase().includes(search.toLowerCase()) ||
       t.id.toLowerCase().includes(search.toLowerCase()),
     );
@@ -136,23 +117,28 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
       const sa = teamStats.get(a.id), sb = teamStats.get(b.id);
       const pa = params?.teams[a.id], pb = params?.teams[b.id];
       switch (sortKey) {
-        case 'elo':       return b.elo - a.elo;
-        case 'squadValue':return (b.squadValue ?? 0) - (a.squadValue ?? 0);
-        case 'name':      return a.name.localeCompare(b.name, 'it');
-        case 'attack':    return (pb?.attack ?? 0) - (pa?.attack ?? 0);
-        case 'defense':   return (pb?.defense ?? 0) - (pa?.defense ?? 0);
-        case 'form':      return (sb?.form.score ?? 50) - (sa?.form.score ?? 50);
-        case 'knockout':  return (sb?.knockout.score ?? 50) - (sa?.knockout.score ?? 50);
-        case 'history':   return (sb?.history.score ?? 0) - (sa?.history.score ?? 0);
-        case 'strength':  return (strengthScores.get(b.id)?.avgWinRate ?? 0) - (strengthScores.get(a.id)?.avgWinRate ?? 0);
-        default:          return a.group.localeCompare(b.group) || b.elo - a.elo;
+        case 'elo':        return b.elo - a.elo;
+        case 'squadValue': return (b.squadValue ?? 0) - (a.squadValue ?? 0);
+        case 'name':       return a.name.localeCompare(b.name, 'it');
+        case 'attack':     return (pb?.attack ?? 0) - (pa?.attack ?? 0);
+        case 'defense':    return (pb?.defense ?? 0) - (pa?.defense ?? 0);
+        case 'form':       return (sb?.form.score ?? 50) - (sa?.form.score ?? 50);
+        case 'knockout':   return (sb?.knockout.score ?? 50) - (sa?.knockout.score ?? 50);
+        case 'history':    return (sb?.history.score ?? 0) - (sa?.history.score ?? 0);
+        case 'strength':   return (strengthScores.get(b.id)?.avgWinRate ?? 0) - (strengthScores.get(a.id)?.avgWinRate ?? 0);
+        default:           return a.group.localeCompare(b.group) || b.elo - a.elo;
       }
     });
   }, [visibleTeams, sortKey, search, params, teamStats, strengthScores]);
 
-  const selected     = useMemo(() => selectedId ? visibleTeams.find((t) => t.id === selectedId) ?? null : null, [selectedId, visibleTeams]);
-  const selectedGroupTeams = useMemo(() => selected ? visibleTeams.filter((t) => t.group === selected.group) : [], [selected, visibleTeams]);
-
+  const selected = useMemo(() =>
+    selectedId ? visibleTeams.find(t => t.id === selectedId) ?? null : null,
+    [selectedId, visibleTeams],
+  );
+  const selectedGroupTeams = useMemo(() =>
+    selected ? visibleTeams.filter(t => t.group === selected.group) : [],
+    [selected, visibleTeams],
+  );
   const selectedH2HSummary = useMemo(() => {
     if (!selected) return null;
     let w = 0, d = 0, l = 0, n = 0;
@@ -169,387 +155,373 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
     return { w, d, l, n };
   }, [selected, allIds, h2h]);
 
-  const SORTS: { key: SortKey; label: string; needsParams?: boolean; needsStats?: boolean }[] = [
-    { key: 'strength',   label: '💪 Forza' },
-    { key: 'group',      label: 'Girone' },
+  // Classifiche: generano un rank numerico
+  const RANK_SORTS: { key: SortKey; label: string; needsParams?: boolean; needsStats?: boolean }[] = [
+    { key: 'strength',   label: 'Forza' },
     { key: 'elo',        label: 'Elo' },
-    { key: 'attack',     label: '⚔ Attacco', needsParams: true },
-    { key: 'defense',    label: '🛡 Difesa',  needsParams: true },
-    { key: 'form',       label: '🔥 Forma',   needsStats: true },
-    { key: 'knockout',   label: '🏆 Knockout', needsStats: true },
-    { key: 'history',    label: '📜 Storia', needsStats: true },
-    { key: 'squadValue', label: '💰 Valore rosa' },
-    { key: 'name',       label: 'Nome' },
+    { key: 'attack',     label: 'Attacco',  needsParams: true },
+    { key: 'defense',    label: 'Difesa',   needsParams: true },
+    { key: 'form',       label: 'Forma',    needsStats: true },
+    { key: 'knockout',   label: 'KO Exp',   needsStats: true },
+    { key: 'history',    label: 'Storia',   needsStats: true },
+    { key: 'squadValue', label: 'Valore' },
   ];
+  // Raggruppamento: non generano una classifica numerica
+  const GROUP_SORTS: { key: SortKey; label: string }[] = [
+    { key: 'group', label: 'Girone' },
+    { key: 'name',  label: 'A→Z' },
+  ];
+  const isRankSort = RANK_SORTS.some(s => s.key === sortKey);
+
+  function handleSelectTeam(id: string) {
+    if (selectedId === id) { setSelectedId(null); return; }
+    setSelectedId(id);
+    // Scroll la lista in cima quando si apre il dettaglio
+    if (listRef.current) listRef.current.scrollTop = 0;
+  }
+
+  const isGridMode = !selected;
 
   return (
-    <div className="teams-page">
-      {/* Toolbar */}
-      <div className="teams-toolbar">
-        <input
-          className="teams-search"
-          placeholder="🔍  Cerca squadra…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <div className="sort-btns">
-          {SORTS.map(({ key, label, needsParams, needsStats }) => {
-            const disabled = (needsParams && !params) || (needsStats && teamStats.size === 0);
-            return (
-              <button key={key}
-                className={`sort-btn ${sortKey === key ? 'active' : ''} ${disabled ? 'disabled' : ''}`}
-                onClick={() => !disabled && setSortKey(key)}
-                title={disabled ? 'Dati non disponibili' : undefined}
-              >{label}</button>
-            );
-          })}
+    <div className="tp2-root">
+
+      {/* ── Barra filtri ── */}
+      <div className="tp2-filter-bar">
+        {/* Classifiche (generano rank numerico) */}
+        <div className="tp2-filter-group">
+          <span className="tp2-filter-label">Classifica per</span>
+          <div className="tp2-tabs">
+            {RANK_SORTS.map(({ key, label, needsParams, needsStats }) => {
+              const disabled = (needsParams && !params) || (needsStats && teamStats.size === 0);
+              return (
+                <button key={key}
+                  className={`tp2-tab ${sortKey === key ? 'on' : ''} ${disabled ? 'off' : ''}`}
+                  onClick={() => { if (!disabled) setSortKey(key); }}
+                  disabled={disabled}
+                  title={disabled ? 'Dati non disponibili' : undefined}
+                >{label}</button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Raggruppa + Search — a destra */}
+        <div className="tp2-filter-right">
+          {/* Raggruppa */}
+          <div className="tp2-filter-group tp2-filter-group--group">
+            <span className="tp2-filter-label tp2-filter-label--dim">Raggruppa</span>
+            <div className="tp2-tabs tp2-tabs--group">
+              {GROUP_SORTS.map(({ key, label }) => (
+                <button key={key}
+                  className={`tp2-tab tp2-tab--group ${sortKey === key ? 'on' : ''}`}
+                  onClick={() => setSortKey(key)}
+                >{label}</button>
+              ))}
+            </div>
+          </div>
+          {/* Search */}
+          <div className="tp2-search-wrap">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input className="tp2-search" placeholder="Cerca…" value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
         </div>
       </div>
 
-      <div className="teams-layout">
-        {/* ── Lista ─────────────────────────────────────────── */}
-        <div className="teams-list">
-          {sorted.map((team) => {
-            const isSelected = team.id === selectedId;
-            const isItaly    = team.id === 'ITA';
-            const tp  = params?.teams[team.id];
-            const ts  = teamStats.get(team.id);
-            const tier = eloTier(team.elo);
-            const strength = strengthScores.get(team.id);
-            const rank = sortKey === 'strength' ? sorted.indexOf(team) + 1 : null;
+      {/* ── Corpo ── */}
+      <div className={`tp2-body ${isGridMode ? 'tp2-body--grid' : 'tp2-body--split'}`}>
 
-            return (
-              <div key={team.id}
-                className={`team-card ${isSelected ? 'selected' : ''} ${isItaly ? 'italy-card' : ''}`}
-                onClick={() => setSelectedId(isSelected ? null : team.id)}
-              >
-                {/* Header */}
-                <div className="tc-head">
-                  {rank !== null && <span className="tc-rank">{rank}</span>}
-                  <span className="fi tc-flag"
-                    style={{ backgroundImage: `url(https://flagcdn.com/w40/${team.flag}.png)` }} />
-                  <div className="tc-title">
-                    <span className="tc-name">{team.name}</span>
-                    <span className="tc-group-badge">Girone {team.group}</span>
-                  </div>
-                  <div className="tc-badges">
-                    {strength && (
-                      <span className={`badge badge-strength ${strengthScoreTier(strength.score)}`} title="Punteggio Forza (0–100, tiene conto di tutti i pesi)">
-                        💪 {strength.score}
-                      </span>
-                    )}
-                    {team.isHost && <span className="badge badge-host">🏟 Casa</span>}
-                    {isItaly     && <span className="badge badge-italy">What-if</span>}
-                  </div>
-                </div>
-
-                {/* Stats grid */}
-                <div className="tc-stats">
-                  <StatRow icon="📊" label="Elo"
-                    value={String(team.elo)} pct={eloBar(team.elo)} barCls="bar-elo"
-                    pill={{ score: 0, cls: '' }}
-                  />
-                  {/* sostituto pill per Elo → tier chip */}
-                  {/* usiamo un approccio custom per la prima riga */}
-
-                  {tp && (
-                    <>
-                      <StatRow icon="⚔" label="Attacco"
-                        value={String(strengthScore(tp.attack))}
-                        pct={strengthBar(tp.attack)} barCls="bar-atk" />
-                      <StatRow icon="🛡" label="Difesa"
-                        value={String(strengthScore(tp.defense))}
-                        pct={strengthBar(tp.defense)} barCls="bar-def" />
-                    </>
-                  )}
-
-                  {ts && (
-                    <>
-                      <StatRow icon="🔥" label="Forma"
-                        value={`${ts.form.w}V ${ts.form.d}P ${ts.form.l}S`}
-                        pct={ts.form.score} barCls="bar-form"
-                        pill={{ score: ts.form.score, cls: scoreTier(ts.form.score).cls }} />
-                      <StatRow icon="🏆" label="Knockout"
-                        value={`${ts.knockout.w}V/${ts.knockout.l}L`}
-                        pct={ts.knockout.score} barCls="bar-ko"
-                        pill={{ score: ts.knockout.score, cls: scoreTier(ts.knockout.score).cls }} />
-                      <StatRow icon="📜" label="Storia"
-                        value={ts.history.score === 0 ? 'Nessun titolo major' : ts.history.byTournament.map(t => '🏆'.repeat(t.titles)).join('')}
-                        pct={ts.history.score} barCls="bar-history"
-                        pill={{ score: ts.history.score, cls: scoreTier(ts.history.score).cls }} />
-                    </>
-                  )}
-
-                  {team.squadValue != null && (
-                    <StatRow icon="💰" label="Rosa"
-                      value={`€${team.squadValue}M`}
-                      pct={valueBar(team.squadValue)} barCls="bar-val" />
-                  )}
-                </div>
-
-                {/* Tier chip */}
-                <div className="tc-footer">
-                  <span className={`tier-chip ${tier.cls}`}>{tier.label}</span>
-                  {tp && <span className="tc-footer-hint">Dati bayesiani</span>}
-                </div>
-              </div>
-            );
-          })}
-          {sorted.length === 0 && (
-            <p className="muted" style={{ padding: '32px', textAlign: 'center' }}>Nessuna squadra trovata.</p>
-          )}
+        {/* Lista / Griglia */}
+        <div className="tp2-list" ref={listRef}>
+          <TeamList
+            sorted={sorted}
+            sortKey={sortKey}
+            isRankSort={isRankSort}
+            isGridMode={isGridMode}
+            selectedId={selectedId}
+            params={params}
+            teamStats={teamStats}
+            strengthScores={strengthScores}
+            onSelect={handleSelectTeam}
+          />
         </div>
 
-        {/* ── Dettaglio ─────────────────────────────────────── */}
-        {selected ? (() => {
-          const tp = params?.teams[selected.id];
-          const ts = teamStats.get(selected.id);
-          const tier = eloTier(selected.elo);
-          const groupH2H = selectedGroupTeams
-            .filter((t) => t.id !== selected.id)
-            .map((opp) => ({ opp, rec: h2h.get(h2hKey(selected.id, opp.id)) ?? null }));
+        {/* Pannello dettaglio — solo in split mode */}
+        {!isGridMode && selected && (
+          <div className="tp2-detail">
+            <TeamDetail
+              team={selected}
+              params={params}
+              paramsSource={paramsSource}
+              teamStats={teamStats}
+              strengthScores={strengthScores}
+              groupH2H={selectedGroupTeams.filter(t => t.id !== selected.id).map(opp => ({
+                opp, rec: h2h.get(h2hKey(selected.id, opp.id)) ?? null,
+              }))}
+              h2hSummary={selectedH2HSummary}
+              onClose={() => setSelectedId(null)}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
-          return (
-            <div className="team-detail card">
-              <button className="detail-close" onClick={() => setSelectedId(null)}>✕</button>
+/* ═══════════════════════════ TEAM LIST ═══════════════════════════ */
+const GROUPS_ORDER = ['A','B','C','D','E','F','G','H','I','J','K','L'];
 
-              {/* Hero */}
-              <div className="detail-hero">
-                <span className="detail-flag fi"
-                  style={{ backgroundImage: `url(https://flagcdn.com/w80/${selected.flag}.png)`, width: 56, height: 42 }} />
-                <div className="detail-hero-text">
-                  <h2 className="detail-name">{selected.name}</h2>
-                  <div className="detail-meta">
-                    <span className={`tier-chip ${tier.cls}`}>{tier.label}</span>
-                    <span className="muted">Girone <strong style={{ color: 'var(--text)' }}>{selected.group}</strong></span>
-                    {selected.isHost && <span className="badge badge-host">🏟 Paese ospitante</span>}
-                    {selected.id === 'ITA' && <span className="badge badge-italy">Scenario what-if</span>}
-                  </div>
-                </div>
-              </div>
+interface TeamListProps {
+  sorted: ReturnType<typeof Array.prototype.filter> extends never ? never : Team[];
+  sortKey: SortKey;
+  isRankSort: boolean;
+  isGridMode: boolean;
+  selectedId: string | null;
+  params: ModelParams | null;
+  teamStats: Map<string, TeamStats>;
+  strengthScores: Map<string, TeamStrengthScore>;
+  onSelect: (id: string) => void;
+}
 
-              {/* Data source banner */}
-              <div className="dsb">
-                <span>📅 Elo <strong>1 giu 2026</strong></span>
-                <span className="dsb-dot">·</span>
-                <span>💰 Transfermarkt <strong>giu 2026</strong></span>
-                <span className="dsb-dot">·</span>
-                <span>
-                  {paramsSource === 'bayesian'
-                    ? <>⚽ Modello bayesiano · storico fino al <strong>{LAST_REAL_MATCH_DATE}</strong></>
-                    : <>⚽ Fallback Elo (modello non fittato)</>}
-                </span>
-              </div>
+function TeamList({ sorted, sortKey, isRankSort, isGridMode, selectedId, params, teamStats, strengthScores, onSelect }: TeamListProps) {
+  if (sorted.length === 0) return <p className="tp2-empty">Nessuna squadra trovata.</p>;
 
-              {/* Punteggio Forza complessivo */}
-              {(() => {
-                const sc = strengthScores.get(selected.id);
-                if (!sc) return null;
-                return (
-                  <>
-                    <h3 className="detail-section">💪 Punteggio Forza (tiene conto di tutto)</h3>
-                    <div className="dp-row dp-highlight">
-                      <div className="dp-half">
-                        <div className="dp-label">Punteggio Forza</div>
-                        <div className="dp-big">{sc.score}<span className="dp-unit">/100</span></div>
-                        <MiniBar pct={sc.score} cls="bar-elo" />
-                        <div className="dp-sub">
-                          Aggrega parametri del modello, Elo, valore rosa, forma e tutti
-                          i pesi correnti dell'Admin.
-                        </div>
-                      </div>
-                      <div className="dp-divider" />
-                      <div className="dp-half">
-                        <div className="dp-label">Win-rate medio vs tutte</div>
-                        <div className="dp-big">{Math.round(sc.avgWinRate * 100)}<span className="dp-unit">%</span></div>
-                        <MiniBar pct={sc.avgWinRate * 100} cls="bar-form" />
-                        <div className="dp-sub">
-                          Probabilità media di battere una qualsiasi delle altre 47 squadre
-                          (incl. <strong>{Math.round(sc.avgNotLoseRate * 100)}%</strong> di non perdere).
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                );
-              })()}
+  const isGroupSort = sortKey === 'group';
 
-              {/* Parametri simulazione */}
-              <h3 className="detail-section">Parametri della simulazione</h3>
-              <div className="detail-params">
+  /* Raggruppamento per girone */
+  if (isGroupSort) {
+    const byGroup = new Map<string, Team[]>();
+    for (const t of sorted) {
+      if (!byGroup.has(t.group)) byGroup.set(t.group, []);
+      byGroup.get(t.group)!.push(t);
+    }
+    const groups = GROUPS_ORDER.filter(g => byGroup.has(g));
 
-                {/* Attacco & Difesa */}
-                {tp ? (
-                  <div className="dp-row dp-highlight">
-                    <div className="dp-half">
-                      <div className="dp-label">⚔ Attacco</div>
-                      <div className="dp-big">{strengthScore(tp.attack)}<span className="dp-unit">/100</span></div>
-                      <MiniBar pct={strengthBar(tp.attack)} cls="bar-atk" />
-                      <div className="dp-sub">log-λ: <strong>{tp.attack.toFixed(3)}</strong>{tp.attackSd != null ? ` ± ${tp.attackSd.toFixed(3)}` : ''}</div>
-                    </div>
-                    <div className="dp-divider" />
-                    <div className="dp-half">
-                      <div className="dp-label">🛡 Difesa</div>
-                      <div className="dp-big">{strengthScore(tp.defense)}<span className="dp-unit">/100</span></div>
-                      <MiniBar pct={strengthBar(tp.defense)} cls="bar-def" />
-                      <div className="dp-sub">log-λ: <strong>{tp.defense.toFixed(3)}</strong>{tp.defenseSd != null ? ` ± ${tp.defenseSd.toFixed(3)}` : ''}</div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="dp-row dp-muted">
-                    <div className="dp-label">⚔ Attacco &amp; 🛡 Difesa</div>
-                    <div className="dp-sub">Derivati da Elo (modello non fittato). Esegui <code>model/fit.py</code>.</div>
-                  </div>
-                )}
-
-                {/* Forma + Knockout */}
-                {ts && (
-                  <div className="dp-row dp-highlight2">
-                    <div className="dp-half">
-                      <div className="dp-label">🔥 Forma recente</div>
-                      <div className="dp-big">{ts.form.score}<span className="dp-unit">/100</span></div>
-                      <MiniBar pct={ts.form.score} cls="bar-form" />
-                      <div className="dp-sub">
-                        {ts.form.w}V {ts.form.d}P {ts.form.l}S su ultime {ts.form.n} partite
-                        {ts.form.lastDate && <> · ultima: <strong>{ts.form.lastDate}</strong></>}
-                      </div>
-                    </div>
-                    <div className="dp-divider" />
-                    <div className="dp-half">
-                      <div className="dp-label">🏆 Rendimento Knockout <span className="dp-label-note">(dal 1994)</span></div>
-                      <div className="dp-big">{ts.knockout.score}<span className="dp-unit">/100</span></div>
-                      <MiniBar pct={ts.knockout.score} cls="bar-ko" />
-                      <div className="dp-sub">
-                        {ts.knockout.w}V {ts.knockout.d}P {ts.knockout.l}S · {ts.knockout.n} partite tornei major dal 1994
-                      </div>
-                      {ts.knockout.byTournament.length > 0 && (
-                        <div className="ko-breakdown">
-                          {ts.knockout.byTournament.map((bt) => (
-                            <div key={bt.label} className="ko-bt-row">
-                              <span className="ko-bt-label">{bt.label}</span>
-                              <span className="ko-bt-weight">×{bt.weight}</span>
-                              <MiniBar pct={bt.score} cls="bar-ko" />
-                              <span className="ko-bt-record">{bt.w}V/{bt.l}S</span>
-                              {bt.editions > 0 && (
-                                <span className="ko-bt-phases">
-                                  {bt.editions}ed
-                                  {bt.semiFinals > 0 && <> · {bt.semiFinals}SF</>}
-                                  {bt.finals > 0 && <> · {bt.finals}F</>}
-                                  {bt.titles > 0 && <> · {'🏆'.repeat(bt.titles)}</>}
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Punteggio storia nazionale */}
-                {ts && (
-                  <div className="dp-row dp-highlight3">
-                    <div className="dp-half" style={{ flex: 1 }}>
-                      <div className="dp-label">📜 Punteggio Storia Nazionale <span className="dp-label-note">(storia completa)</span></div>
-                      <div className="dp-big">{ts.history.score}<span className="dp-unit">/100</span></div>
-                      <MiniBar pct={ts.history.score} cls="bar-history" />
-                      {ts.history.score === 0
-                        ? <div className="dp-sub">{(ts.history as any)._zeroReason ?? 'Nessun titolo né finale raggiunta in tornei major.'}</div>
-                        : <div className="dp-sub">Titoli vinti nella storia completa di ogni torneo, pesati per importanza.</div>
-                      }
-                      {ts.history.byTournament.length > 0 && (
-                        <div className="ko-breakdown" style={{ marginTop: 8 }}>
-                          {ts.history.byTournament.map((ht) => (
-                            <div key={ht.label} className="ko-bt-row">
-                              <span className="ko-bt-label">{ht.label}</span>
-                              <span className="ko-bt-weight">×{ht.weight}</span>
-                              <MiniBar pct={ht.score} cls="bar-history" />
-                              <span className="ko-bt-record">{ht.titles > 0 ? '🏆'.repeat(Math.min(ht.titles, 10)) : '—'}</span>
-                              <span className="ko-bt-phases">{ht.titles} titoli · {ht.finals} finali</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Elo + Valore rosa */}
-                <div className="dp-row">
-                  <div className="dp-half">
-                    <div className="dp-label">📊 Elo</div>
-                    <div className="dp-big">{selected.elo}</div>
-                    <MiniBar pct={eloBar(selected.elo)} cls="bar-elo" />
-                    <div className="dp-sub">Snapshot 1/06/2026 · eloratings.net</div>
-                  </div>
-                  <div className="dp-divider" />
-                  <div className="dp-half">
-                    <div className="dp-label">💰 Valore rosa</div>
-                    <div className="dp-big">
-                      {selected.squadValue != null ? `€${selected.squadValue}M` : <span className="muted">N/D</span>}
-                    </div>
-                    {selected.squadValue != null && <MiniBar pct={valueBar(selected.squadValue)} cls="bar-val" />}
-                    <div className="dp-sub">Transfermarkt · giugno 2026</div>
-                  </div>
-                </div>
-
-                {/* Vantaggio campo + H2H totale */}
-                <div className="dp-row">
-                  <div className="dp-half">
-                    <div className="dp-label">🏟 Vantaggio campo</div>
-                    <div className="dp-big" style={{ fontSize: '1.1rem' }}>
-                      {selected.isHost ? '+35% λ gol' : '—'}
-                    </div>
-                    <div className="dp-sub">
-                      {selected.isHost
-                        ? `homeAdv ${params?.global.homeAdv.toFixed(3) ?? '0.271'} log-λ (MEX/USA/CAN)`
-                        : 'Nessun bonus campo per questa squadra'}
-                    </div>
-                  </div>
-                  <div className="dp-divider" />
-                  <div className="dp-half">
-                    <div className="dp-label">⚽ H2H vs partecipanti</div>
-                    {selectedH2HSummary && selectedH2HSummary.n > 0 ? (
-                      <>
-                        <div className="dp-big" style={{ fontSize: '1rem' }}>
-                          {selectedH2HSummary.w}V {selectedH2HSummary.d}P {selectedH2HSummary.l}S
-                        </div>
-                        <div className="dp-sub">
-                          {selectedH2HSummary.n} partite · win rate {Math.round((selectedH2HSummary.w / selectedH2HSummary.n) * 100)}%
-                        </div>
-                      </>
-                    ) : (
-                      <div className="dp-sub muted">Nessun dato storico dal 1994</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* H2H girone */}
-              <h3 className="detail-section">Scontri diretti · Girone {selected.group}</h3>
-              <div className="h2h-table">
-                {groupH2H.map(({ opp, rec }) => (
-                  <div key={opp.id} className="h2h-row">
-                    <span className="fi" style={{ backgroundImage: `url(https://flagcdn.com/w40/${opp.flag}.png)` }} />
-                    <span className="h2h-opp">{opp.name}</span>
-                    <H2HBadgeDirect rec={rec} teamIsFirstAlpha={selected.id < opp.id} />
-                  </div>
-                ))}
-              </div>
-
-              {/* Disclaimer */}
-              <div className="detail-disclaimer">
-                Attacco/Difesa stimati su {'>'}19.000 partite internazionali dal 2006 con modello PyMC (Dixon-Coles bayesiano).
-                Forma = ultime 30 partite pesate per importanza torneo e recency.
-                Knockout = win rate in tornei major dal 1994 (Mondiali, Europei, Copa América, AFCON…).
-                Tutti i valori sono euristici — l'obiettivo è l'engagement, non battere i bookmaker.
-              </div>
+    return (
+      <>
+        {groups.map(g => (
+          <div key={g} className="tp2-group-section">
+            <div className="tp2-group-header">
+              <span className="tp2-group-letter">{g}</span>
+              <span className="tp2-group-title">Girone {g}</span>
             </div>
-          );
-        })() : (
-          <div className="team-detail-placeholder card">
-            <p className="muted" style={{ textAlign: 'center', padding: '48px 16px' }}>
-              ← Clicca su una squadra per vedere tutti i parametri della simulazione.
-            </p>
+            <div className={isGridMode ? 'tp2-group-grid' : 'tp2-group-rows'}>
+              {byGroup.get(g)!.map(team =>
+                isGridMode
+                  ? <TeamCard key={team.id} team={team} sortKey={sortKey} rank={null} params={params} teamStats={teamStats} strengthScores={strengthScores} onSelect={onSelect} />
+                  : <TeamRow  key={team.id} team={team} sortKey={sortKey} rank={null} isSelected={team.id === selectedId} params={params} teamStats={teamStats} strengthScores={strengthScores} onSelect={onSelect} />
+              )}
+            </div>
+          </div>
+        ))}
+      </>
+    );
+  }
+
+  /* Lista piatta con rank (classifica o A→Z) */
+  return (
+    <>
+      {sorted.map((team, idx) =>
+        isGridMode
+          ? <TeamCard key={team.id} team={team} sortKey={sortKey} rank={isRankSort ? idx + 1 : null} params={params} teamStats={teamStats} strengthScores={strengthScores} onSelect={onSelect} />
+          : <TeamRow  key={team.id} team={team} sortKey={sortKey} rank={isRankSort ? idx + 1 : null} isSelected={team.id === selectedId} params={params} teamStats={teamStats} strengthScores={strengthScores} onSelect={onSelect} />
+      )}
+    </>
+  );
+}
+
+/* ── Card (modalità griglia) ── */
+interface CardProps {
+  team: Team; sortKey: SortKey; rank: number | null;
+  params: ModelParams | null; teamStats: Map<string, TeamStats>;
+  strengthScores: Map<string, TeamStrengthScore>; onSelect: (id: string) => void;
+}
+function TeamCard({ team, sortKey, rank, params, teamStats, strengthScores, onSelect }: CardProps) {
+  const isItaly = team.id === 'ITA';
+  const tier    = eloTier(team.elo);
+  const sc      = strengthScores.get(team.id);
+  const sortVal = getSortValue(team, sortKey, params, teamStats, strengthScores);
+
+  return (
+    <button className={`tp2-card ${isItaly ? 'italy' : ''}`} onClick={() => onSelect(team.id)}>
+      {/* Rank prominente */}
+      {rank !== null && (
+        <span className={`tp2-card-rank ${rank <= 3 ? 'tp2-card-rank--top' : ''}`}>
+          {rank <= 3 ? ['①','②','③'][rank - 1] : rank}
+        </span>
+      )}
+      <span className={`fi fi-${team.flag} tp2-card-flag`} aria-hidden />
+      <div className="tp2-card-info">
+        <span className="tp2-card-name">{team.name}</span>
+        <span className="tp2-card-meta">
+          Girone {team.group}
+          {isItaly && <span className="tp2-card-whatif">what-if</span>}
+        </span>
+        <span className={`tp2-card-tier ${tier.cls}`}>{tier.label}</span>
+      </div>
+      {sortVal && sortKey !== 'group' && (
+        <div className="tp2-card-stat">
+          <span className="tp2-card-stat-value">{sortVal.value}</span>
+          {sortVal.label && <span className="tp2-card-stat-label">{sortVal.label}</span>}
+        </div>
+      )}
+      {sortKey !== 'strength' && sc && (
+        <span className={`tp2-card-score ${strengthScoreTier(sc.score)}`}>{sc.score}</span>
+      )}
+    </button>
+  );
+}
+
+/* ── Row (modalità split) ── */
+interface RowProps extends CardProps { isSelected: boolean; }
+function TeamRow({ team, sortKey, rank, isSelected, params, teamStats, strengthScores, onSelect }: RowProps) {
+  const isItaly = team.id === 'ITA';
+  const tier    = eloTier(team.elo);
+  const sc      = strengthScores.get(team.id);
+  const sortVal = getSortValue(team, sortKey, params, teamStats, strengthScores);
+
+  return (
+    <button className={`tp2-row ${isSelected ? 'selected' : ''} ${isItaly ? 'italy' : ''}`} onClick={() => onSelect(team.id)}>
+      {rank !== null && (
+        <span className={`tp2-row-rank ${rank <= 3 ? 'tp2-row-rank--top' : ''}`}>{rank}</span>
+      )}
+      <span className={`fi fi-${team.flag} tp2-row-flag`} aria-hidden />
+      <div className="tp2-row-info">
+        <span className="tp2-row-name">{team.name}</span>
+        <span className="tp2-row-sub">
+          Girone {team.group}
+          {isItaly && <span className="tp2-row-whatif"> · what-if</span>}
+          <span className={`tp2-row-tier ${tier.cls}`}>{tier.label}</span>
+        </span>
+      </div>
+      {sortVal && sortKey !== 'group' && <span className="tp2-row-val">{sortVal.value}</span>}
+      {sortKey !== 'strength' && sc && (
+        <span className={`tp2-row-score ${strengthScoreTier(sc.score)}`}>{sc.score}</span>
+      )}
+      <svg className={`tp2-row-chevron ${isSelected ? 'open' : ''}`} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </button>
+  );
+}
+
+/* ═══════════════════════════ TEAM DETAIL ═══════════════════════════ */
+interface DetailProps {
+  team: Team;
+  params: ModelParams | null;
+  paramsSource: 'bayesian' | 'elo-fallback';
+  teamStats: Map<string, TeamStats>;
+  strengthScores: Map<string, TeamStrengthScore>;
+  groupH2H: { opp: Team; rec: H2HRecord | null }[];
+  h2hSummary: { w: number; d: number; l: number; n: number } | null;
+  onClose: () => void;
+}
+
+function TeamDetail({ team, params, paramsSource, teamStats, strengthScores, groupH2H, h2hSummary, onClose }: DetailProps) {
+  const [tab, setTab] = useState<'stats' | 'h2h'>('stats');
+  const tp  = params?.teams[team.id];
+  const ts  = teamStats.get(team.id);
+  const sc  = strengthScores.get(team.id);
+  const tier = eloTier(team.elo);
+
+  return (
+    <div className="tpd-root">
+
+      {/* Header con bandiera grande e nome */}
+      <div className="tpd-header">
+        <span className={`fi fi-${team.flag} tpd-flag`} aria-hidden />
+        <div className="tpd-header-text">
+          <h3 className="tpd-name">{team.name}</h3>
+          <div className="tpd-badges">
+            <span className={`tier-chip ${tier.cls}`}>{tier.label}</span>
+            <span className="tpd-group-badge">Girone {team.group}</span>
+            {team.isHost && <span className="badge badge-host">Casa</span>}
+            {team.id === 'ITA' && <span className="badge badge-italy">what-if</span>}
+          </div>
+        </div>
+        <button className="tpd-close" onClick={onClose} aria-label="Chiudi">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      {/* Banner punteggio forza */}
+      {sc && (
+        <div className="tpd-strength-banner">
+          <div className="tpd-sb-item">
+            <span className="tpd-sb-label">Punteggio Forza</span>
+            <span className={`tpd-sb-value ${strengthScoreTier(sc.score)}`}>{sc.score}<span className="tpd-sb-unit">/100</span></span>
+          </div>
+          <div className="tpd-sb-sep" />
+          <div className="tpd-sb-item">
+            <span className="tpd-sb-label">Win rate medio</span>
+            <span className="tpd-sb-value">{Math.round(sc.avgWinRate * 100)}<span className="tpd-sb-unit">%</span></span>
+          </div>
+          <div className="tpd-sb-sep" />
+          <div className="tpd-sb-item">
+            <span className="tpd-sb-label">Non perde vs</span>
+            <span className="tpd-sb-value">{Math.round(sc.avgNotLoseRate * 100)}<span className="tpd-sb-unit">%</span></span>
+          </div>
+        </div>
+      )}
+
+      {/* Tab bar */}
+      <div className="tpd-tabs">
+        <button className={`tpd-tab ${tab === 'stats' ? 'on' : ''}`} onClick={() => setTab('stats')}>Parametri</button>
+        <button className={`tpd-tab ${tab === 'h2h'  ? 'on' : ''}`} onClick={() => setTab('h2h')}>Scontri diretti</button>
+      </div>
+
+      <div className="tpd-body">
+        {tab === 'stats' && (
+          <div className="tpd-stats-grid">
+            <DetailStat label="Elo" value={String(team.elo)} pct={eloBar(team.elo)} barCls="bar-elo" sub="Snapshot 19/01/2026 · eloratings.net" />
+            <DetailStat label="Valore rosa" value={team.squadValue != null ? `€${team.squadValue}M` : 'N/D'} pct={team.squadValue != null ? valueBar(team.squadValue) : undefined} barCls="bar-val" sub="Stima ispirata a Transfermarkt · giu 2026" />
+            {tp ? (
+              <>
+                <DetailStat label="Attacco" value={`${strengthScore(tp.attack)}/100`} pct={strengthBar(tp.attack)} barCls="bar-atk" sub={`log-λ: ${tp.attack.toFixed(3)}${tp.attackSd != null ? ` ± ${tp.attackSd.toFixed(3)}` : ''}`} />
+                <DetailStat label="Difesa"  value={`${strengthScore(tp.defense)}/100`} pct={strengthBar(tp.defense)} barCls="bar-def" sub={`log-λ: ${tp.defense.toFixed(3)}${tp.defenseSd != null ? ` ± ${tp.defenseSd.toFixed(3)}` : ''}`} />
+              </>
+            ) : (
+              <div className="tpd-note">Attacco/Difesa derivati da Elo — modello non fittato.</div>
+            )}
+            {ts && <DetailStat label="Forma recente" value={`${Math.round(ts.form.score)}/100`} pct={ts.form.score} barCls="bar-form" sub={`${ts.form.w}V ${ts.form.d}P ${ts.form.l}S su ${ts.form.n} partite${ts.form.lastDate ? ` · ultima: ${ts.form.lastDate}` : ''}`} />}
+            {ts && <DetailStat label="Rendimento KO" value={`${Math.round(ts.knockout.score)}/100`} pct={ts.knockout.score} barCls="bar-ko" sub={`${ts.knockout.w}V ${ts.knockout.d}P ${ts.knockout.l}S · ${ts.knockout.n} partite KO dal 1994`} />}
+            {ts && <DetailStat label="Storia nazionale" value={`${Math.round(ts.history.score)}/100`} pct={ts.history.score} barCls="bar-history" sub={ts.history.score === 0 ? 'Nessun titolo major' : ts.history.byTournament.filter(t => t.titles > 0).map(t => `${t.label}: ${'🏆'.repeat(Math.min(t.titles, 5))}`).join(' · ')} />}
+            {team.isHost && (
+              <div className="tpd-host-banner">
+                <span className="tpd-host-icon">🏟</span>
+                <div>
+                  <span className="tpd-host-label">Paese ospitante</span>
+                  <span className="tpd-host-sub">+35% λ gol in casa · {params?.global.homeAdv.toFixed(3) ?? '0.271'} log-λ</span>
+                </div>
+              </div>
+            )}
+            <div className="tpd-source">{paramsSource === 'bayesian' ? `Modello bayesiano · dati fino al ${LAST_REAL_MATCH_DATE}` : 'Fallback Elo — modello bayesiano non disponibile'}</div>
+          </div>
+        )}
+
+        {tab === 'h2h' && (
+          <div className="tpd-h2h-section">
+            {h2hSummary && h2hSummary.n > 0 && (
+              <div className="tpd-h2h-summary">
+                <span className="tpd-h2h-sum-label">vs tutti i partecipanti</span>
+                <span className="tpd-h2h-sum-record">{h2hSummary.w}V {h2hSummary.d}P {h2hSummary.l}S <span className="tpd-h2h-sum-n">· {h2hSummary.n} partite</span></span>
+                <span className="tpd-h2h-sum-pct">{Math.round((h2hSummary.w / h2hSummary.n) * 100)}% win rate</span>
+              </div>
+            )}
+            <div className="tpd-h2h-section-label">Scontri diretti · Girone {team.group}</div>
+            <div className="tpd-h2h-list">
+              {groupH2H.map(({ opp, rec }) => (
+                <div key={opp.id} className="tpd-h2h-row">
+                  <span className={`fi fi-${opp.flag} tpd-h2h-flag`} aria-hidden />
+                  <span className="tpd-h2h-name">{opp.name}</span>
+                  <H2HBadge rec={rec} teamIsFirstAlpha={team.id < opp.id} />
+                </div>
+              ))}
+            </div>
+            <div className="tpd-source">H2H calcolato su dati dal 1994 · 4.078 partite · 805 coppie</div>
           </div>
         )}
       </div>

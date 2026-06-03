@@ -147,7 +147,7 @@ export function Onboarding({ teams, onComplete }: Props) {
                 className={`ob-choice ob-choice--italy ${withItaly === true ? 'selected' : ''}`}
                 onClick={() => setWithItaly(true)}
               >
-                <span className="ob-choice-emoji">🇮🇹</span>
+                <span className="ob-choice-emoji"><span className="fi fi-it" style={{ width: 36, height: 26, borderRadius: 4, display: 'inline-block' }} /></span>
                 <span className="ob-choice-title">…e se ci fosse l'Italia?</span>
                 <span className="ob-choice-desc">
                   <code>git push --force</code> degli Azzurri nel Girone B, al
@@ -166,9 +166,9 @@ export function Onboarding({ teams, onComplete }: Props) {
             <p className="ob-kicker">Passo 2 · Opzionale</p>
             <h1 className="ob-title">Vuoi forzare un po' il destino?</h1>
             <p className="ob-lead">
-              Scenari "what-if" che alterano la forza di una squadra. Sono
-              euristiche giocose, non profezie. Puoi sceglierne adesso o
-              aggiungerli quando vuoi dal pannello laterale.
+              Scenari "what-if" che alterano la forza di una squadra: un infortunio,
+              il rientro di un campione, una squalifica. Puoi sceglierne adesso o
+              aggiungerli in seguito.
             </p>
 
             <div className="ob-factors">

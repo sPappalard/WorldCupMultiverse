@@ -11,7 +11,6 @@ interface Props {
   modulators?: ModulatorConfig;
 }
 
-/** P(home>away), P(draw), P(away>home) dalla distribuzione scoreline. */
 function computeOutcomes(flat: Float64Array, cols: number) {
   let pWin = 0, pDraw = 0, pLoss = 0;
   const n = flat.length;
@@ -26,105 +25,17 @@ function computeOutcomes(flat: Float64Array, cols: number) {
   return { pWin, pDraw, pLoss };
 }
 
-/** Quota decimale da probabilità (con margine bookmaker ~8%). */
 function quota(p: number): string {
   if (p <= 0.01) return '—';
   return (0.92 / p).toFixed(2);
 }
 
-const pct = (x: number) => `${Math.round(x * 100)}%`;
+const pct  = (x: number) => `${Math.round(x * 100)}%`;
 const pct1 = (x: number) => `${(x * 100).toFixed(1)}%`;
 
-function DeltaBar({ valA, valB }: { valA: number; valB: number }) {
-  const max = Math.max(Math.abs(valA), Math.abs(valB), 0.01);
-  const wA = Math.min(100, (valA / max) * 100);
-  const wB = Math.min(100, (valB / max) * 100);
-  const better = valA > valB ? 'left' : valA < valB ? 'right' : 'equal';
-  return (
-    <div className="mu-delta-bar">
-      <span className={`mu-delta-val ${better === 'left' ? 'mu-better' : ''}`}>{valA.toFixed(2)}</span>
-      <div className="mu-delta-track">
-        <div className="mu-delta-half mu-delta-left">
-          <div className="mu-delta-fill mu-fill-left" style={{ width: `${wA}%` }} />
-        </div>
-        <div className="mu-delta-half mu-delta-right">
-          <div className="mu-delta-fill mu-fill-right" style={{ width: `${wB}%` }} />
-        </div>
-      </div>
-      <span className={`mu-delta-val mu-delta-val--right ${better === 'right' ? 'mu-better' : ''}`}>{valB.toFixed(2)}</span>
-    </div>
-  );
-}
-
-function EloBar({ valA, valB }: { valA: number; valB: number }) {
-  const min = 1400, max = 2300;
-  const wA = ((valA - min) / (max - min)) * 100;
-  const wB = ((valB - min) / (max - min)) * 100;
-  const better = valA > valB ? 'left' : valA < valB ? 'right' : 'equal';
-  return (
-    <div className="mu-delta-bar">
-      <span className={`mu-delta-val ${better === 'left' ? 'mu-better' : ''}`}>{valA}</span>
-      <div className="mu-delta-track">
-        <div className="mu-delta-half mu-delta-left">
-          <div className="mu-delta-fill mu-fill-left" style={{ width: `${wA}%` }} />
-        </div>
-        <div className="mu-delta-half mu-delta-right">
-          <div className="mu-delta-fill mu-fill-right" style={{ width: `${wB}%` }} />
-        </div>
-      </div>
-      <span className={`mu-delta-val mu-delta-val--right ${better === 'right' ? 'mu-better' : ''}`}>{valB}</span>
-    </div>
-  );
-}
-
-function ValueBar({ valA, valB }: { valA: number; valB: number }) {
-  const max = Math.max(valA, valB, 100);
-  const wA = (valA / max) * 100;
-  const wB = (valB / max) * 100;
-  const better = valA > valB ? 'left' : valA < valB ? 'right' : 'equal';
-  return (
-    <div className="mu-delta-bar">
-      <span className={`mu-delta-val ${better === 'left' ? 'mu-better' : ''}`}>{valA}M</span>
-      <div className="mu-delta-track">
-        <div className="mu-delta-half mu-delta-left">
-          <div className="mu-delta-fill mu-fill-left mu-fill-val" style={{ width: `${wA}%` }} />
-        </div>
-        <div className="mu-delta-half mu-delta-right">
-          <div className="mu-delta-fill mu-fill-right mu-fill-val" style={{ width: `${wB}%` }} />
-        </div>
-      </div>
-      <span className={`mu-delta-val mu-delta-val--right ${better === 'right' ? 'mu-better' : ''}`}>{valB}M</span>
-    </div>
-  );
-}
-
-function ScoreBar({ valA, valB }: { valA: number; valB: number }) {
-  const max = Math.max(valA, valB, 1);
-  const wA = (valA / max) * 100;
-  const wB = (valB / max) * 100;
-  const better = valA > valB ? 'left' : valA < valB ? 'right' : 'equal';
-  return (
-    <div className="mu-delta-bar">
-      <span className={`mu-delta-val ${better === 'left' ? 'mu-better' : ''}`}>{Math.round(valA)}</span>
-      <div className="mu-delta-track">
-        <div className="mu-delta-half mu-delta-left">
-          <div className="mu-delta-fill mu-fill-left mu-fill-score" style={{ width: `${wA}%` }} />
-        </div>
-        <div className="mu-delta-half mu-delta-right">
-          <div className="mu-delta-fill mu-fill-right mu-fill-score" style={{ width: `${wB}%` }} />
-        </div>
-      </div>
-      <span className={`mu-delta-val mu-delta-val--right ${better === 'right' ? 'mu-better' : ''}`}>{Math.round(valB)}</span>
-    </div>
-  );
-}
-
-/** Probabilità vittoria ai rigori basata su esperienza KO. */
 function penaltyWinProb(
-  teamA: Team, teamB: Team,
-  lambdaA: number, lambdaB: number,
-  teamStats: Map<string, TeamStats>,
-  modulators: ModulatorConfig,
+  teamA: Team, teamB: Team, lambdaA: number, lambdaB: number,
+  teamStats: Map<string, TeamStats>, modulators: ModulatorConfig,
 ): { pA: number; pB: number } {
   let pA = lambdaA / (lambdaA + lambdaB);
   const statsA = teamStats.get(teamA.id);
@@ -136,86 +47,66 @@ function penaltyWinProb(
   return { pA, pB: 1 - pA };
 }
 
-/** Calcola pWin/pDraw/pLoss di A vs B dato il modello. */
-function calcWinProb(
-  teamA: Team, teamB: Team,
-  params: ModelParams | null,
-  modStats: ReturnType<typeof buildModulatorStats>,
-  globalParams: { intercept: number; homeAdv: number; rho: number },
-  h2h: Map<string, H2HRecord>,
-  teamStats: Map<string, TeamStats>,
-  effectiveMods: ModulatorConfig,
-): { pWin: number; pDraw: number; pLoss: number } {
-  const strA = params?.teams[teamA.id] ?? eloToStrength(teamA.elo);
-  const strB = params?.teams[teamB.id] ?? eloToStrength(teamB.elo);
-  const dist = scorelineDist(
-    strA, strB, globalParams, false,
-    teamA.id, teamB.id, h2h, teamStats,
-    teamA.elo, teamB.elo,
-    teamA.squadValue ?? 0, teamB.squadValue ?? 0,
-    modStats, effectiveMods,
+/** Barra comparativa centrata: A a sinistra, B a destra */
+function CmpBar({ valA, valB, formatFn = (v: number) => String(v) }: {
+  valA: number; valB: number; formatFn?: (v: number) => string;
+}) {
+  const max = Math.max(Math.abs(valA), Math.abs(valB), 0.001);
+  const wA = Math.min(100, (valA / max) * 100);
+  const wB = Math.min(100, (valB / max) * 100);
+  const betterA = valA > valB;
+  const betterB = valB > valA;
+  return (
+    <div className="cmp-bar-row">
+      <span className={`cmp-val cmp-val-a ${betterA ? 'better' : ''}`}>{formatFn(valA)}</span>
+      <div className="cmp-bar-wrap">
+        <div className="cmp-half cmp-half-a">
+          <div className="cmp-fill cmp-fill-a" style={{ width: `${wA}%` }} />
+        </div>
+        <div className="cmp-half cmp-half-b">
+          <div className="cmp-fill cmp-fill-b" style={{ width: `${wB}%` }} />
+        </div>
+      </div>
+      <span className={`cmp-val cmp-val-b ${betterB ? 'better' : ''}`}>{formatFn(valB)}</span>
+    </div>
   );
-  return computeOutcomes(dist.flat, dist.cols);
 }
 
-/** Pannello panoramica vs tutte le squadre. */
-function AllOpponentsPanel({
-  focus, opponents, params, h2h, teamStats, effectiveMods, onSelect,
-}: {
-  focus: Team;
-  opponents: Team[];
-  params: ModelParams | null;
-  h2h: Map<string, H2HRecord>;
-  teamStats: Map<string, TeamStats>;
-  effectiveMods: ModulatorConfig;
-  onSelect: (id: string) => void;
+/** Vista panoramica vs tutte le squadre */
+function AllOpponentsPanel({ focus, opponents, params, h2h, teamStats, effectiveMods, onSelect }: {
+  focus: Team; opponents: Team[]; params: ModelParams | null;
+  h2h: Map<string, H2HRecord>; teamStats: Map<string, TeamStats>;
+  effectiveMods: ModulatorConfig; onSelect: (id: string) => void;
 }) {
-  const globalParams = params?.global ?? {
-    intercept: config.modelDefaults.intercept,
-    homeAdv: config.modelDefaults.homeAdv,
-    rho: config.modelDefaults.rho,
-  };
-  const activeOnly = opponents.filter((t) => t.active);
-  const modStats = buildModulatorStats(
-    activeOnly.map((t) => t.elo),
-    activeOnly.map((t) => t.squadValue ?? 0),
-  );
-
-  // Soglia: "equilibrata" se la differenza pWin-pLoss è ≤5pp
   const BALANCE_THRESH = 0.05;
+  const globalParams = params?.global ?? { intercept: config.modelDefaults.intercept, homeAdv: config.modelDefaults.homeAdv, rho: config.modelDefaults.rho };
+  const activeOnly = opponents.filter(t => t.active);
+  const modStats = buildModulatorStats(activeOnly.map(t => t.elo), activeOnly.map(t => t.squadValue ?? 0));
 
   const rows = useMemo(() => {
-    return opponents
-      .filter((t) => t.id !== focus.id)
-      .map((opp) => {
-        const { pWin, pDraw, pLoss } = calcWinProb(focus, opp, params, modStats, globalParams, h2h, teamStats, effectiveMods);
-        return { opp, pWin, pDraw, pLoss };
-      })
-      .sort((a, b) => b.pWin - a.pWin);
-  // Dipendenze primitive dei modulatori per rilevare cambiamenti reali
+    return opponents.filter(t => t.id !== focus.id && t.active).map(opp => {
+      const strF = params?.teams[focus.id] ?? eloToStrength(focus.elo);
+      const strO = params?.teams[opp.id]   ?? eloToStrength(opp.elo);
+      const dist = scorelineDist(strF, strO, globalParams, false, focus.id, opp.id, h2h, teamStats, focus.elo, opp.elo, focus.squadValue ?? 0, opp.squadValue ?? 0, modStats, effectiveMods);
+      const { pWin, pDraw, pLoss } = computeOutcomes(dist.flat, dist.cols);
+      return { opp, pWin, pDraw, pLoss };
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focus.id, params, h2h, teamStats,
-    effectiveMods.eloCoeff, effectiveMods.squadValueCoeff, effectiveMods.formCoeff,
-    effectiveMods.h2hMaxBoost, effectiveMods.homeAdvBoost,
-    effectiveMods.koExperienceCoeff, effectiveMods.koKnockoutWeight, effectiveMods.koHistoryWeight,
-  ]);
+  }, [focus.id, opponents, params, h2h, teamStats, effectiveMods.eloCoeff, effectiveMods.formCoeff]);
 
-  const favored  = rows.filter((r) => r.pWin - r.pLoss >  BALANCE_THRESH);
-  const balanced = rows.filter((r) => Math.abs(r.pWin - r.pLoss) <= BALANCE_THRESH).sort((a, b) => b.pWin - a.pWin);
-  const underdog = rows.filter((r) => r.pLoss - r.pWin >  BALANCE_THRESH).sort((a, b) => a.pWin - b.pWin);
+  const favored  = rows.filter(r => r.pWin - r.pLoss >  BALANCE_THRESH);
+  const balanced = rows.filter(r => Math.abs(r.pWin - r.pLoss) <= BALANCE_THRESH).sort((a, b) => b.pWin - a.pWin);
+  const underdog = rows.filter(r => r.pLoss - r.pWin >  BALANCE_THRESH).sort((a, b) => a.pWin - b.pWin);
 
-  function RowItem({ opp, pWin, pDraw, pLoss, kind }: { opp: Team; pWin: number; pDraw: number; pLoss: number; kind: 'fav' | 'bal' | 'und' }) {
+  function OppRow({ opp, pWin, pDraw, pLoss, kind }: { opp: Team; pWin: number; pDraw: number; pLoss: number; kind: 'fav' | 'bal' | 'und' }) {
     return (
-      <button className="mu-all-row" onClick={() => onSelect(opp.id)}>
-        <span className={`fi fi-${opp.flag}`} aria-hidden style={{ width: 20, height: 14, borderRadius: 2, flexShrink: 0 }} />
-        <span className="mu-all-name">{opp.name}</span>
-        <div className="mu-all-bar-bg">
-          <div
-            className={`mu-all-bar-fill ${kind === 'fav' ? 'mu-all-bar-fav' : kind === 'und' ? 'mu-all-bar-und' : 'mu-all-bar-bal'}`}
-            style={{ width: `${kind === 'fav' ? pWin * 100 : kind === 'und' ? pLoss * 100 : 100}%` }}
-          />
+      <button className="mu-opp-row" onClick={() => onSelect(opp.id)}>
+        <span className={`fi fi-${opp.flag} mu-opp-flag`} aria-hidden />
+        <span className="mu-opp-name">{opp.name}</span>
+        <div className="mu-opp-bar-bg">
+          <div className={`mu-opp-bar-fill ${kind}`} style={{ width: `${kind === 'fav' ? pWin * 100 : kind === 'und' ? pLoss * 100 : 100}%` }} />
         </div>
-        <span className={`mu-all-pct ${kind === 'fav' ? 'mu-all-pct-fav' : kind === 'und' ? 'mu-all-pct-und' : 'mu-all-pct-bal'}`}>
+        <span className={`mu-opp-pct ${kind}`}>
           {kind === 'fav' ? pct(pWin) : kind === 'und' ? pct(pLoss) : `${pct(pWin)}/${pct(pDraw)}/${pct(pLoss)}`}
         </span>
       </button>
@@ -223,30 +114,24 @@ function AllOpponentsPanel({
   }
 
   return (
-    <div className="card mu-all-card">
-      <h2 className="mu-card-title">Panoramica vs tutte le squadre — {focus.name}</h2>
-      <p className="muted small">
-        % = vittoria/pareggio/sconfitta di {focus.name}. "Equilibrata" = differenza W–L ≤5pp.
-      </p>
-
-      <div className="mu-all-cols mu-all-cols--3">
+    <div className="mu-all-panel">
+      <div className="mu-all-header">
+        <span className={`fi fi-${focus.flag} mu-all-flag`} aria-hidden />
+        <span className="mu-all-title">{focus.name} — panoramica vs tutte</span>
+        <span className="mu-all-hint">% vittoria / pareggio / sconfitta</span>
+      </div>
+      <div className="mu-all-cols">
         <div className="mu-all-col">
-          <div className="mu-all-col-title mu-all-col-title--fav">Favorita ({favored.length})</div>
-          {favored.map(({ opp, pWin, pDraw, pLoss }) => (
-            <RowItem key={opp.id} opp={opp} pWin={pWin} pDraw={pDraw} pLoss={pLoss} kind="fav" />
-          ))}
+          <div className="mu-all-col-head mu-all-col-head--fav">Favorita ({favored.length})</div>
+          {favored.map(({ opp, pWin, pDraw, pLoss }) => <OppRow key={opp.id} opp={opp} pWin={pWin} pDraw={pDraw} pLoss={pLoss} kind="fav" />)}
         </div>
         <div className="mu-all-col">
-          <div className="mu-all-col-title mu-all-col-title--bal">Equilibrata ({balanced.length})</div>
-          {balanced.map(({ opp, pWin, pDraw, pLoss }) => (
-            <RowItem key={opp.id} opp={opp} pWin={pWin} pDraw={pDraw} pLoss={pLoss} kind="bal" />
-          ))}
+          <div className="mu-all-col-head mu-all-col-head--bal">Equilibrata ({balanced.length})</div>
+          {balanced.map(({ opp, pWin, pDraw, pLoss }) => <OppRow key={opp.id} opp={opp} pWin={pWin} pDraw={pDraw} pLoss={pLoss} kind="bal" />)}
         </div>
         <div className="mu-all-col">
-          <div className="mu-all-col-title mu-all-col-title--und">Sfavorita ({underdog.length})</div>
-          {underdog.map(({ opp, pWin, pDraw, pLoss }) => (
-            <RowItem key={opp.id} opp={opp} pWin={pWin} pDraw={pDraw} pLoss={pLoss} kind="und" />
-          ))}
+          <div className="mu-all-col-head mu-all-col-head--und">Sfavorita ({underdog.length})</div>
+          {underdog.map(({ opp, pWin, pDraw, pLoss }) => <OppRow key={opp.id} opp={opp} pWin={pWin} pDraw={pDraw} pLoss={pLoss} kind="und" />)}
         </div>
       </div>
     </div>
@@ -254,299 +139,288 @@ function AllOpponentsPanel({
 }
 
 export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props) {
-  const activeTeams = useMemo(() => teams.filter((t) => t.active || t.substituteFor), [teams]);
-
+  const activeTeams = useMemo(() => teams.filter(t => t.active || t.substituteFor), [teams]);
   const [idxA, setIdxA] = useState(0);
   const [idxB, setIdxB] = useState(1);
   const [context, setContext] = useState<'group' | 'knockout'>('group');
-  const [showAll, setShowAll] = useState(false);
+  const [showAll, setShowAll] = useState<'A' | 'B' | false>(false);
+  const [tab, setTab] = useState<'probs' | 'params' | 'scores'>('probs');
 
-  const idA = activeTeams[idxA]?.id ?? '';
-  const idB = activeTeams[idxB]?.id ?? '';
   const teamA = activeTeams[idxA];
   const teamB = activeTeams[idxB];
-
+  const idA = teamA?.id ?? '';
+  const idB = teamB?.id ?? '';
   const n = activeTeams.length;
 
   function stepA(dir: 1 | -1) {
-    setIdxA((prev) => {
-      let next = (prev + dir + n) % n;
-      if (next === idxB) next = (next + dir + n) % n;
-      return next;
-    });
-    setShowAll(false);
+    setIdxA(prev => { let next = (prev + dir + n) % n; if (next === idxB) next = (next + dir + n) % n; return next; });
+    setShowAll(v => v === 'A' ? false : v);
   }
   function stepB(dir: 1 | -1) {
-    setIdxB((prev) => {
-      let next = (prev + dir + n) % n;
-      if (next === idxA) next = (next + dir + n) % n;
-      return next;
-    });
+    setIdxB(prev => { let next = (prev + dir + n) % n; if (next === idxA) next = (next + dir + n) % n; return next; });
   }
 
   const effectiveMods: ModulatorConfig = modulators ?? {
-    formCoeff: config.modulators.formCoeff,
-    squadValueCoeff: config.modulators.squadValueCoeff,
-    eloCoeff: config.modulators.eloCoeff,
-    koExperienceCoeff: config.modulators.koExperienceCoeff,
-    koMatchCoeff: config.modulators.koMatchCoeff,
-    koKnockoutWeight: config.modulators.koKnockoutWeight,
-    koHistoryWeight: config.modulators.koHistoryWeight,
-    homeAdvBoost: config.modulators.homeAdvBoost,
-    h2hMaxBoost: config.modulators.h2hMaxBoost,
-    lambdaShrink: config.modulators.lambdaShrink,
+    formCoeff: config.modulators.formCoeff, squadValueCoeff: config.modulators.squadValueCoeff,
+    eloCoeff: config.modulators.eloCoeff, koExperienceCoeff: config.modulators.koExperienceCoeff,
+    koMatchCoeff: config.modulators.koMatchCoeff, koKnockoutWeight: config.modulators.koKnockoutWeight,
+    koHistoryWeight: config.modulators.koHistoryWeight, homeAdvBoost: config.modulators.homeAdvBoost,
+    h2hMaxBoost: config.modulators.h2hMaxBoost, lambdaShrink: config.modulators.lambdaShrink,
     whatIf: config.modulators.whatIf,
   };
 
   const result = useMemo(() => {
-    if (!teamA || !teamB || teamA.id === teamB.id) return null;
-    const activeOnly = teams.filter((t) => t.active);
-    const modStats = buildModulatorStats(
-      activeOnly.map((t) => t.elo),
-      activeOnly.map((t) => t.squadValue ?? 0),
-    );
-    const strA = params?.teams[teamA.id] ?? eloToStrength(teamA.elo);
-    const strB = params?.teams[teamB.id] ?? eloToStrength(teamB.elo);
-    const globalParams = params?.global ?? {
-      intercept: config.modelDefaults.intercept,
-      homeAdv: config.modelDefaults.homeAdv,
-      rho: config.modelDefaults.rho,
-    };
+    if (!teamA || !teamB || idA === idB) return null;
+    const activeOnly = teams.filter(t => t.active);
+    const modStats = buildModulatorStats(activeOnly.map(t => t.elo), activeOnly.map(t => t.squadValue ?? 0));
+    const strA = params?.teams[idA] ?? eloToStrength(teamA.elo);
+    const strB = params?.teams[idB] ?? eloToStrength(teamB.elo);
+    const globalParams = params?.global ?? { intercept: config.modelDefaults.intercept, homeAdv: config.modelDefaults.homeAdv, rho: config.modelDefaults.rho };
     const homeAdv = context === 'group' && teamA.isHost;
-    const dist = scorelineDist(
-      strA, strB, globalParams, homeAdv,
-      teamA.id, teamB.id, h2h, teamStats,
-      teamA.elo, teamB.elo,
-      teamA.squadValue ?? 0, teamB.squadValue ?? 0,
-      modStats, effectiveMods,
-    );
+    const dist = scorelineDist(strA, strB, globalParams, homeAdv, idA, idB, h2h, teamStats, teamA.elo, teamB.elo, teamA.squadValue ?? 0, teamB.squadValue ?? 0, modStats, effectiveMods);
     const { pWin, pDraw, pLoss } = computeOutcomes(dist.flat, dist.cols);
     const pen = penaltyWinProb(teamA, teamB, dist.lambdaHome, dist.lambdaAway, teamStats, effectiveMods);
     const pKoA = pWin + pDraw * pen.pA;
     const pKoB = pLoss + pDraw * pen.pB;
-    const lambdaA = dist.lambdaHome;
-    const lambdaB = dist.lambdaAway;
     const scores: { hg: number; ag: number; p: number }[] = [];
-    const cols = dist.cols;
     const nf = dist.flat.length;
     for (let idx = 0; idx < nf; idx++) {
       const p = idx === 0 ? dist.flat[0] : dist.flat[idx] - dist.flat[idx - 1];
-      scores.push({ hg: Math.floor(idx / cols), ag: idx % cols, p });
+      scores.push({ hg: Math.floor(idx / dist.cols), ag: idx % dist.cols, p });
     }
     scores.sort((a, b) => b.p - a.p);
     const top6 = scores.slice(0, 6);
-    const key = [teamA.id, teamB.id].sort().join('|');
-    const h2hRec = h2h.get(key);
-    return { pWin, pDraw, pLoss, pKoA, pKoB, lambdaA, lambdaB, top6, h2hRec, strA, strB, pen };
-  }, [teamA, teamB, params, h2h, teamStats, effectiveMods, context, teams]);
+    const h2hKey = [idA, idB].sort().join('|');
+    const h2hRec = h2h.get(h2hKey);
+    return { pWin, pDraw, pLoss, pKoA, pKoB, lambdaA: dist.lambdaHome, lambdaB: dist.lambdaAway, top6, h2hRec, strA, strB, pen };
+  }, [teamA, teamB, params, h2h, teamStats, effectiveMods, context, teams, idA, idB]);
 
   const statsA = teamStats.get(idA);
   const statsB = teamStats.get(idB);
 
   return (
-    <div className="mu-page">
+    <div className="mu2-root">
 
-      {/* Selezione squadre con frecce */}
-      <div className="card mu-selectors">
-        <div className="mu-selector-row">
-
-          {/* Lato A */}
-          <div className="mu-selector-side">
-            <label className="mu-selector-label">Squadra A</label>
-            <div className="mu-select-with-arrows">
-              <button className="mu-arrow" onClick={() => stepA(-1)}>‹</button>
-              <select
-                value={idA}
-                onChange={(e) => { setIdxA(activeTeams.findIndex((t) => t.id === e.target.value)); setShowAll(false); }}
-                className="mu-select"
-              >
-                {activeTeams.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
+      {/* Selettori squadre */}
+      <div className="mu2-selectors">
+        {/* Squadra A */}
+        <div className="mu2-side mu2-side--left">
+          <div className="mu2-side-top">
+            {teamA && <span className={`fi fi-${teamA.flag} mu2-flag`} aria-hidden />}
+            <div className="mu2-side-arrows">
+              <button className="mu2-arrow" onClick={() => stepA(-1)} title="Squadra precedente">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <select className="mu2-select" value={idA} onChange={e => { setIdxA(activeTeams.findIndex(t => t.id === e.target.value)); setShowAll(false); }}>
+                {activeTeams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
-              <button className="mu-arrow" onClick={() => stepA(1)}>›</button>
-            </div>
-            {teamA && (
-              <div className="mu-team-badge">
-                <span className={`fi fi-${teamA.flag} mu-flag-lg`} aria-hidden />
-                <span className="mu-team-name-lg">{teamA.name}</span>
-                <button
-                  className={`mu-all-btn ${showAll ? 'active' : ''}`}
-                  onClick={() => setShowAll((v) => !v)}
-                  title="Panoramica vs tutte"
-                >
-                  {showAll ? '✕ Chiudi panoramica' : '⊞ vs tutte'}
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Centro VS */}
-          <div className="mu-vs">
-            <span>VS</span>
-            <div className="mu-context-btns">
-              <button className={`mu-ctx-btn ${context === 'group' ? 'active' : ''}`} onClick={() => setContext('group')}>Girone</button>
-              <button className={`mu-ctx-btn ${context === 'knockout' ? 'active' : ''}`} onClick={() => setContext('knockout')}>KO</button>
+              <button className="mu2-arrow" onClick={() => stepA(1)} title="Squadra successiva">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
             </div>
           </div>
+          {teamA && <span className="mu2-team-name">{teamA.name}</span>}
+          {teamA && <span className="mu2-team-elo">Elo {teamA.elo}</span>}
+          {teamA && (
+            <button
+              className={`mu2-all-btn ${showAll === 'A' ? 'on' : ''}`}
+              onClick={() => setShowAll(v => v === 'A' ? false : 'A')}
+            >
+              {showAll === 'A' ? '← Chiudi' : 'vs tutte'}
+            </button>
+          )}
+        </div>
 
-          {/* Lato B */}
-          <div className="mu-selector-side mu-selector-side--right">
-            <label className="mu-selector-label">Squadra B</label>
-            <div className="mu-select-with-arrows">
-              <button className="mu-arrow" onClick={() => stepB(-1)}>‹</button>
-              <select
-                value={idB}
-                onChange={(e) => setIdxB(activeTeams.findIndex((t) => t.id === e.target.value))}
-                className="mu-select"
-              >
-                {activeTeams.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
+        {/* Centro */}
+        <div className="mu2-center">
+          <span className="mu2-vs">VS</span>
+          <div className="mu2-ctx-btns">
+            <button className={`mu2-ctx-btn ${context === 'group' ? 'on' : ''}`} onClick={() => setContext('group')}>
+              <span className="mu2-ctx-btn-label">Girone</span>
+              <span className="mu2-ctx-btn-sub">fase a gruppi</span>
+            </button>
+            <button className={`mu2-ctx-btn ${context === 'knockout' ? 'on' : ''}`} onClick={() => setContext('knockout')}>
+              <span className="mu2-ctx-btn-label">Eliminazione</span>
+              <span className="mu2-ctx-btn-sub">eliminazione diretta</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Squadra B */}
+        <div className="mu2-side mu2-side--right">
+          <div className="mu2-side-top">
+            <div className="mu2-side-arrows">
+              <button className="mu2-arrow" onClick={() => stepB(-1)} title="Squadra precedente">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <select className="mu2-select" value={idB} onChange={e => setIdxB(activeTeams.findIndex(t => t.id === e.target.value))}>
+                {activeTeams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
-              <button className="mu-arrow" onClick={() => stepB(1)}>›</button>
+              <button className="mu2-arrow" onClick={() => stepB(1)} title="Squadra successiva">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
             </div>
-            {teamB && (
-              <div className="mu-team-badge mu-team-badge--right">
-                <span className="mu-team-name-lg">{teamB.name}</span>
-                <span className={`fi fi-${teamB.flag} mu-flag-lg`} aria-hidden />
-              </div>
-            )}
+            {teamB && <span className={`fi fi-${teamB.flag} mu2-flag`} aria-hidden />}
           </div>
+          {teamB && <span className="mu2-team-name">{teamB.name}</span>}
+          {teamB && <span className="mu2-team-elo">Elo {teamB.elo}</span>}
+          {teamB && (
+            <button
+              className={`mu2-all-btn ${showAll === 'B' ? 'on' : ''}`}
+              onClick={() => setShowAll(v => v === 'B' ? false : 'B')}
+            >
+              {showAll === 'B' ? 'Chiudi →' : 'vs tutte'}
+            </button>
+          )}
         </div>
       </div>
 
       {/* Panoramica vs tutte */}
-      {showAll && teamA && (
+      {showAll && (showAll === 'A' ? teamA : teamB) && (
         <AllOpponentsPanel
-          focus={teamA}
-          opponents={activeTeams}
-          params={params}
-          h2h={h2h}
-          teamStats={teamStats}
-          effectiveMods={effectiveMods}
-          onSelect={(id) => {
-            const idx = activeTeams.findIndex((t) => t.id === id);
-            if (idx !== -1) { setIdxB(idx); setShowAll(false); }
+          focus={showAll === 'A' ? teamA : teamB} opponents={activeTeams} params={params} h2h={h2h}
+          teamStats={teamStats} effectiveMods={effectiveMods}
+          onSelect={id => {
+            const idx = activeTeams.findIndex(t => t.id === id);
+            if (idx !== -1) {
+              if (showAll === 'A') setIdxB(idx);
+              else setIdxA(idx);
+              setShowAll(false);
+            }
           }}
         />
       )}
 
       {/* Confronto dettagliato */}
-      {!showAll && result && teamA && teamB && idA !== idB && (
-        <>
-          <div className="card mu-probs-card">
-            <h2 className="mu-card-title">Probabilità — {context === 'group' ? 'Girone' : 'Eliminazione diretta'}</h2>
-            <div className="mu-wdl-bar">
-              <div className="mu-wdl-seg mu-wdl-win"  style={{ width: `${result.pWin  * 100}%` }} />
-              <div className="mu-wdl-seg mu-wdl-draw" style={{ width: `${result.pDraw * 100}%` }} />
-              <div className="mu-wdl-seg mu-wdl-loss" style={{ width: `${result.pLoss * 100}%` }} />
+      {!showAll && result && idA !== idB && (
+        <div className="mu2-detail">
+
+          {/* Barra W/D/L in evidenza */}
+          <div className="mu2-wdl-bar">
+            <div className="mu2-wdl-seg mu2-wdl-win"  style={{ width: `${result.pWin  * 100}%` }} />
+            <div className="mu2-wdl-seg mu2-wdl-draw" style={{ width: `${result.pDraw * 100}%` }} />
+            <div className="mu2-wdl-seg mu2-wdl-loss" style={{ width: `${result.pLoss * 100}%` }} />
+          </div>
+          <div className="mu2-wdl-labels">
+            <div className="mu2-wdl-cell">
+              <span className="mu2-wdl-pct mu2-wdl-pct--a">{pct(result.pWin)}</span>
+              <span className="mu2-wdl-name">{teamA?.name}</span>
+              <span className="mu2-wdl-quota">@{quota(result.pWin)}</span>
             </div>
-            <div className="mu-wdl-row">
-              <div className="mu-wdl-cell">
-                <span className="mu-wdl-label">{teamA.name}</span>
-                <span className="mu-wdl-prob mu-wdl-prob--win">{pct(result.pWin)}</span>
-                <span className="mu-wdl-quota">quota {quota(result.pWin)}</span>
+            <div className="mu2-wdl-cell mu2-wdl-cell--c">
+              <span className="mu2-wdl-pct">{pct(result.pDraw)}</span>
+              <span className="mu2-wdl-name">Pareggio</span>
+              <span className="mu2-wdl-quota">@{quota(result.pDraw)}</span>
+            </div>
+            <div className="mu2-wdl-cell mu2-wdl-cell--r">
+              <span className="mu2-wdl-pct mu2-wdl-pct--b">{pct(result.pLoss)}</span>
+              <span className="mu2-wdl-name">{teamB?.name}</span>
+              <span className="mu2-wdl-quota">@{quota(result.pLoss)}</span>
+            </div>
+          </div>
+          <div className="mu2-lambda">
+            <span>{result.lambdaA.toFixed(2)} gol attesi</span>
+            <span>{result.lambdaB.toFixed(2)} gol attesi</span>
+          </div>
+
+          {/* KO extra */}
+          {context === 'knockout' && (
+            <div className="mu2-ko-row">
+              <div className="mu2-ko-cell">
+                <span className="mu2-ko-pct mu2-ko-pct--a">{pct1(result.pKoA)}</span>
+                <span className="mu2-ko-label">Vittoria KO</span>
+                <span className="mu2-ko-quota">@{quota(result.pKoA)}</span>
               </div>
-              <div className="mu-wdl-cell mu-wdl-cell--center">
-                <span className="mu-wdl-label">Pareggio</span>
-                <span className="mu-wdl-prob">{pct(result.pDraw)}</span>
-                <span className="mu-wdl-quota">quota {quota(result.pDraw)}</span>
+              <div className="mu2-ko-cell mu2-ko-cell--c">
+                <span className="mu2-ko-pen-label">Rigori se pari</span>
+                <span className="mu2-ko-pen">{pct(result.pen.pA)} – {pct(result.pen.pB)}</span>
               </div>
-              <div className="mu-wdl-cell mu-wdl-cell--right">
-                <span className="mu-wdl-label">{teamB.name}</span>
-                <span className="mu-wdl-prob mu-wdl-prob--loss">{pct(result.pLoss)}</span>
-                <span className="mu-wdl-quota">quota {quota(result.pLoss)}</span>
+              <div className="mu2-ko-cell mu2-ko-cell--r">
+                <span className="mu2-ko-pct mu2-ko-pct--b">{pct1(result.pKoB)}</span>
+                <span className="mu2-ko-label">Vittoria KO</span>
+                <span className="mu2-ko-quota">@{quota(result.pKoB)}</span>
               </div>
             </div>
-            <div className="mu-lambda-row">
-              <span className="mu-lambda">{result.lambdaA.toFixed(2)} gol att.</span>
-              <span className="mu-lambda-mid muted small">λ attesi</span>
-              <span className="mu-lambda">{result.lambdaB.toFixed(2)} gol att.</span>
-            </div>
-            {context === 'knockout' && (
-              <div className="mu-ko-section">
-                <div className="mu-ko-title muted small">Vittoria in KO (incl. supplementari e rigori)</div>
-                <div className="mu-ko-row">
-                  <div className="mu-ko-cell">
-                    <span className="mu-ko-prob mu-ko-prob--a">{pct1(result.pKoA)}</span>
-                    <span className="mu-ko-quota muted small">quota {quota(result.pKoA)}</span>
-                  </div>
-                  <div className="mu-ko-cell mu-ko-cell--center">
-                    <div className="mu-ko-pen-box">
-                      <span className="mu-ko-pen-label muted small">% rigori (se pari ai 90')</span>
-                      <div className="mu-ko-pen-row">
-                        <span className="mu-ko-pen-val">{pct(result.pen.pA)}</span>
-                        <span className="muted small">–</span>
-                        <span className="mu-ko-pen-val">{pct(result.pen.pB)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mu-ko-cell mu-ko-cell--right">
-                    <span className="mu-ko-prob mu-ko-prob--b">{pct1(result.pKoB)}</span>
-                    <span className="mu-ko-quota muted small">quota {quota(result.pKoB)}</span>
-                  </div>
-                </div>
-              </div>
+          )}
+
+          {/* Tab bar */}
+          <div className="mu2-tabs">
+            <button className={`mu2-tab ${tab === 'probs' ? 'on' : ''}`} onClick={() => setTab('probs')}>Risultati</button>
+            <button className={`mu2-tab ${tab === 'params' ? 'on' : ''}`} onClick={() => setTab('params')}>Parametri</button>
+            {result.h2hRec && result.h2hRec.n >= 3 && (
+              <button className={`mu2-tab ${tab === 'scores' ? 'on' : ''}`} onClick={() => setTab('scores')}>H2H</button>
             )}
           </div>
 
-          <div className="card">
-            <h2 className="mu-card-title">Confronto parametri</h2>
-            <div className="mu-params">
-              <div className="mu-param-row"><span className="mu-param-label">Elo</span><EloBar valA={teamA.elo} valB={teamB.elo} /></div>
-              <div className="mu-param-row"><span className="mu-param-label">Valore rosa</span><ValueBar valA={teamA.squadValue ?? 0} valB={teamB.squadValue ?? 0} /></div>
-              <div className="mu-param-row"><span className="mu-param-label">Attacco</span><DeltaBar valA={result.strA.attack} valB={result.strB.attack} /></div>
-              <div className="mu-param-row"><span className="mu-param-label">Difesa</span><DeltaBar valA={result.strA.defense} valB={result.strB.defense} /></div>
+          {/* Risultati più probabili */}
+          {tab === 'probs' && (
+            <div className="mu2-scores-grid">
+              {result.top6.map(({ hg, ag, p }) => (
+                <div key={`${hg}-${ag}`} className={`mu2-score-card ${hg > ag ? 'win-a' : hg < ag ? 'win-b' : 'draw'}`}>
+                  <span className="mu2-score-result">{hg} – {ag}</span>
+                  <span className="mu2-score-pct">{pct1(p)}</span>
+                  <span className="mu2-score-quota">@{quota(p)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Parametri comparativi */}
+          {tab === 'params' && (
+            <div className="mu2-params">
+              <div className="mu2-params-header">
+                <span className="mu2-params-head-a">{teamA?.name}</span>
+                <span />
+                <span className="mu2-params-head-b">{teamB?.name}</span>
+              </div>
+              <CmpBar valA={teamA?.elo ?? 0} valB={teamB?.elo ?? 0} formatFn={v => String(v)} />
+              <div className="mu2-param-label-row"><span>Elo</span></div>
+              <CmpBar valA={teamA?.squadValue ?? 0} valB={teamB?.squadValue ?? 0} formatFn={v => `€${v}M`} />
+              <div className="mu2-param-label-row"><span>Valore rosa</span></div>
+              <CmpBar valA={result.strA.attack} valB={result.strB.attack} formatFn={v => v.toFixed(2)} />
+              <div className="mu2-param-label-row"><span>Attacco (log-λ)</span></div>
+              <CmpBar valA={result.strA.defense} valB={result.strB.defense} formatFn={v => v.toFixed(2)} />
+              <div className="mu2-param-label-row"><span>Difesa (log-λ)</span></div>
               {statsA && statsB && (
                 <>
-                  <div className="mu-param-row"><span className="mu-param-label">Forma</span><ScoreBar valA={statsA.form.score} valB={statsB.form.score} /></div>
-                  <div className="mu-param-row"><span className="mu-param-label">Esp. KO</span><ScoreBar valA={statsA.knockout.score} valB={statsB.knockout.score} /></div>
-                  <div className="mu-param-row"><span className="mu-param-label">Storia</span><ScoreBar valA={statsA.history.score} valB={statsB.history.score} /></div>
+                  <CmpBar valA={statsA.form.score} valB={statsB.form.score} formatFn={v => `${Math.round(v)}/100`} />
+                  <div className="mu2-param-label-row"><span>Forma recente</span></div>
+                  <CmpBar valA={statsA.knockout.score} valB={statsB.knockout.score} formatFn={v => `${Math.round(v)}/100`} />
+                  <div className="mu2-param-label-row"><span>Exp. KO</span></div>
+                  <CmpBar valA={statsA.history.score} valB={statsB.history.score} formatFn={v => `${Math.round(v)}/100`} />
+                  <div className="mu2-param-label-row"><span>Storia nazionale</span></div>
                 </>
               )}
             </div>
-          </div>
+          )}
 
-          {result.h2hRec && result.h2hRec.n >= 3 && (() => {
+          {/* H2H */}
+          {tab === 'scores' && result.h2hRec && result.h2hRec.n >= 3 && (() => {
             const rec = result.h2hRec!;
-            const aIsFirst = teamA.id <= teamB.id;
+            const aIsFirst = idA <= idB;
             const wA = aIsFirst ? rec.w_a : rec.w_b;
             const wB = aIsFirst ? rec.w_b : rec.w_a;
             return (
-              <div className="card">
-                <h2 className="mu-card-title">Scontri diretti storici ({rec.n} partite dal 1994)</h2>
-                <div className="mu-h2h-bar-wrap">
-                  <div className="mu-h2h-seg mu-h2h-a" style={{ width: `${(wA / rec.n) * 100}%` }} />
-                  <div className="mu-h2h-seg mu-h2h-d" style={{ width: `${(rec.d / rec.n) * 100}%` }} />
-                  <div className="mu-h2h-seg mu-h2h-b" style={{ width: `${(wB / rec.n) * 100}%` }} />
+              <div className="mu2-h2h">
+                <div className="mu2-h2h-count">{rec.n} partite storiche dal 1994</div>
+                <div className="mu2-h2h-bar">
+                  <div className="mu2-h2h-seg mu2-h2h-a" style={{ width: `${(wA / rec.n) * 100}%` }} />
+                  <div className="mu2-h2h-seg mu2-h2h-d" style={{ width: `${(rec.d / rec.n) * 100}%` }} />
+                  <div className="mu2-h2h-seg mu2-h2h-b" style={{ width: `${(wB / rec.n) * 100}%` }} />
                 </div>
-                <div className="mu-h2h-labels">
-                  <span className="mu-h2h-label-a">{teamA.name} <strong>{wA}V</strong></span>
-                  <span className="mu-h2h-label-d"><strong>{rec.d}P</strong></span>
-                  <span className="mu-h2h-label-b"><strong>{wB}V</strong> {teamB.name}</span>
+                <div className="mu2-h2h-labels">
+                  <span className="mu2-h2h-la">{teamA?.name} <strong>{wA}V</strong></span>
+                  <span className="mu2-h2h-ld"><strong>{rec.d}P</strong></span>
+                  <span className="mu2-h2h-lb"><strong>{wB}V</strong> {teamB?.name}</span>
                 </div>
               </div>
             );
           })()}
-
-          <div className="card">
-            <h2 className="mu-card-title">Risultati più probabili</h2>
-            <div className="mu-scores-grid">
-              {result.top6.map(({ hg, ag, p }) => (
-                <div key={`${hg}-${ag}`} className={`mu-score-card ${hg > ag ? 'mu-score-card--a' : hg < ag ? 'mu-score-card--b' : 'mu-score-card--d'}`}>
-                  <span className="mu-score-result">{hg} – {ag}</span>
-                  <span className="mu-score-pct">{pct1(p)}</span>
-                  <span className="mu-score-quota muted small">q. {quota(p)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
+        </div>
       )}
 
       {idA === idB && !showAll && (
-        <div className="card empty"><p className="muted">Seleziona due squadre diverse.</p></div>
+        <div className="mu2-same-team">Seleziona due squadre diverse.</div>
       )}
     </div>
   );

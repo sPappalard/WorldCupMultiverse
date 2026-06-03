@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { SampleRun, Team, MatchResult } from '../../engine/types';
 import { cinemaAudio } from '../cinemaAudio';
+import { buildBracketLayout, CARD_W, CARD_H, type PlacedMatch } from '../bracketLayout';
 
 interface Props {
   sample: SampleRun;
@@ -19,6 +20,8 @@ interface Props {
   favoriteTeam?: string | null;
   italyActive: boolean;
   onDone: () => void;
+  /** Salta tutto il flusso guidato e va alla dashboard (opzionale). */
+  onSkip?: () => void;
 }
 
 const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
@@ -42,89 +45,7 @@ const ROUND_LABEL: Record<string, string> = {
   Semifinali: 'Semifinali', Final: 'Finale', Finale: 'Finale',
 };
 
-// ── Geometria bracket ─────────────────────────────────────────────────────────
-// R32(×16): CARD_W×CARD_H_FULL ; Ottavi(×8): CARD_W×CARD_H_FLAG ; Quarti+(×4,2,1): CARD_W×CARD_H_QF
-const CARD_W      = 168;
-const CARD_H_FULL = 56;   // R32: bandiera+nome+gol
-const CARD_H_FLAG = 54;   // Ottavi: solo bandiera grande
-const CARD_H_QF   = 68;   // Quarti+: bandiera+nome piccolo sotto
-const COL_GAP     = 48;
-const ROW_BASE    = 76;   // slot altezza per match R32
-
-interface PlacedMatch {
-  roundIdx: number;
-  matchIdx: number;
-  side: 'L' | 'R' | 'C';
-  x: number; y: number;
-  cx: number; cy: number;
-  cardH: number;
-  parentRoundIdx: number;
-  parentMatchIdx: number;
-}
-
-function cardHeight(roundIdx: number): number {
-  if (roundIdx === 0) return CARD_H_FULL;           // R32
-  if (roundIdx === 1) return CARD_H_FLAG;           // R16/Ottavi
-  return CARD_H_QF;                                  // QF, SF, Finale
-}
-
-function buildBracketLayout(rounds: { matches: unknown[] }[]) {
-  const nRounds  = rounds.length;
-  const finalIdx = nRounds - 1;
-  const r32Count = rounds[0]?.matches.length ?? 0;
-  const perSide0 = r32Count / 2;
-
-  const colSpan = CARD_W + COL_GAP;
-  const worldH  = perSide0 * ROW_BASE;
-  const centerY = worldH / 2;
-  const worldW  = (2 * finalIdx + 1) * colSpan;
-
-  const placed: PlacedMatch[] = [];
-
-  for (let r = 0; r < nRounds; r++) {
-    const total  = rounds[r].matches.length;
-    const cH     = cardHeight(r);
-
-    if (r === finalIdx) {
-      placed.push({
-        roundIdx: r, matchIdx: 0, side: 'C',
-        x: finalIdx * colSpan, y: centerY - cH / 2,
-        cx: finalIdx * colSpan + CARD_W / 2, cy: centerY,
-        cardH: cH, parentRoundIdx: -1, parentMatchIdx: -1,
-      });
-      continue;
-    }
-
-    const perSide = total / 2;
-    const step    = worldH / perSide;
-
-    for (let i = 0; i < total; i++) {
-      const side: 'L' | 'R' = i < perSide ? 'L' : 'R';
-      const localIdx = side === 'L' ? i : i - perSide;
-      const col = side === 'L' ? r : (2 * finalIdx - r);
-      const x   = col * colSpan;
-      const y   = localIdx * step + step / 2 - cH / 2;
-
-      const nextTotal    = rounds[r + 1]?.matches.length ?? 0;
-      const perSideNext  = nextTotal / 2;
-      const isNextFinal  = r + 1 === finalIdx;
-      const parentMatchIdx = isNextFinal
-        ? 0
-        : side === 'L'
-          ? Math.floor(localIdx / 2)
-          : perSideNext + Math.floor(localIdx / 2);
-
-      placed.push({
-        roundIdx: r, matchIdx: i, side,
-        x, y, cx: x + CARD_W / 2, cy: y + cH / 2,
-        cardH: cH,
-        parentRoundIdx: r + 1, parentMatchIdx,
-      });
-    }
-  }
-
-  return { placed, worldW, worldH, colSpan, finalIdx, perSide0 };
-}
+// Geometria bracket condivisa con la dashboard (src/ui/bracketLayout.ts).
 
 // ── Durate base (ms) ─────────────────────────────────────────────────────────
 const BASE = {
@@ -140,7 +61,7 @@ const BASE = {
   championHold: 600,
 };
 
-export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive, onDone }: Props) {
+export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive, onDone, onSkip }: Props) {
   const rounds = sample.knockoutRounds;
   const [speed,   setSpeed]   = useState(1);
   const [leaving, setLeaving] = useState(false);
@@ -150,8 +71,8 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
   // groups: indice girone attivo (0-11), risultati svelati in quel girone
   const [activeGroup,    setActiveGroup]    = useState(0);
   const [groupRevealed,  setGroupRevealed]  = useState(0); // partite svelate nel girone attivo
-  // overlay terze: appare sopra i gironi (stage='groups', showThirds=true)
-  const [showThirds,     setShowThirds]     = useState(false);
+  // overlay terze: 'hidden'=non ancora mostrato, 'showing'=in corso, 'done'=completato
+  const [thirdsState,    setThirdsState]    = useState<'hidden' | 'showing' | 'done'>('hidden');
   const [thirdsRevealed, setThirdsRevealed] = useState(0);
   // KO
   const [koRound,   setKoRound]   = useState(0);
@@ -219,28 +140,36 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
     if (stage === 'kickoff') {
       after(BASE.kickoff, () => { setStage('groups'); setActiveGroup(0); setGroupRevealed(0); });
 
-    } else if (stage === 'groups' && !showThirds) {
+    } else if (stage === 'groups' && thirdsState === 'hidden') {
       cinemaAudio.setTension(0);
       const total = currentGroupMatches.length;
       if (groupRevealed < total) {
-        // Rivela la prossima partita del girone corrente
         after(BASE.groupStagger, () => setGroupRevealed((n) => n + 1));
       } else if (activeGroup < GROUPS.length - 1) {
-        // Girone finito: pausa poi passa al successivo
         after(BASE.groupBetween, () => { setActiveGroup((g) => g + 1); setGroupRevealed(0); });
       } else {
-        // Tutti i gironi finiti: pausa poi mostra overlay terze
-        after(BASE.groupTail, () => { setShowThirds(true); setThirdsRevealed(0); });
+        // Tutti i gironi finiti → apri overlay terze
+        after(BASE.groupTail, () => { setThirdsState('showing'); setThirdsRevealed(0); });
       }
 
-    } else if (stage === 'groups' && showThirds) {
+    } else if (stage === 'groups' && thirdsState === 'showing') {
       if (thirdsRevealed < thirds.length) {
         after(BASE.thirdsReveal, () => setThirdsRevealed((n) => n + 1));
       } else {
+        // Overlay completato: chiudi, mostra gironi con terze in verde per 3s, poi KO.
+        // Il secondo timer è un window.setTimeout diretto (non passa per after/clearTimers)
+        // così non viene annullato quando thirdsState cambia a 'done'.
         after(BASE.thirdsTail, () => {
-          setShowThirds(false); setStage('ko'); setKoRound(0); setKoPhase('appear'); setKoRevealed(0);
+          cinemaAudio.advance();
+          setThirdsState('done');
+          window.setTimeout(() => {
+            setStage('ko'); setKoRound(0); setKoPhase('appear'); setKoRevealed(0);
+          }, 3000 / speedRef.current);
         });
       }
+
+    } else if (stage === 'groups' && thirdsState === 'done') {
+      // In attesa del timer diretto sopra — non fare nulla qui.
 
     } else if (stage === 'ko') {
       cinemaAudio.setTension(tensionForRound(koRound));
@@ -257,7 +186,7 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
 
     return clearTimers;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, activeGroup, groupRevealed, showThirds, thirdsRevealed, koRound, koPhase, koRevealed, koTotal, speed, paused]);
+  }, [stage, activeGroup, groupRevealed, thirdsState, thirdsRevealed, koRound, koPhase, koRevealed, koTotal, speed, paused]);
 
   // ── Suoni ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -267,12 +196,12 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
   }, [stage]);
 
   useEffect(() => {
-    if (stage === 'groups' && !showThirds && groupRevealed > 0) cinemaAudio.groupTick();
+    if (stage === 'groups' && thirdsState === 'hidden' && groupRevealed > 0) cinemaAudio.groupTick();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupRevealed]);
 
   useEffect(() => {
-    if (showThirds && thirdsRevealed > 0) {
+    if (thirdsState === 'showing' && thirdsRevealed > 0) {
       thirds[thirdsRevealed - 1]?.qualified ? cinemaAudio.advance() : cinemaAudio.groupTick();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -280,10 +209,8 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
 
   useEffect(() => {
     if (stage !== 'ko' || koPhase !== 'results' || koRevealed === 0) return;
-    const m = rounds[koRound]?.matches[koRevealed - 1];
     const t = tensionForRound(koRound);
     if (t >= 3) cinemaAudio.keyMatch(t);
-    else if (m?.penalties) cinemaAudio.penalties();
     else cinemaAudio.advance();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [koRevealed, koPhase, koRound, stage]);
@@ -305,18 +232,18 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
     clearTimers();
     const c = Math.max(0, Math.min(TIMELINE.length - 1, idx));
     if (c === 0) {
-      setStage('kickoff');
+      setStage('kickoff'); setThirdsState('hidden'); setThirdsRevealed(0);
     } else if (c === 1) {
       // Mostra tutti i gironi completi, nessun overlay
       setStage('groups');
       setActiveGroup(GROUPS.length - 1);
       setGroupRevealed(groupMatches[GROUPS[GROUPS.length - 1]]?.length ?? 0);
-      setShowThirds(false);
+      setThirdsState('done'); setThirdsRevealed(thirds.length);
     } else if (c === TIMELINE.length - 1) {
       setStage('champion');
     } else {
       const r = c - 2;
-      setStage('ko'); setShowThirds(false);
+      setStage('ko'); setThirdsState('done');
       setActiveGroup(GROUPS.length - 1);
       setGroupRevealed(groupMatches[GROUPS[GROUPS.length - 1]]?.length ?? 0);
       setKoRound(r); setKoPhase('results'); setKoRevealed(rounds[r]?.matches.length ?? 0);
@@ -330,12 +257,15 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
   const championId = sample.championId;
 
   let title = '', sub = '';
-  if (stage === 'groups' && !showThirds) {
+  if (stage === 'groups' && thirdsState === 'hidden') {
     title = `Girone ${GROUPS[activeGroup] ?? ''}`;
     sub   = `${groupRevealed} / ${currentGroupMatches.length} partite`;
-  } else if (stage === 'groups' && showThirds) {
+  } else if (stage === 'groups' && thirdsState === 'showing') {
     title = 'Migliori terze';
     sub   = `${Math.min(thirdsRevealed, thirds.length)} / ${thirds.length}`;
+  } else if (stage === 'groups' && thirdsState === 'done') {
+    title = 'Gironi completati';
+    sub   = 'Le qualificate ai sedicesimi';
   } else if (stage === 'ko') {
     title = ROUND_LABEL[rounds[koRound]?.name] ?? rounds[koRound]?.name ?? '';
     sub   = koPhase === 'appear' ? 'Accoppiamenti'
@@ -368,8 +298,8 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
       {/* ── TIMELINE ── */}
       <Timeline stopIndex={stopIndex} onStopClick={goToStop} />
 
-      {/* ── TITLEBAR: solo per KO e champion, non per gironi (il titolo è dentro la scena) ── */}
-      {stage !== 'kickoff' && stage !== 'groups' && (
+      {/* ── TITLEBAR ── */}
+      {stage !== 'kickoff' && (
         <div className="cin-titlebar">
           <h2 className="cin-title" key={title}>{title}</h2>
           {sub && <span className="cin-title-sub">{sub}</span>}
@@ -384,7 +314,7 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
             <h1 className="cin-bigtitle">Il sorteggio è fatto.<br />Si gioca.</h1>
             <p className="cin-sub">
               Una simulazione possibile su {(100000).toLocaleString('it-IT')}.
-              {italyActive && ' Con l’Italia nel Girone B. 🇮🇹'}
+              {italyActive && <> Con l&apos;Italia nel Girone B. <span className="fi fi-it" style={{display:'inline-block',width:18,height:13,borderRadius:2,verticalAlign:'middle',marginLeft:3}} /></>}
             </p>
           </div>
         )}
@@ -396,10 +326,10 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
               revealedByGroup={revealedByGroup}
               activeGroupKey={GROUPS[activeGroup] ?? ''}
               groupMatches={groupMatches}
-              title={title} sub={sub}
+              thirdsQualified={thirdsState === 'done' ? new Set(thirds.filter(t => t.qualified).map(t => t.teamId)) : undefined}
               name={name} flag={flag} isFav={isFav} italyActive={italyActive}
             />
-            {showThirds && (
+            {thirdsState === 'showing' && (
               <div className="cin-thirds-overlay">
                 <ThirdsModal
                   thirds={thirds} revealed={thirdsRevealed}
@@ -452,11 +382,16 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
           ))}
         </div>
 
-        {stage !== 'champion' ? (
-          <button className="cin-skip" onClick={skip}>Salta alla fine →</button>
-        ) : (
-          <button className="cin-skip" onClick={finish}>Vedi statistiche ✕</button>
-        )}
+        <div className="cin-skip-group">
+          {stage !== 'champion' ? (
+            <button className="cin-skip" onClick={skip}>Salta alla fine →</button>
+          ) : (
+            <button className="cin-skip" onClick={finish}>Vedi statistiche ✕</button>
+          )}
+          {onSkip && (
+            <button className="cin-skip cin-skip--dash" onClick={onSkip}>Dashboard →</button>
+          )}
+        </div>
       </footer>
     </div>
   );
@@ -489,13 +424,13 @@ function Timeline({ stopIndex, onStopClick }: { stopIndex: number; onStopClick: 
 
 /* ───────────── GIRONI ───────────── */
 function GroupsScene({
-  sample, revealedByGroup, activeGroupKey, groupMatches, title, sub, name, flag, isFav, italyActive,
+  sample, revealedByGroup, activeGroupKey, groupMatches, thirdsQualified, name, flag, isFav, italyActive,
 }: {
   sample: SampleRun;
   revealedByGroup: Record<string, number>;
   activeGroupKey: string;
   groupMatches: Record<string, MatchResult[]>;
-  title: string; sub: string;
+  thirdsQualified?: Set<string>;
   name: (id: string) => string; flag: (id: string) => string;
   isFav: (id: string) => boolean; italyActive: boolean;
 }) {
@@ -521,10 +456,6 @@ function GroupsScene({
 
   return (
     <>
-      <div className="cin-groups-title">
-        <h2 className="cin-groups-h">{title}</h2>
-        {sub && <span className="cin-groups-sub">{sub}</span>}
-      </div>
       <div className="cin-groups-grid">
       {GROUPS.map((g, gi) => {
         const standing   = liveStanding(g);
@@ -550,7 +481,7 @@ function GroupsScene({
                   key={s.id}
                   className={[
                     'cin-group-row',
-                    idx < 2 && complete ? 'qualified' : '',
+                    (idx < 2 && complete) || (idx === 2 && complete && thirdsQualified?.has(s.id)) ? 'qualified' : '',
                     isFav(s.id) ? 'fav' : '',
                     italyActive && s.id === 'ITA' ? 'italy' : '',
                   ].filter(Boolean).join(' ')}
@@ -652,16 +583,20 @@ function BracketScene({
     r < activeRound || (r === activeRound && phase === 'results' && i < revealed);
 
   // Una singola squadra (home o away) è visibile solo se il suo match-figlio
-  // specifico è stato deciso — usato per mostrare il vincitore progressivamente.
+  // specifico è stato deciso. Funziona anche per il round activeRound+1:
+  // i vincitori compaiono in tempo reale mentre i risultati vengono rivelati.
   const teamSlotKnown = (r: number, i: number, slot: 'home' | 'away'): boolean => {
-    if (r > activeRound) return false;
-    if (r === 0) return true;
+    // Round 0 (R32): squadre sempre note appena entriamo nel round
+    if (r === 0) return r <= activeRound;
+    // Round oltre activeRound+1: mai visibili
+    if (r > activeRound + 1) return false;
+    // Round activeRound+1 (il "prossimo"): mostra solo i vincitori già decisi
+    // Round <= activeRound (già completati): tutti i vincitori noti
     const total    = rounds[r]?.matches.length ?? 0;
     const perSide  = total / 2;
     const side: 'L' | 'R' = i < perSide ? 'L' : 'R';
     const localIdx = side === 'L' ? i : i - perSide;
     const prevPerSide = (rounds[r - 1]?.matches.length ?? 0) / 2;
-    // home viene dal child con indice pari, away dall'indice dispari
     const childBase = side === 'L' ? localIdx * 2 : prevPerSide + localIdx * 2;
     const childIdx  = slot === 'home' ? childBase : childBase + 1;
     const prevTotal = rounds[r - 1]?.matches.length ?? 0;
@@ -670,20 +605,41 @@ function BracketScene({
   };
 
   // ── Camera ──
+  // Durante i sedicesimi (r=0) NON zoommare: mostra tutto il bracket
+  // così il vincitore compare subito nello slot degli ottavi sullo stesso schermo.
+  // Lo zoom scatta solo quando si entra negli ottavi (activeRound=1+).
   const fit = vp.w && vp.h
     ? Math.min((vp.w * 0.96) / worldW, (vp.h * 0.94) / worldH)
     : 0.5;
+  // Zoom: sedicesimi=fit completo, poi crescita moderata verso la finale.
   const rel = activeRound === 0 ? 1.0
-            : activeRound === 1 ? 1.0
+            : activeRound === 1 ? 1.15
             : activeRound === 2 ? 1.55
-            : activeRound === 3 ? 2.1
-            : 2.8;
+            : activeRound === 3 ? 1.9
+            : 1.9;  // finale: stesso zoom delle semifinali, non più grande
   const scale = fit * rel;
+
+  // Camera centrata sul round attivo.
+  // Con transform-origin:center e scale(s) translateX(dx):
+  // il translateX è nel sistema di coordinate post-scale (cioè in pixel viewport / s).
+  // Vogliamo che focusX (world coords) finisca al centro del viewport.
+  // Centro viewport in world coords = worldW/2 (perché transform-origin=center).
+  // Shift necessario = worldW/2 - focusX, ma in post-scale = shift/scale non serve
+  // perché translateX con scale già applicata si muove di dx*scale px sullo schermo.
+  // Formula corretta: translateX((worldW/2 - focusX)px) — il browser applica scale prima.
   const activeXs = placed.filter((p) => p.roundIdx === activeRound).map((p) => p.cx);
   const focusX   = activeXs.length ? activeXs.reduce((a, b) => a + b, 0) / activeXs.length : worldW / 2;
+  // Con transform-origin:center e transform:scale(s) translateX(dx):
+  // il viewport vede il punto (worldW/2 + dx) del world centrato sullo schermo.
+  // Vogliamo che focusX sia al centro → dx = worldW/2 - focusX.
+  // Ma translateX in questo ordine è nel sistema post-origin (world coords) → dx diretto.
+  const shiftX = worldW / 2 - focusX;
   const camStyle: React.CSSProperties = {
     width: worldW, height: worldH,
-    transform: `scale(${scale}) translate(${(worldW / 2 - focusX)}px, 0)`,
+    // scale prima, poi translate: il translate è in world-coords (pre-scale),
+    // quindi usiamo l'ordine inverso: translate prima, scale dopo.
+    transform: `translateX(${shiftX}px) scale(${scale})`,
+    transformOrigin: 'center center',
   };
 
   return (
@@ -747,10 +703,10 @@ function BracketBox({
   const awayWon = m.winnerId === m.awayId;
   const anyKnown = homeKnown || awayKnown;
 
-  const isR16    = roundIdx === 1;
-  const isQFplus = roundIdx >= 2;
-  const sideLayout = isR16 ? 'flag-only' : isQFplus ? 'flag-lg' : '';
-  const showName   = !isR16;
+  // Tutti i round dal R16 in poi: flag-lg (bandiera media + nome)
+  // Solo R32 usa il layout compatto base
+  const sideLayout = roundIdx === 0 ? '' : 'flag-lg';
+  const showName   = true;
 
   const cls = [
     'cin-bx',
@@ -766,16 +722,16 @@ function BracketBox({
         ? <span className={`fi fi-${flag(id)}`} aria-hidden />
         : <span className="cin-bx-empty-flag" aria-hidden />}
       {showName && <span className="cin-bx-name">{slotKnown ? name(id) : '—'}</span>}
-      {decided && slotKnown && <span className="cin-bx-goal">{goals}</span>}
+      <span className="cin-bx-goal" style={{ visibility: decided && slotKnown ? 'visible' : 'hidden' }}>{goals}</span>
     </div>
   );
 
   return (
-    <div className={cls} style={{ left: p.x, top: p.y, width: CARD_W, height: p.cardH }}>
+    <div className={cls} style={{ left: p.x, top: p.y, width: CARD_W, height: CARD_H }}>
       <Side id={m.homeId} goals={m.homeGoals} won={homeWon} slotKnown={homeKnown} />
       <div className="cin-bx-divider" />
       <Side id={m.awayId} goals={m.awayGoals} won={awayWon} slotKnown={awayKnown} />
-      {decided && m.penalties && <span className="cin-bx-pen">dcr</span>}
+      {decided && m.penalties && <div className="cin-bx-pen-bar">rigori</div>}
     </div>
   );
 }
@@ -801,7 +757,7 @@ function ChampionScene({
       <h1 className="cin-champ-name">{name(championId)}</h1>
       {isFav(championId) && <p className="cin-champ-fav">La tua squadra del cuore ce l&apos;ha fatta ♥</p>}
       {italyActive && championId === 'ITA' && (
-        <p className="cin-champ-fav">🇮🇹 L&apos;Italia campione del mondo. In questa run, almeno.</p>
+        <p className="cin-champ-fav"><span className="fi fi-it" style={{display:'inline-block',width:20,height:14,borderRadius:2,verticalAlign:'middle',marginRight:6}} /> L&apos;Italia campione del mondo. In questa run, almeno.</p>
       )}
       <p className="cin-champ-disclaimer">
         È <strong>una</strong> delle 100.000 simulazioni. Le probabilità reali

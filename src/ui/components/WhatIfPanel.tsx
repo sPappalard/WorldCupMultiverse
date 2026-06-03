@@ -62,8 +62,7 @@ export function WhatIfPanel({ scenario, teams, onChange }: Props) {
 
       <h3>Altri scenari what-if</h3>
       <p className="small muted">
-        Euristiche giocose, separate dal motore predittivo. Impilabili. Puoi
-        applicare ogni scenario a più squadre.
+        Scenari ipotetici impilabili. Puoi applicare ogni scenario a più squadre.
       </p>
 
       <div className="factors">

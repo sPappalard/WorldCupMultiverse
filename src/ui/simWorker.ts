@@ -7,7 +7,7 @@
  * messaggio in ingresso e le ricostruiamo qui.
  */
 import { simulate, type SimInput } from '../engine/simulator';
-import type { H2HRecord, TeamStats } from '../engine/types';
+import type { H2HRecord, TeamStats, SampleRun } from '../engine/types';
 
 /** Payload del messaggio: SimInput con le Map appiattite in entries. */
 export interface SimWorkerRequest {
@@ -24,6 +24,7 @@ export interface SimWorkerRequest {
 }
 
 export type SimWorkerMessage =
+  | { type: 'sample'; sample: SampleRun }
   | { type: 'progress'; fraction: number }
   | { type: 'done'; result: ReturnType<typeof simulate> }
   | { type: 'error'; message: string };
@@ -44,6 +45,11 @@ self.onmessage = (e: MessageEvent<SimWorkerRequest>) => {
       modulators: req.modulators,
       onProgress: (fraction) => {
         const msg: SimWorkerMessage = { type: 'progress', fraction };
+        self.postMessage(msg);
+      },
+      onSample: (sample) => {
+        // Notifica la sample run appena pronta: il cinema può già partire.
+        const msg: SimWorkerMessage = { type: 'sample', sample };
         self.postMessage(msg);
       },
     };

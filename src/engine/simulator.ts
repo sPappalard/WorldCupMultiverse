@@ -59,6 +59,9 @@ export interface SimInput {
   modulators?: ModulatorConfig;
   /** Callback opzionale di progresso (0–1), chiamato ogni ~1% di run. */
   onProgress?: (fraction: number) => void;
+  /** Callback opzionale: chiamato appena la sample run (run 0) è pronta,
+   *  prima del calcolo degli aggregati. Abilita il flusso "cinema subito". */
+  onSample?: (sample: SampleRun) => void;
 }
 
 /** Costruisce la mappa forza per squadra, applicando overrides what-if. */
@@ -438,12 +441,8 @@ export function simulate(input: SimInput): SimulationOutput {
   // Riporta il progresso ~100 volte sul totale (granularità 1%).
   const progressStep = Math.max(1, Math.floor(numRuns / 100));
 
-  let sample: SampleRun | undefined;
-  for (let run = 0; run < numRuns; run++) {
-    const capture = run === 0; // prima run = sample animata
-    const { championId, reached, sample: s } = runOnce(groups, groupFixtures, koCache, rand, capture, input.teamStats, modulators);
-    if (capture) sample = s;
-
+  /** Accumula i contatori di "ha raggiunto almeno la fase X" per una run. */
+  const accumulate = (championId: string, reached: Map<string, string>) => {
     wins.set(championId, (wins.get(championId) ?? 0) + 1);
     for (const id of allIds) {
       const r = reached.get(id);
@@ -453,7 +452,22 @@ export function simulate(input: SimInput): SimulationOutput {
       if (reachedAtLeast(r, 'ro16')) counts.ro16.set(id, counts.ro16.get(id)! + 1);
       if (reachedAtLeast(r, 'ro32')) counts.ro32.set(id, counts.ro32.get(id)! + 1);
     }
+  };
 
+  // ── Run 0: cattura la sample run e notificala SUBITO (flusso "cinema subito").
+  // L'aggregato continua dopo, ma il cinema può già partire con questa sample.
+  let sample: SampleRun | undefined;
+  {
+    const r0 = runOnce(groups, groupFixtures, koCache, rand, true, input.teamStats, modulators);
+    sample = r0.sample;
+    input.onSample?.(sample!);
+    accumulate(r0.championId, r0.reached);
+  }
+
+  // ── Run 1..N: solo aggregati (capture=false, nessun overhead).
+  for (let run = 1; run < numRuns; run++) {
+    const { championId, reached } = runOnce(groups, groupFixtures, koCache, rand, false, input.teamStats, modulators);
+    accumulate(championId, reached);
     if (input.onProgress && run % progressStep === 0) {
       input.onProgress(run / numRuns);
     }

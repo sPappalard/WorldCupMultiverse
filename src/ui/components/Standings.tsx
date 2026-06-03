@@ -1,18 +1,13 @@
+import { useState } from 'react';
 import type { TeamAggregate, Team } from '../../engine/types';
 
 interface Props {
   aggregates: TeamAggregate[];
   teamsById: Map<string, Team>;
   italyActive: boolean;
-  /** Squadra del cuore: evidenziata, senza alcun effetto sul calcolo. */
   favoriteTeam?: string | null;
 }
 
-/**
- * Percentuale leggibile: per le big arrotonda all'intero, ma per le code
- * (sotto l'1%) mostra un decimale così non collassano tutte a "0%".
- * Sotto lo 0.05% mostra "<0.1%" invece di "0.0%".
- */
 const pct = (x: number) => {
   const p = x * 100;
   if (p >= 1) return `${Math.round(p)}%`;
@@ -21,60 +16,115 @@ const pct = (x: number) => {
   return '0%';
 };
 
-/**
- * Quota decimale in stile bookmaker dalla probabilità del modello.
- * Applichiamo un margine (overround) ~18% riducendo la prob, così le quote
- * sono realistiche (un po' più basse di quelle "eque" 1/p). Cappata a 999.
- */
 const oddsFromProb = (x: number): string => {
   if (x <= 0) return '—';
-  const margin = 0.85; // riduce la prob → quota più "da banco"
-  const o = 1 / (x * margin);
+  const o = 1 / (x * 0.85);
   if (o >= 100) return Math.round(o).toString();
   if (o >= 10) return o.toFixed(1);
   return o.toFixed(2);
 };
 
-/** Classifica aggregata: probabilità di vittoria torneo (top 24). */
+const MEDALS = ['🥇', '🥈', '🥉'];
+const DEFAULT_SHOWN = 10;
+
 export function Standings({ aggregates, teamsById, italyActive, favoriteTeam }: Props) {
-  const top = aggregates.filter((a) => a.winProb > 0).slice(0, 24);
+  const [showAll, setShowAll] = useState(false);
+  const all = aggregates.filter((a) => a.winProb > 0);
+  const maxProb = all[0]?.winProb ?? 1;
+  const displayed = showAll ? all : all.slice(0, DEFAULT_SHOWN);
+
+  // Se il favorito o l'Italia sono fuori dalla top 10, li aggiungiamo comunque quando collapsed
+  const extraIds = new Set<string>();
+  if (!showAll) {
+    if (italyActive && !displayed.find(a => a.teamId === 'ITA'))
+      extraIds.add('ITA');
+    if (favoriteTeam && !displayed.find(a => a.teamId === favoriteTeam))
+      extraIds.add(favoriteTeam);
+  }
+  const rows = showAll
+    ? all
+    : [...displayed, ...all.filter(a => extraIds.has(a.teamId))];
+
   return (
-    <div className="card">
-      <h2>Probabilità di vittoria del torneo</h2>
-      <p className="muted small">
-        Dall'aggregato delle run Monte Carlo, calibrato sulle quote bookmaker.
-        Accanto alla %, la quota decimale stile scommessa.
-      </p>
-      <ol className="standings">
-        {top.map((a, i) => {
+    <section className="dash-section">
+      <div className="dash-section-header">
+        <h2 className="dash-section-title">Chi vince il Mondiale?</h2>
+        <span className="dash-section-sub">Probabilità su 100.000 simulazioni · quota stile bookmaker</span>
+      </div>
+
+      <div className="stn-table">
+        <div className="stn-row stn-row--header">
+          <span className="stn-rank">#</span>
+          <span className="stn-team-col">Squadra</span>
+          <span className="stn-bar-col" />
+          <span className="stn-odds-col">Quota</span>
+          <span className="stn-prob-col">Prob</span>
+        </div>
+
+        {rows.map((a) => {
           const t = teamsById.get(a.teamId);
-          const isItaly = a.teamId === 'ITA';
+          const isItaly = a.teamId === 'ITA' && italyActive;
           const isFav = a.teamId === favoriteTeam;
-          const cls = [
-            'standings-row',
-            isItaly && italyActive ? 'italy' : '',
-            isFav ? 'fav' : '',
-          ].filter(Boolean).join(' ');
+          const realRank = all.findIndex(x => x.teamId === a.teamId);
+          const barW = Math.min(100, (a.winProb / maxProb) * 100);
+          const isMedal = realRank < 3;
+          const isExtra = extraIds.has(a.teamId);
+
           return (
-            <li
+            <div
               key={a.teamId}
-              className={cls}
+              className={[
+                'stn-row',
+                isItaly ? 'stn-row--italy' : '',
+                isFav ? 'stn-row--fav' : '',
+                isMedal ? `stn-row--medal-${realRank + 1}` : '',
+                isExtra ? 'stn-row--extra' : '',
+              ].filter(Boolean).join(' ')}
             >
-              <span className="rank">{i + 1}</span>
-              <span className={`fi fi-${t?.flag}`} aria-hidden />
-              <span className="team-name">
-                {t?.name ?? a.teamId}
-                {isFav && <span className="fav-heart" title="La tua squadra del cuore">♥</span>}
+              <span className="stn-rank">
+                {isMedal
+                  ? <span className="stn-medal">{MEDALS[realRank]}</span>
+                  : <span className="stn-rank-num">{realRank + 1}</span>}
               </span>
-              <span className="bar-wrap">
-                <span className="bar" style={{ width: `${a.winProb * 100 * 3}%` }} />
+              <span className="stn-team-col">
+                <span className={`fi fi-${t?.flag}`} aria-hidden />
+                <span className="stn-name">
+                  {t?.name ?? a.teamId}
+                  {isFav && <span className="stn-fav"> ♥</span>}
+                  {isItaly && <span className="stn-italy-badge">ITA</span>}
+                </span>
               </span>
-              <span className="odds" title="Quota decimale (stile bookmaker)">@{oddsFromProb(a.winProb)}</span>
-              <span className="prob">{pct(a.winProb)}</span>
-            </li>
+              <span className="stn-bar-col">
+                <span className="stn-bar-track">
+                  <span className={`stn-bar-fill${isItaly ? ' italy' : isFav ? ' fav' : ''}`} style={{ width: `${barW}%` }} />
+                </span>
+              </span>
+              <span className="stn-odds-col">
+                <span className="stn-odds">@{oddsFromProb(a.winProb)}</span>
+              </span>
+              <span className="stn-prob-col">
+                <strong className="stn-prob">{pct(a.winProb)}</strong>
+              </span>
+            </div>
           );
         })}
-      </ol>
-    </div>
+      </div>
+
+      {all.length > DEFAULT_SHOWN && (
+        <button className="stn-expand-btn" onClick={() => setShowAll(v => !v)}>
+          {showAll ? (
+            <>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+              Mostra meno
+            </>
+          ) : (
+            <>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+              Mostra tutte le {all.length} squadre
+            </>
+          )}
+        </button>
+      )}
+    </section>
   );
 }
