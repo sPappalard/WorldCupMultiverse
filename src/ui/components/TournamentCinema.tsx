@@ -112,8 +112,14 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
     const list = GROUPS.map((g) => {
       const s = sample.groupStandings[g]?.[2];
       return s ? { group: g, ...s } : null;
-    }).filter(Boolean) as { group: string; teamId: string; points: number; goalDifference: number; goalsFor: number }[];
-    list.sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference || b.goalsFor - a.goalsFor);
+    }).filter(Boolean) as { group: string; teamId: string; points: number; goalDifference: number; goalsFor: number; goalsAgainst: number }[];
+    // Ordine identico al motore: punti → diff reti → gol fatti → gol subiti (meno=meglio)
+    list.sort((a, b) =>
+      b.points - a.points ||
+      b.goalDifference - a.goalDifference ||
+      b.goalsFor - a.goalsFor ||
+      a.goalsAgainst - b.goalsAgainst
+    );
     return list.map((t) => ({ ...t, qualified: r32Teams.has(t.teamId) }));
   }, [sample, rounds]);
 
@@ -304,8 +310,8 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
       {/* ── TIMELINE ── */}
       <Timeline stopIndex={stopIndex} onStopClick={goToStop} />
 
-      {/* ── TITLEBAR ── */}
-      {stage !== 'kickoff' && (
+      {/* ── TITLEBAR ── (nascosta durante overlay terze) */}
+      {stage !== 'kickoff' && thirdsState !== 'showing' && (
         <div className="cin-titlebar">
           <h2 className="cin-title" key={title}>{title}</h2>
           {sub && <span className="cin-title-sub">{sub}</span>}
@@ -510,7 +516,7 @@ function GroupsScene({
 /* ───────────── OVERLAY MIGLIORI TERZE ───────────── */
 interface ThirdRow {
   group: string; teamId: string; points: number;
-  goalDifference: number; goalsFor: number; qualified: boolean;
+  goalDifference: number; goalsFor: number; goalsAgainst: number; qualified: boolean;
 }
 function ThirdsModal({
   thirds, revealed, name, flag, isFav, italyActive,

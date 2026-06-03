@@ -73,40 +73,48 @@ export function allocateThirds(qualifiedThirdGroups: string[]): Map<number, stri
     (m) => m.away.kind === 'third',
   ) as (Ro32Slot & { away: { kind: 'third'; candidates: string[] } })[];
 
+  // Backtracking: garantisce una soluzione valida per qualsiasi combinazione
+  // di 8 terze qualificate, rispettando i vincoli dei candidati FIFA.
   const assignment = new Map<number, string>();
   const available = new Set(qualifiedThirdGroups);
 
-  // Ordina gli slot per numero di candidati disponibili crescente (most-
-  // constrained first) per massimizzare le assegnazioni valide.
-  const order = [...thirdSlots].sort((a, b) => {
+  // Ordina gli slot per numero di candidati disponibili crescente (most-constrained first).
+  const slots = [...thirdSlots].sort((a, b) => {
     const ca = a.away.candidates.filter((g) => available.has(g)).length;
     const cb = b.away.candidates.filter((g) => available.has(g)).length;
     return ca - cb;
   });
 
-  for (const slot of order) {
-    const winnerGroup =
-      slot.home.kind === 'winner' ? slot.home.group : undefined;
-    const pick = slot.away.candidates.find(
+  function backtrack(idx: number): boolean {
+    if (idx === slots.length) return true;
+    const slot = slots[idx];
+    const winnerGroup = slot.home.kind === 'winner' ? slot.home.group : undefined;
+    const candidates = slot.away.candidates.filter(
       (g) => available.has(g) && g !== winnerGroup,
     );
-    if (pick) {
+    for (const pick of candidates) {
       assignment.set(slot.matchId, pick);
       available.delete(pick);
+      if (backtrack(idx + 1)) return true;
+      assignment.delete(slot.matchId);
+      available.add(pick);
     }
+    return false; // nessuna assegnazione valida per questo slot → backtrack
   }
 
-  // Eventuali terze residue (per imperfezioni dell'euristica) vengono messe
-  // negli slot ancora vuoti rispettando solo il vincolo "non proprio girone".
-  const unfilled = thirdSlots.filter((s) => !assignment.has(s.matchId));
-  for (const slot of unfilled) {
-    const winnerGroup = slot.home.kind === 'winner' ? slot.home.group : undefined;
-    const pick = [...available].find((g) => g !== winnerGroup);
-    if (pick) {
-      assignment.set(slot.matchId, pick);
-      available.delete(pick);
+  // Il backtracking con ordinamento most-constrained-first trova sempre
+  // una soluzione valida per le 8 terze nei loro 8 slot.
+  // Se per qualsiasi motivo fallisce, riprova senza ordinamento come fallback.
+  if (!backtrack(0)) {
+    assignment.clear();
+    available.clear();
+    for (const g of qualifiedThirdGroups) available.add(g);
+    const slotsUnordered = [...thirdSlots];
+    backtrack2: for (const slot of slotsUnordered) {
+      const winnerGroup = slot.home.kind === 'winner' ? slot.home.group : undefined;
+      const pick = slot.away.candidates.find((g) => available.has(g) && g !== winnerGroup);
+      if (pick) { assignment.set(slot.matchId, pick); available.delete(pick); }
     }
   }
-
   return assignment;
 }
