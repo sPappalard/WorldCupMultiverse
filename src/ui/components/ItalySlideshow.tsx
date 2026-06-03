@@ -23,31 +23,54 @@ interface SlideshowProps {
   overlay?: boolean;
 }
 
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function nextRandom(current: number, total: number): number {
+  if (total <= 1) return 0;
+  let next: number;
+  do { next = Math.floor(Math.random() * total); } while (next === current);
+  return next;
+}
+
 export function ItalySlideshow({ overlay = true }: SlideshowProps) {
   const [photos, setPhotos] = useState<string[]>([]);
   const [current, setCurrent] = useState(0);
+  const [kbClass, setKbClass] = useState(KB_VARIANTS[0]);
   const [fading, setFading] = useState(false);
   const timerRef = useRef<number | null>(null);
 
-  // Carica il manifest una volta sola
+  // Carica il manifest, shuffla subito
   useEffect(() => {
     fetch('/images/italy/manifest.json')
       .then(r => r.json())
       .then((list: string[]) => {
         if (Array.isArray(list) && list.length > 0) {
-          setPhotos(list.map(f => `/images/italy/${f}`));
+          const shuffled = shuffle(list.map(f => `/images/italy/${f}`));
+          setPhotos(shuffled);
+          setKbClass(KB_VARIANTS[Math.floor(Math.random() * KB_VARIANTS.length)]);
         }
       })
       .catch(() => {}); // silenzioso: nessuna foto → nessun slideshow
   }, []);
 
-  // Avanza slide
+  // Avanza slide in modo randomico
   useEffect(() => {
     if (photos.length < 2) return;
     timerRef.current = window.setInterval(() => {
       setFading(true);
       setTimeout(() => {
-        setCurrent(c => (c + 1) % photos.length);
+        setCurrent(c => {
+          const next = nextRandom(c, photos.length);
+          setKbClass(KB_VARIANTS[Math.floor(Math.random() * KB_VARIANTS.length)]);
+          return next;
+        });
         setFading(false);
       }, FADE_DURATION);
     }, SLIDE_DURATION);
@@ -55,8 +78,6 @@ export function ItalySlideshow({ overlay = true }: SlideshowProps) {
   }, [photos]);
 
   if (photos.length === 0) return null;
-
-  const kbClass = KB_VARIANTS[current % KB_VARIANTS.length];
 
   return (
     <div className="its-root" aria-hidden>
