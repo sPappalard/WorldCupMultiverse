@@ -48,11 +48,11 @@ function getSortValue(team: Team, sortKey: SortKey, params: ModelParams | null, 
     case 'strength':   return sc ? { value: String(sc.score), label: 'Forza' } : null;
     case 'elo':        return { value: String(team.elo), label: 'Elo' };
     case 'squadValue': return team.squadValue != null ? { value: `€${team.squadValue}M`, label: 'Rosa' } : null;
-    case 'attack':     return tp ? { value: `${strengthScore(tp.attack)}/100`, label: 'Attacco' } : null;
-    case 'defense':    return tp ? { value: `${strengthScore(tp.defense)}/100`, label: 'Difesa' } : null;
-    case 'form':       return ts ? { value: `${Math.round(ts.form.score)}/100`, label: 'Forma' } : null;
-    case 'knockout':   return ts ? { value: `${Math.round(ts.knockout.score)}/100`, label: 'KO Exp' } : null;
-    case 'history':    return ts ? { value: `${Math.round(ts.history.score)}/100`, label: 'Storia' } : null;
+    case 'attack':     return tp ? { value: String(strengthScore(tp.attack)), label: 'Attacco' } : null;
+    case 'defense':    return tp ? { value: String(strengthScore(tp.defense)), label: 'Difesa' } : null;
+    case 'form':       return ts ? { value: String(Math.round(ts.form.score)), label: 'Forma' } : null;
+    case 'knockout':   return ts ? { value: String(Math.round(ts.knockout.score)), label: 'KO Exp' } : null;
+    case 'history':    return ts ? { value: String(Math.round(ts.history.score)), label: 'Storia' } : null;
     case 'group':      return { value: `Girone ${team.group}`, label: '' };
     default:           return null;
   }
@@ -339,35 +339,26 @@ interface CardProps {
 }
 function TeamCard({ team, sortKey, rank, params, teamStats, strengthScores, onSelect }: CardProps) {
   const isItaly = team.id === 'ITA';
-  const tier    = eloTier(team.elo);
-  const sc      = strengthScores.get(team.id);
   const sortVal = getSortValue(team, sortKey, params, teamStats, strengthScores);
 
   return (
     <button className={`tp2-card ${isItaly ? 'italy' : ''}`} onClick={() => onSelect(team.id)}>
       {/* Rank prominente */}
       {rank !== null && (
-        <span className={`tp2-card-rank ${rank <= 3 ? 'tp2-card-rank--top' : ''}`}>
-          {rank <= 3 ? ['①','②','③'][rank - 1] : rank}
+        <span className={`tp2-card-rank${rank === 1 ? ' tp2-rank--gold' : rank === 2 ? ' tp2-rank--silver' : rank === 3 ? ' tp2-rank--bronze' : ''}`}>
+          {rank}
         </span>
       )}
       <span className={`fi fi-${team.flag} tp2-card-flag`} aria-hidden />
       <div className="tp2-card-info">
         <span className="tp2-card-name">{team.name}</span>
-        <span className="tp2-card-meta">
-          Girone {team.group}
-          {isItaly && <span className="tp2-card-whatif">what-if</span>}
-        </span>
-        <span className={`tp2-card-tier ${tier.cls}`}>{tier.label}</span>
+        {isItaly && <span className="tp2-card-whatif">what-if</span>}
       </div>
       {sortVal && sortKey !== 'group' && (
         <div className="tp2-card-stat">
           <span className="tp2-card-stat-value">{sortVal.value}</span>
           {sortVal.label && <span className="tp2-card-stat-label">{sortVal.label}</span>}
         </div>
-      )}
-      {sortKey !== 'strength' && sc && (
-        <span className={`tp2-card-score ${strengthScoreTier(sc.score)}`}>{sc.score}</span>
       )}
     </button>
   );
@@ -377,28 +368,19 @@ function TeamCard({ team, sortKey, rank, params, teamStats, strengthScores, onSe
 interface RowProps extends CardProps { isSelected: boolean; }
 function TeamRow({ team, sortKey, rank, isSelected, params, teamStats, strengthScores, onSelect }: RowProps) {
   const isItaly = team.id === 'ITA';
-  const tier    = eloTier(team.elo);
-  const sc      = strengthScores.get(team.id);
   const sortVal = getSortValue(team, sortKey, params, teamStats, strengthScores);
 
   return (
     <button className={`tp2-row ${isSelected ? 'selected' : ''} ${isItaly ? 'italy' : ''}`} onClick={() => onSelect(team.id)}>
       {rank !== null && (
-        <span className={`tp2-row-rank ${rank <= 3 ? 'tp2-row-rank--top' : ''}`}>{rank}</span>
+        <span className={`tp2-row-rank${rank === 1 ? ' tp2-rank--gold' : rank === 2 ? ' tp2-rank--silver' : rank === 3 ? ' tp2-rank--bronze' : ''}`}>{rank}</span>
       )}
       <span className={`fi fi-${team.flag} tp2-row-flag`} aria-hidden />
       <div className="tp2-row-info">
         <span className="tp2-row-name">{team.name}</span>
-        <span className="tp2-row-sub">
-          Girone {team.group}
-          {isItaly && <span className="tp2-row-whatif"> · what-if</span>}
-          <span className={`tp2-row-tier ${tier.cls}`}>{tier.label}</span>
-        </span>
+        {isItaly && <span className="tp2-row-whatif">what-if</span>}
       </div>
       {sortVal && sortKey !== 'group' && <span className="tp2-row-val">{sortVal.value}</span>}
-      {sortKey !== 'strength' && sc && (
-        <span className={`tp2-row-score ${strengthScoreTier(sc.score)}`}>{sc.score}</span>
-      )}
       <svg className={`tp2-row-chevron ${isSelected ? 'open' : ''}`} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="9 18 15 12 9 6"/>
       </svg>

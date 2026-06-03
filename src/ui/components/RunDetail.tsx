@@ -123,22 +123,30 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
   const scale = userZoom ?? autoScale;
   const isZoomed = userZoom !== null && userZoom > autoScale + 0.05;
 
-  // Zoom con rotella — minimo = autoScale (non si rimpicciolisce oltre il fit)
+  // Zoom con rotella — verso il cursore, non verso top-left
   function handleWheel(e: React.WheelEvent) {
     e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    const factor = e.deltaY > 0 ? 0.92 : 1.09;
+    const el = vpRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cx = e.clientX - rect.left; // cursore relativo al viewport
+    const cy = e.clientY - rect.top;
     setUserZoom(z => {
       const cur = z ?? autoScale;
-      const next = Math.max(autoScale, Math.min(MAX_ZOOM, cur + delta));
-      // Se torna vicino all'autoScale, resetta a null (auto-fit)
+      const next = Math.max(autoScale, Math.min(MAX_ZOOM, cur * factor));
       if (Math.abs(next - autoScale) < 0.05) { setPan({ x: 0, y: 0 }); return null; }
+      // Punto nel mondo sotto il cursore prima dello zoom
+      const worldX = (cx - pan.x) / cur;
+      const worldY = (cy - pan.y) / cur;
+      // Dopo lo zoom quel punto deve restare sotto il cursore
+      setPan({ x: cx - worldX * next, y: cy - worldY * next });
       return next;
     });
   }
 
-  // Drag to pan (solo quando zoomato)
+  // Drag to pan
   function handleMouseDown(e: React.MouseEvent) {
-    if (!isZoomed) return;
     dragging.current = true;
     dragStart.current = { mx: e.clientX, my: e.clientY, px: pan.x, py: pan.y };
   }
@@ -272,11 +280,10 @@ function MatchDetail({ match, name, flag, onClose }: {
 function GroupsDetail({ sample, teamsById, favoriteTeam }: {
   sample: SampleRun; teamsById: Map<string, Team>; favoriteTeam?: string | null;
 }) {
-  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [activeGroup, setActiveGroup] = useState<string>('A');
   const name = (id: string) => teamsById.get(id)?.name ?? id;
   const flag = (id: string) => teamsById.get(id)?.flag ?? '';
 
-  // Calcola le migliori terze: le squadre con idx === 2 in ogni girone, ordinate per punti/DR
   const thirdPlaces = GROUPS.map(g => {
     const s = sample.groupStandings[g] ?? [];
     return s[2] ? { ...s[2], group: g } : null;
@@ -284,97 +291,104 @@ function GroupsDetail({ sample, teamsById, favoriteTeam }: {
   thirdPlaces.sort((a, b) => b.points - a.points || b.goalDifference - a.goalDifference || b.goalsFor - a.goalsFor);
   const qualifiedThirds = new Set(thirdPlaces.slice(0, 8).map(t => t.teamId));
 
+  const standings = sample.groupStandings[activeGroup] ?? [];
+  const matches   = sample.groupResults[activeGroup] ?? [];
+  const maxPts    = Math.max(...standings.map(s => s.points), 1);
+
   return (
-    <div className="rd2-groups-root">
-      {GROUPS.map(g => {
-        const standings = sample.groupStandings[g] ?? [];
-        const matches   = sample.groupResults[g] ?? [];
-        const isOpen    = openGroup === g;
+    <div className="gd-root">
+      {/* Selettore gironi */}
+      <div className="gd-selector">
+        {GROUPS.map(g => {
+          const hasItaly = (sample.groupStandings[g] ?? []).some(s => s.teamId === 'ITA');
+          return (
+            <button
+              key={g}
+              className={`gd-sel-btn ${g === activeGroup ? 'on' : ''} ${hasItaly ? 'italy' : ''}`}
+              onClick={() => setActiveGroup(g)}
+            >
+              {g}
+            </button>
+          );
+        })}
+      </div>
 
-        return (
-          <div key={g} className={`rd2-group ${isOpen ? 'rd2-group--open' : ''}`}>
-            {/* Header girone: label + header colonne + toggle */}
-            <div className="rd2-group-head" onClick={() => setOpenGroup(isOpen ? null : g)}>
-              <span className="rd2-group-label">Girone {g}</span>
-              <div className="rd2-group-standings">
-                {/* Header colonne */}
-                <div className="rd2-standings-header">
-                  <span className="rd2-sh-name">Squadra</span>
-                  <span className="rd2-sh-num">Pt</span>
-                  <span className="rd2-sh-num">GF</span>
-                  <span className="rd2-sh-num">GS</span>
-                  <span className="rd2-sh-num">DR</span>
+      {/* Contenuto girone selezionato */}
+      <div className="gd-body" key={activeGroup}>
+
+        {/* Classifica */}
+        <div className="gd-standings">
+          <div className="gd-standings-title">Classifica · Girone {activeGroup}</div>
+          {standings.map((s, idx) => {
+            const t = teamsById.get(s.teamId);
+            const isQual  = idx < 2 || qualifiedThirds.has(s.teamId);
+            const isThird = idx === 2 && qualifiedThirds.has(s.teamId);
+            const isFav   = s.teamId === favoriteTeam;
+            const barPct  = (s.points / maxPts) * 100;
+            return (
+              <div key={s.teamId} className={`gd-row ${isQual ? (isThird ? 'third' : 'qual') : ''} ${isFav ? 'fav' : ''}`}>
+                <span className="gd-pos">{idx + 1}</span>
+                <span className={`fi fi-${t?.flag ?? flag(s.teamId)} gd-flag`} aria-hidden />
+                <span className="gd-name">{t?.name ?? s.teamId}</span>
+                <div className="gd-bar-wrap">
+                  <div className="gd-bar" style={{ width: `${barPct}%` }} />
                 </div>
-                {standings.map((s, idx) => {
-                  const t = teamsById.get(s.teamId);
-                  const isQualified = idx < 2 || qualifiedThirds.has(s.teamId);
-                  const isFav = s.teamId === favoriteTeam;
-                  const isThird = idx === 2 && qualifiedThirds.has(s.teamId);
-                  return (
-                    <div key={s.teamId}
-                      className={`rd2-standing-row ${isQualified ? 'qualified' : ''} ${isThird ? 'third' : ''} ${isFav ? 'fav' : ''}`}>
-                      <span className="rd2-st-pos">{idx + 1}</span>
-                      <span className={`fi fi-${t?.flag ?? flag(s.teamId)} rd2-st-flag`} aria-hidden />
-                      <span className="rd2-st-name">{t?.name ?? s.teamId}</span>
-                      <span className="rd2-st-pts">{s.points}</span>
-                      <span className="rd2-st-gf">{s.goalsFor}</span>
-                      <span className="rd2-st-gs">{s.goalsAgainst}</span>
-                      <span className={`rd2-st-dr ${s.goalDifference > 0 ? 'pos' : s.goalDifference < 0 ? 'neg' : ''}`}>
-                        {s.goalDifference > 0 ? '+' : ''}{s.goalDifference}
-                      </span>
-                    </div>
-                  );
-                })}
+                <span className="gd-pts">{s.points}</span>
+                <span className="gd-record">{s.goalsFor}:{s.goalsAgainst}</span>
+                <span className={`gd-dr ${s.goalDifference > 0 ? 'pos' : s.goalDifference < 0 ? 'neg' : ''}`}>
+                  {s.goalDifference > 0 ? '+' : ''}{s.goalDifference}
+                </span>
+                {isQual && (
+                  <span className={`gd-qual-badge ${isThird ? 'third' : ''}`}>
+                    {isThird ? '3ª ✓' : '✓'}
+                  </span>
+                )}
               </div>
-              <button className="rd2-group-toggle" aria-label={isOpen ? 'Chiudi' : 'Vedi partite'}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                  style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.22s' }}>
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-                {isOpen ? 'Chiudi' : 'Partite'}
-              </button>
-            </div>
-
-            {/* Partite espandibili */}
-            {isOpen && (
-              <div className="rd2-matches">
-                {matches.map((m, i) => {
-                  const ph = m.winProbHome ?? 0.5;
-                  const hw = m.homeGoals > m.awayGoals;
-                  const aw = m.awayGoals > m.homeGoals;
-                  const ht = teamsById.get(m.homeId);
-                  const at = teamsById.get(m.awayId);
-                  return (
-                    <div key={i} className="rd2-match">
-                      {/* Casa */}
-                      <div className={`rd2-mt-home ${hw ? 'won' : ''} ${m.homeId === favoriteTeam ? 'fav' : ''}`}>
-                        <span className={`fi fi-${ht?.flag ?? flag(m.homeId)} rd2-match-flag`} aria-hidden />
-                        <span className="rd2-mt-name">{ht?.name ?? name(m.homeId)}</span>
-                      </div>
-                      {/* Probabilità casa */}
-                      <span className="rd2-mt-prob">{pctInt(ph)}</span>
-                      {/* Punteggio */}
-                      <div className={`rd2-mt-score ${hw ? 'hw' : aw ? 'aw' : ''}`}>
-                        {m.homeGoals}–{m.awayGoals}
-                        {m.penalties && <span className="rd2-match-rig">rig</span>}
-                      </div>
-                      {/* Probabilità away */}
-                      <span className="rd2-mt-prob rd2-mt-prob--r">{pctInt(1 - ph)}</span>
-                      {/* Away */}
-                      <div className={`rd2-mt-away ${aw ? 'won' : ''} ${m.awayId === favoriteTeam ? 'fav' : ''}`}>
-                        <span className={`fi fi-${at?.flag ?? flag(m.awayId)} rd2-match-flag`} aria-hidden />
-                        <span className="rd2-mt-name">{at?.name ?? name(m.awayId)}</span>
-                      </div>
-                      {/* Quota su riga sotto */}
-                      <span className="rd2-mt-quota">@{oddsFromProb(ph)} · @{oddsFromProb(1 - ph)}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            );
+          })}
+          <div className="gd-standings-legend">
+            <span className="gd-leg gd-leg--qual">Qualificate (1ª-2ª)</span>
+            <span className="gd-leg gd-leg--third">Migliore terza</span>
           </div>
-        );
-      })}
+        </div>
+
+        {/* Partite */}
+        <div className="gd-matches">
+          <div className="gd-matches-title">Partite · Girone {activeGroup}</div>
+          {matches.map((m, i) => {
+            const ph  = m.winProbHome ?? 0.5;
+            const hw  = m.homeGoals > m.awayGoals;
+            const aw  = m.awayGoals > m.homeGoals;
+            const ht  = teamsById.get(m.homeId);
+            const at  = teamsById.get(m.awayId);
+            return (
+              <div key={i} className="gd-match">
+                <div className={`gd-team gd-team--home ${hw ? 'won' : aw ? 'lost' : ''} ${m.homeId === favoriteTeam ? 'fav' : ''}`}>
+                  <span className={`fi fi-${ht?.flag ?? flag(m.homeId)} gd-mflag`} aria-hidden />
+                  <span className="gd-mname">{ht?.name ?? name(m.homeId)}</span>
+                </div>
+                <div className="gd-score-block">
+                  <div className={`gd-score ${hw ? 'hw' : aw ? 'aw' : 'draw'}`}>
+                    <span className={hw ? 'bold' : ''}>{m.homeGoals}</span>
+                    <span className="gd-score-sep">–</span>
+                    <span className={aw ? 'bold' : ''}>{m.awayGoals}</span>
+                    {m.penalties && <span className="gd-pen">rig</span>}
+                  </div>
+                  <div className="gd-probbar">
+                    <div className="gd-probbar-home" style={{ width: `${ph * 100}%` }} />
+                  </div>
+                  <div className="gd-odds">{oddsFromProb(ph)} · {oddsFromProb(1-ph)}</div>
+                </div>
+                <div className={`gd-team gd-team--away ${aw ? 'won' : hw ? 'lost' : ''} ${m.awayId === favoriteTeam ? 'fav' : ''}`}>
+                  <span className="gd-mname">{at?.name ?? name(m.awayId)}</span>
+                  <span className={`fi fi-${at?.flag ?? flag(m.awayId)} gd-mflag`} aria-hidden />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+      </div>
     </div>
   );
 }

@@ -81,9 +81,9 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
   const [paused,  setPaused]  = useState(false);
   const [muted,   setMuted]   = useState(false);
 
-  const speedRef  = useRef(speed);  speedRef.current  = speed;
-  const pausedRef = useRef(paused); pausedRef.current = paused;
-  const timers    = useRef<number[]>([]);
+  const speedRef      = useRef(speed);  speedRef.current  = speed;
+  const pausedRef     = useRef(paused); pausedRef.current = paused;
+  const timers = useRef<number[]>([]);
   const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   const after = (ms: number, fn: () => void) => {
     if (pausedRef.current) return;
@@ -169,7 +169,8 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
       }
 
     } else if (stage === 'groups' && thirdsState === 'done') {
-      // In attesa del timer diretto sopra — non fare nulla qui.
+      // Il timer diretto (window.setTimeout) nel ramo 'showing' gestisce il passaggio al KO.
+      // Non fare nulla qui — evita di avviare un secondo timer.
 
     } else if (stage === 'ko') {
       cinemaAudio.setTension(tensionForRound(koRound));
@@ -232,21 +233,26 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
     clearTimers();
     const c = Math.max(0, Math.min(TIMELINE.length - 1, idx));
     if (c === 0) {
+      // Kickoff: tutto azzerato
       setStage('kickoff'); setThirdsState('hidden'); setThirdsRevealed(0);
+      setActiveGroup(0); setGroupRevealed(0);
     } else if (c === 1) {
-      // Mostra tutti i gironi completi, nessun overlay
+      // Gironi: tutti i risultati visibili, terze NON evidenziate.
+      // Play → parte il calcolo migliori terze (overlay 'showing').
       setStage('groups');
       setActiveGroup(GROUPS.length - 1);
       setGroupRevealed(groupMatches[GROUPS[GROUPS.length - 1]]?.length ?? 0);
-      setThirdsState('done'); setThirdsRevealed(thirds.length);
+      setThirdsState('hidden'); setThirdsRevealed(0);
     } else if (c === TIMELINE.length - 1) {
       setStage('champion');
     } else {
+      // Round KO: mostra le squadre già posizionate (round attuale in 'appear', 0 rivelati).
+      // Play → parte la rivelazione partita per partita.
       const r = c - 2;
       setStage('ko'); setThirdsState('done');
       setActiveGroup(GROUPS.length - 1);
       setGroupRevealed(groupMatches[GROUPS[GROUPS.length - 1]]?.length ?? 0);
-      setKoRound(r); setKoPhase('results'); setKoRevealed(rounds[r]?.matches.length ?? 0);
+      setKoRound(r); setKoPhase('appear'); setKoRevealed(0);
       cinemaAudio.setTension(tensionForRound(r));
     }
     setPaused(true);
@@ -605,41 +611,34 @@ function BracketScene({
   };
 
   // ── Camera ──
-  // Durante i sedicesimi (r=0) NON zoommare: mostra tutto il bracket
-  // così il vincitore compare subito nello slot degli ottavi sullo stesso schermo.
-  // Lo zoom scatta solo quando si entra negli ottavi (activeRound=1+).
+  // Approccio: transform-origin top-left, translate assoluto in px viewport.
+  // tx = vpW/2 - focusX * scale  → il punto focusX del world finisce al centro orizzontale
+  // ty = vpH/2 - focusY * scale  → il punto focusY del world finisce al centro verticale
   const fit = vp.w && vp.h
     ? Math.min((vp.w * 0.96) / worldW, (vp.h * 0.94) / worldH)
     : 0.5;
-  // Zoom: sedicesimi=fit completo, poi crescita moderata verso la finale.
   const rel = activeRound === 0 ? 1.0
             : activeRound === 1 ? 1.15
             : activeRound === 2 ? 1.55
             : activeRound === 3 ? 1.9
-            : 1.9;  // finale: stesso zoom delle semifinali, non più grande
+            : 1.9;
   const scale = fit * rel;
 
-  // Camera centrata sul round attivo.
-  // Con transform-origin:center e scale(s) translateX(dx):
-  // il translateX è nel sistema di coordinate post-scale (cioè in pixel viewport / s).
-  // Vogliamo che focusX (world coords) finisca al centro del viewport.
-  // Centro viewport in world coords = worldW/2 (perché transform-origin=center).
-  // Shift necessario = worldW/2 - focusX, ma in post-scale = shift/scale non serve
-  // perché translateX con scale già applicata si muove di dx*scale px sullo schermo.
-  // Formula corretta: translateX((worldW/2 - focusX)px) — il browser applica scale prima.
   const activeXs = placed.filter((p) => p.roundIdx === activeRound).map((p) => p.cx);
   const focusX   = activeXs.length ? activeXs.reduce((a, b) => a + b, 0) / activeXs.length : worldW / 2;
-  // Con transform-origin:center e transform:scale(s) translateX(dx):
-  // il viewport vede il punto (worldW/2 + dx) del world centrato sullo schermo.
-  // Vogliamo che focusX sia al centro → dx = worldW/2 - focusX.
-  // Ma translateX in questo ordine è nel sistema post-origin (world coords) → dx diretto.
-  const shiftX = worldW / 2 - focusX;
+  const focusY   = worldH / 2;
+
+  const tx = vp.w ? vp.w / 2 - focusX * scale : 0;
+  const ty = vp.h ? vp.h / 2 - focusY * scale : 0;
+
   const camStyle: React.CSSProperties = {
+    position: 'absolute',
     width: worldW, height: worldH,
-    // scale prima, poi translate: il translate è in world-coords (pre-scale),
-    // quindi usiamo l'ordine inverso: translate prima, scale dopo.
-    transform: `translateX(${shiftX}px) scale(${scale})`,
-    transformOrigin: 'center center',
+    left: 0, top: 0,
+    transform: `translate(${tx}px, ${ty}px) scale(${scale})`,
+    transformOrigin: 'top left',
+    transition: 'transform 1s var(--ease-out)',
+    willChange: 'transform',
   };
 
   return (
