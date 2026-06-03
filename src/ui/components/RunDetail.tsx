@@ -82,9 +82,20 @@ export function RunDetail({ sample, teamsById, favoriteTeam, onReplay, numRuns }
 
       {/* ── Contenuto ── */}
       <div className="rd2-content">
-        {view === 'bracket'
-          ? <CompactBracket sample={sample} name={name} flag={flag} favoriteTeam={favoriteTeam} />
-          : <GroupsDetail   sample={sample} teamsById={teamsById} favoriteTeam={favoriteTeam} />}
+        {view === 'bracket' ? (
+          <>
+            {/* Desktop: bracket grafico */}
+            <div className="rd-bracket-desktop">
+              <CompactBracket sample={sample} name={name} flag={flag} favoriteTeam={favoriteTeam} />
+            </div>
+            {/* Mobile: lista round */}
+            <div className="rd-bracket-mobile">
+              <BracketRoundList sample={sample} name={name} flag={flag} favoriteTeam={favoriteTeam} />
+            </div>
+          </>
+        ) : (
+          <GroupsDetail sample={sample} teamsById={teamsById} favoriteTeam={favoriteTeam} />
+        )}
       </div>
     </div>
   );
@@ -92,7 +103,73 @@ export function RunDetail({ sample, teamsById, favoriteTeam, onReplay, numRuns }
 
 /* ────────────────── BRACKET ────────────────── */
 const MAX_ZOOM = 2.2;
-const ZOOM_STEP = 1.25;       // fattore per ogni click +/−
+const ZOOM_STEP = 1.25;
+
+const ROUND_LABELS: Record<string, string> = {
+  'Round of 32': 'Sedicesimi', 'Round of 16': 'Ottavi',
+  'Quarter-finals': 'Quarti', 'Semi-finals': 'Semifinali',
+  'Semifinali': 'Semifinali', 'Final': 'Finale', 'Finale': 'Finale',
+};
+
+/* Vista lista per mobile: un round alla volta */
+function BracketRoundList({ sample, name, flag, favoriteTeam }: {
+  sample: SampleRun; name: (id: string) => string; flag: (id: string) => string; favoriteTeam?: string | null;
+}) {
+  const rounds = sample.knockoutRounds;
+  const [activeRound, setActiveRound] = useState(0);
+  const [sel, setSel] = useState<number | null>(null);
+  const round = rounds[activeRound];
+  const selMatch = sel !== null ? round?.matches[sel] : null;
+
+  return (
+    <div className="brl-root">
+      {/* Selettore round */}
+      <div className="brl-tabs">
+        {rounds.map((r, i) => (
+          <button
+            key={i}
+            className={`brl-tab ${i === activeRound ? 'on' : ''}`}
+            onClick={() => { setActiveRound(i); setSel(null); }}
+          >
+            {ROUND_LABELS[r.name] ?? r.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Lista partite del round */}
+      <div className="brl-matches">
+        {round?.matches.map((m, i) => {
+          const homeWon = m.winnerId === m.homeId;
+          const awayWon = m.winnerId === m.awayId;
+          const isSel = sel === i;
+          return (
+            <button
+              key={i}
+              className={`brl-match ${isSel ? 'sel' : ''}`}
+              onClick={() => setSel(isSel ? null : i)}
+            >
+              <div className={`brl-team ${homeWon ? 'won' : 'lost'} ${m.homeId === favoriteTeam ? 'fav' : ''}`}>
+                <span className={`fi fi-${flag(m.homeId)} brl-flag`} aria-hidden />
+                <span className="brl-name">{name(m.homeId)}</span>
+                <span className="brl-goal">{m.homeGoals}</span>
+              </div>
+              <div className="brl-divider" />
+              <div className={`brl-team ${awayWon ? 'won' : 'lost'} ${m.awayId === favoriteTeam ? 'fav' : ''}`}>
+                <span className={`fi fi-${flag(m.awayId)} brl-flag`} aria-hidden />
+                <span className="brl-name">{name(m.awayId)}</span>
+                <span className="brl-goal">{m.awayGoals}</span>
+              </div>
+              {m.penalties && <span className="brl-pen">rigori</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Dettaglio partita selezionata */}
+      {selMatch && <MatchDetail match={selMatch} name={name} flag={flag} onClose={() => setSel(null)} />}
+    </div>
+  );
+}
 
 function CompactBracket({ sample, name, flag, favoriteTeam }: {
   sample: SampleRun; name: (id: string) => string; flag: (id: string) => string; favoriteTeam?: string | null;

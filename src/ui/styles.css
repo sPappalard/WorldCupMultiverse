@@ -3745,6 +3745,66 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
   background: var(--surface-2); padding: 16px; overflow: hidden;
 }
 
+/* Desktop: mostra bracket grafico, nasconde lista round */
+.rd-bracket-desktop { display: block; }
+.rd-bracket-mobile  { display: none; }
+
+/* Mobile (≤600px): nasconde bracket grafico, mostra lista round */
+@media (max-width: 600px) {
+  .rd-bracket-desktop { display: none; }
+  .rd-bracket-mobile  { display: block; }
+}
+
+/* ── BRACKET LISTA ROUND (mobile) ── */
+.brl-root { display: flex; flex-direction: column; gap: 12px; }
+
+/* Selettore round: scroll orizzontale se non ci stanno tutti */
+.brl-tabs {
+  display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.brl-tabs::-webkit-scrollbar { display: none; }
+.brl-tab {
+  flex: none; padding: 7px 14px; border-radius: var(--r-pill);
+  border: 1px solid var(--border); background: var(--surface-3);
+  color: var(--text-soft); font: inherit; font-size: 0.82rem; font-weight: 700;
+  cursor: pointer; white-space: nowrap; transition: all 0.13s;
+}
+.brl-tab.on { background: var(--green-dim); border-color: var(--green); color: var(--green-bright); }
+
+/* Lista partite */
+.brl-matches { display: flex; flex-direction: column; gap: 8px; }
+.brl-match {
+  position: relative; width: 100%; display: flex; flex-direction: column;
+  background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: var(--r-md); overflow: hidden; cursor: pointer;
+  font: inherit; text-align: left; transition: border-color 0.14s;
+}
+.brl-match:hover { border-color: var(--border-strong); }
+.brl-match.sel { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan-dim); }
+
+.brl-team {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; min-width: 0;
+}
+.brl-flag { width: 28px !important; height: 20px !important; border-radius: 2px; flex: none; }
+.brl-name { flex: 1; font-size: 0.95rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.brl-goal { font-size: 1.1rem; font-weight: 900; font-variant-numeric: tabular-nums; flex: none; min-width: 20px; text-align: right; }
+
+.brl-team.won .brl-name { color: var(--green-bright); font-weight: 800; }
+.brl-team.won .brl-goal { color: var(--green-bright); }
+.brl-team.lost .brl-name { color: var(--muted); }
+.brl-team.lost .brl-goal { color: var(--muted); }
+.brl-team.fav .brl-name  { color: var(--fav); }
+
+.brl-divider { height: 1px; background: var(--border); flex: none; }
+.brl-pen {
+  position: absolute; top: 50%; right: 12px; transform: translateY(-50%);
+  font-size: 0.6rem; font-weight: 800; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--amber);
+  background: var(--surface-2); padding: 1px 6px; border-radius: var(--r-pill);
+}
+
 /* ── Gironi: layout card-list ── */
 /* ── GIRONI PREMIUM (GroupsDetail) ── */
 .gd-root { display: flex; flex-direction: column; gap: 12px; }
