@@ -2246,6 +2246,69 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
 /* howto: colonna 2, riga 3 */
 .bento-card:nth-child(6) { grid-column: 2; grid-row: 3; }
 
+/* ═══════════════════════════════════════════════════════════════════
+   HOME — RESPONSIVE MOBILE
+   ≤760px: la home diventa scrollabile, le card si impilano.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 760px) {
+  /* Padding laterale ridotto per dare respiro alle card */
+  .app { padding: 10px; }
+
+  /* La home non è più a tutto-schermo fisso: scorre verticalmente */
+  .app.home {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  .home-brand-ball { font-size: 1.8rem; }
+
+  /* Header: brand sopra, azioni sotto a tutta larghezza */
+  .home-header {
+    flex-direction: column; align-items: stretch; gap: 12px;
+    padding: 14px 2px 16px;
+  }
+  .home-brand h1, .home-brand-name { font-size: 1.6rem; }
+  .home-header-actions { width: 100%; justify-content: flex-start; }
+  .home-newsim-btn { flex: 1; justify-content: center; display: flex; align-items: center; gap: 8px; }
+
+  /* Bento: 2 colonne, righe automatiche, card impilate e leggibili */
+  .bento {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: none;
+    gap: 12px;
+    flex: none;
+  }
+  /* Annulla il posizionamento esplicito desktop: tutto torna a flusso naturale */
+  .bento-card:nth-child(1),
+  .bento-card:nth-child(2),
+  .bento-card:nth-child(3),
+  .bento-card:nth-child(4),
+  .bento-card:nth-child(5),
+  .bento-card:nth-child(6) {
+    grid-column: auto; grid-row: auto; min-height: 150px;
+  }
+  /* Le card "grandi" (results, italy) occupano la riga intera e sono più alte */
+  .bento--lg { grid-column: 1 / -1; min-height: 200px; }
+  .bento--lg .bento-title { font-size: 1.5rem; }
+  .bento--lg .bento-blurb { font-size: 0.92rem; }
+
+  /* Testi leggermente più grandi per leggibilità su mobile */
+  .bento-title { font-size: 1.1rem; }
+  .bento-blurb { font-size: 0.84rem; -webkit-line-clamp: 2; }
+}
+
+/* ≤440px: una sola colonna */
+@media (max-width: 440px) {
+  .bento { grid-template-columns: 1fr; }
+  .bento--lg { min-height: 180px; }
+  .bento-card:nth-child(1),
+  .bento-card:nth-child(2),
+  .bento-card:nth-child(3),
+  .bento-card:nth-child(4),
+  .bento-card:nth-child(5),
+  .bento-card:nth-child(6) { min-height: 130px; }
+}
+
 /* Tema slate (come funziona) */
 .hc--slate {
   background: var(--surface-3);
@@ -3263,12 +3326,54 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
 .mu-opp-pct.und { color: var(--cyan); min-width: 34px; }
 
 @media (max-width: 600px) {
-  .mu2-selectors { grid-template-columns: 1fr; }
-  .mu2-side { border-right: none; border-left: none; border-bottom: 1px solid var(--border); }
-  .mu2-side--right { border-left: none; }
+  /* Layout compatto: A | B affiancati, bottoni sotto a tutta larghezza */
+  .mu2-selectors {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+  }
+  .mu2-side--left {
+    grid-column: 1; grid-row: 1;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 10px 8px; align-items: flex-start;
+  }
+  .mu2-side--right {
+    grid-column: 2; grid-row: 1;
+    border-left: none; border-bottom: 1px solid var(--border);
+    padding: 10px 10px 8px; align-items: flex-start;
+  }
+  /* Bottoni contesto: riga 2 intera */
+  .mu2-center {
+    grid-column: 1 / -1; grid-row: 2;
+    flex-direction: row; padding: 8px 10px; gap: 8px;
+  }
+  .mu2-vs { display: none; }
+  .mu2-ctx-btns { flex-direction: row; flex: 1; gap: 8px; }
+  .mu2-ctx-btn { flex: 1; padding: 9px 4px; min-width: 0; overflow: hidden; }
+  .mu2-ctx-btn-label { font-size: 0.76rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mu2-ctx-btn-sub { display: none; }
+
+  /* Nasconde nome grande ed elo (già nel select) */
+  .mu2-team-name { display: none; }
+  .mu2-team-elo  { display: none; }
+  /* vs tutte: rimane visibile, piccolo, sotto il select */
+  .mu2-all-btn { margin-top: 6px; font-size: 0.7rem; padding: 3px 8px; }
+  .mu2-side--right .mu2-all-btn { align-self: flex-start; }
+
+  /* Bandiera squadra B a sinistra come A */
+  .mu2-side--right .mu2-side-top { flex-direction: row !important; }
+  .mu2-side--right .mu2-flag { order: -1; }
+
+  /* Frecce nascoste su mobile: usa solo il select */
+  .mu2-side-top { width: 100%; }
+  .mu2-arrow { display: none; }
+  .mu2-flag { width: 28px !important; height: 20px !important; }
+  .mu2-select { font-size: 0.78rem; padding: 5px 4px; flex: 1; min-width: 0; }
+  .mu2-side-arrows { gap: 4px; }
+
+  /* Percentuali e griglia risultati */
   .mu2-scores-grid { grid-template-columns: repeat(2, 1fr); }
-  .mu2-wdl-pct { font-size: 1.5rem; }
-  .mu2-team-name { font-size: 1.2rem; }
+  .mu2-wdl-pct { font-size: 1.6rem; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -3466,10 +3571,34 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
 .tp2-detail::-webkit-scrollbar { width: 3px; }
 .tp2-detail::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-@media (max-width: 860px) {
+@media (max-width: 860px) and (min-width: 701px) {
   .tp2-body--split { flex-direction: column; }
   .tp2-body--split .tp2-list { width: 100%; max-height: 40vh; }
   .tp2-detail { max-height: none; }
+}
+
+/* ── MOBILE: dettaglio squadra come bottom-sheet a schermo intero ── */
+@media (max-width: 700px) {
+  /* La lista resta visibile a tutta larghezza; il dettaglio diventa un overlay */
+  .tp2-body--split { flex-direction: column; }
+  .tp2-body--split .tp2-list { width: 100%; max-height: none; }
+  .tp2-detail {
+    position: fixed; inset: 0; z-index: 1300;
+    max-height: none; height: 100dvh; width: 100%;
+    border-radius: 0; border: none;
+    overflow-y: auto;
+    animation: tpSheetIn 0.28s var(--ease-out) both;
+    /* Lascia spazio in fondo per evitare che l'ultimo contenuto sia coperto */
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  @keyframes tpSheetIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+  /* Header del dettaglio sticky: il bottone Chiudi resta sempre accessibile */
+  .tp2-detail .tpd-header {
+    position: sticky; top: 0; z-index: 2;
+    background: var(--surface-2); backdrop-filter: blur(8px);
+  }
+  /* Bottone chiudi più grande e visibile su mobile */
+  .tp2-detail .tpd-close { width: 38px; height: 38px; }
 }
 
 /* ── Card modalità griglia ── */

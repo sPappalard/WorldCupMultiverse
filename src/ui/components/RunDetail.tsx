@@ -111,6 +111,9 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
   const vpRef  = useRef<HTMLDivElement>(null);
   const [autoScale, setAutoScale] = useState(1);
   const [vpW, setVpW] = useState(0);
+  // Scala minima leggibile: su schermi stretti il fit-to-width renderebbe il
+  // bracket illeggibile, quindi imponiamo un minimo e si naviga col drag.
+  const MIN_READABLE = 0.62;
 
   useEffect(() => {
     const el = vpRef.current;
@@ -124,15 +127,19 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
     return () => ro.disconnect();
   }, [worldW]);
 
-  const scale = userZoom ?? autoScale;
-  const isZoomed = userZoom !== null && userZoom > autoScale + 0.01;
+  // Su mobile il fit puro è troppo piccolo: parti da una scala leggibile.
+  const baseScale = Math.max(autoScale, MIN_READABLE);
+  const scale = userZoom ?? baseScale;
+  // "Navigabile" (drag attivo) se il contenuto eccede il viewport in larghezza.
+  const overflowsX = worldW * scale > vpW + 1;
+  const isZoomed = (userZoom !== null && userZoom > baseScale + 0.01) || (userZoom === null && overflowsX);
 
   // Limita il pan: il contenuto non può uscire oltre i bordi del viewport.
-  // Il viewport ha larghezza = vpW e altezza = worldH * autoScale (fissa, vista completa).
+  // Il viewport ha larghezza = vpW e altezza = worldH * baseScale (fissa, vista completa).
   function clampPan(p: { x: number; y: number }, s: number) {
     const scaledW = worldW * s;
     const scaledH = worldH * s;
-    const vpH = worldH * autoScale;
+    const vpH = worldH * baseScale;
     const minX = Math.min(0, vpW - scaledW);
     const minY = Math.min(0, vpH - scaledH);
     return {
@@ -144,12 +151,12 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
   // Zoom verso il centro del viewport
   function zoomBy(factor: number) {
     setUserZoom(z => {
-      const cur = z ?? autoScale;
-      const next = Math.max(autoScale, Math.min(MAX_ZOOM, cur * factor));
-      if (Math.abs(next - autoScale) < 0.01) { setPan({ x: 0, y: 0 }); return null; }
+      const cur = z ?? baseScale;
+      const next = Math.max(baseScale, Math.min(MAX_ZOOM, cur * factor));
+      if (Math.abs(next - baseScale) < 0.01) { setPan(p => clampPan(p, baseScale)); return null; }
       // Mantieni il centro del viewport fisso durante lo zoom
       const cx = vpW / 2;
-      const cy = (worldH * autoScale) / 2;
+      const cy = (worldH * baseScale) / 2;
       setPan(p => {
         const worldX = (cx - p.x) / cur;
         const worldY = (cy - p.y) / cur;
@@ -189,9 +196,9 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
             : 'Usa + per ingrandire · clicca una partita per i dettagli'}
         </span>
         <div className="rd-bracket-ctrl-group">
-          <button className="rd-bracket-ctrl" onClick={zoomOut} disabled={!isZoomed} title="Riduci" aria-label="Riduci">−</button>
+          <button className="rd-bracket-ctrl" onClick={zoomOut} disabled={scale <= baseScale + 0.01} title="Riduci" aria-label="Riduci">−</button>
           <button className="rd-bracket-ctrl" onClick={zoomIn} disabled={scale >= MAX_ZOOM - 0.01} title="Ingrandisci" aria-label="Ingrandisci">+</button>
-          {isZoomed && <button className="rd2-zoom-reset" onClick={resetView}>Reset</button>}
+          {(userZoom !== null && userZoom > baseScale + 0.01) && <button className="rd2-zoom-reset" onClick={resetView}>Reset</button>}
         </div>
       </div>
 
@@ -205,7 +212,7 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
         style={{
           // Altezza fissa alla vista completa: lo zoom espande il contenuto
           // dentro un viewport stabile, così il pan ha senso su entrambi gli assi.
-          height: worldH * autoScale + 16,
+          height: worldH * baseScale + 16,
           overflow: 'hidden',
           userSelect: 'none',
           cursor: isZoomed ? (dragging.current ? 'grabbing' : 'grab') : 'default',
