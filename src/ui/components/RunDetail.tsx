@@ -92,15 +92,17 @@ export function RunDetail({ sample, teamsById, favoriteTeam, onReplay, numRuns }
 
 /* ────────────────── BRACKET ────────────────── */
 const MAX_ZOOM = 2.2;
+const ZOOM_STEP = 1.25;       // fattore per ogni click +/−
 
 function CompactBracket({ sample, name, flag, favoriteTeam }: {
   sample: SampleRun; name: (id: string) => string; flag: (id: string) => string; favoriteTeam?: string | null;
 }) {
   const rounds = sample.knockoutRounds;
   const [sel, setSel]           = useState<{ r: number; m: number } | null>(null);
-  const [userZoom, setUserZoom] = useState<number | null>(null); // null = auto-fit
+  const [userZoom, setUserZoom] = useState<number | null>(null); // null = auto-fit (vista completa)
   const [pan, setPan]           = useState({ x: 0, y: 0 });
   const dragging                = useRef(false);
+  const moved                   = useRef(false); // distingue click da trascinamento
   const dragStart               = useRef({ mx: 0, my: 0, px: 0, py: 0 });
 
   const selMatch = sel ? rounds[sel.r]?.matches[sel.m] : null;
@@ -108,6 +110,7 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
   const { placed, worldW, worldH } = layout;
   const vpRef  = useRef<HTMLDivElement>(null);
   const [autoScale, setAutoScale] = useState(1);
+  const [vpW, setVpW] = useState(0);
 
   useEffect(() => {
     const el = vpRef.current;
@@ -115,47 +118,62 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
     const ro = new ResizeObserver(([e]) => {
       const fitScale = Math.min(1.4, (e.contentRect.width - 16) / worldW);
       setAutoScale(fitScale);
+      setVpW(e.contentRect.width);
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, [worldW]);
 
   const scale = userZoom ?? autoScale;
-  const isZoomed = userZoom !== null && userZoom > autoScale + 0.05;
+  const isZoomed = userZoom !== null && userZoom > autoScale + 0.01;
 
-  // Zoom con rotella — verso il cursore, non verso top-left
-  function handleWheel(e: React.WheelEvent) {
-    e.preventDefault();
-    const factor = e.deltaY > 0 ? 0.92 : 1.09;
-    const el = vpRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const cx = e.clientX - rect.left; // cursore relativo al viewport
-    const cy = e.clientY - rect.top;
+  // Limita il pan: il contenuto non può uscire oltre i bordi del viewport.
+  // Il viewport ha larghezza = vpW e altezza = worldH * autoScale (fissa, vista completa).
+  function clampPan(p: { x: number; y: number }, s: number) {
+    const scaledW = worldW * s;
+    const scaledH = worldH * s;
+    const vpH = worldH * autoScale;
+    const minX = Math.min(0, vpW - scaledW);
+    const minY = Math.min(0, vpH - scaledH);
+    return {
+      x: Math.max(minX, Math.min(0, p.x)),
+      y: Math.max(minY, Math.min(0, p.y)),
+    };
+  }
+
+  // Zoom verso il centro del viewport
+  function zoomBy(factor: number) {
     setUserZoom(z => {
       const cur = z ?? autoScale;
       const next = Math.max(autoScale, Math.min(MAX_ZOOM, cur * factor));
-      if (Math.abs(next - autoScale) < 0.05) { setPan({ x: 0, y: 0 }); return null; }
-      // Punto nel mondo sotto il cursore prima dello zoom
-      const worldX = (cx - pan.x) / cur;
-      const worldY = (cy - pan.y) / cur;
-      // Dopo lo zoom quel punto deve restare sotto il cursore
-      setPan({ x: cx - worldX * next, y: cy - worldY * next });
+      if (Math.abs(next - autoScale) < 0.01) { setPan({ x: 0, y: 0 }); return null; }
+      // Mantieni il centro del viewport fisso durante lo zoom
+      const cx = vpW / 2;
+      const cy = (worldH * autoScale) / 2;
+      setPan(p => {
+        const worldX = (cx - p.x) / cur;
+        const worldY = (cy - p.y) / cur;
+        return clampPan({ x: cx - worldX * next, y: cy - worldY * next }, next);
+      });
       return next;
     });
   }
+  const zoomIn  = () => zoomBy(ZOOM_STEP);
+  const zoomOut = () => zoomBy(1 / ZOOM_STEP);
 
-  // Drag to pan
+  // Click e trascina per spostarsi (solo quando zoomato)
   function handleMouseDown(e: React.MouseEvent) {
+    if (!isZoomed) return;
     dragging.current = true;
+    moved.current = false;
     dragStart.current = { mx: e.clientX, my: e.clientY, px: pan.x, py: pan.y };
   }
   function handleMouseMove(e: React.MouseEvent) {
     if (!dragging.current) return;
-    setPan({
-      x: dragStart.current.px + (e.clientX - dragStart.current.mx),
-      y: dragStart.current.py + (e.clientY - dragStart.current.my),
-    });
+    const dx = e.clientX - dragStart.current.mx;
+    const dy = e.clientY - dragStart.current.my;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved.current = true;
+    setPan(clampPan({ x: dragStart.current.px + dx, y: dragStart.current.py + dy }, scale));
   }
   function handleMouseUp() { dragging.current = false; }
 
@@ -163,26 +181,35 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
 
   return (
     <div className="rd-bracket-wrap">
-      <div className="rd2-zoom-hint">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-        Rotella per ingrandire · trascina per spostarti · clicca una partita per i dettagli
-        {isZoomed && <button className="rd2-zoom-reset" onClick={resetView}>Reset</button>}
+      {/* Controlli zoom manuali */}
+      <div className="rd-bracket-controls">
+        <span className="rd-bracket-hint">
+          {isZoomed
+            ? 'Trascina per spostarti · clicca una partita per i dettagli'
+            : 'Usa + per ingrandire · clicca una partita per i dettagli'}
+        </span>
+        <div className="rd-bracket-ctrl-group">
+          <button className="rd-bracket-ctrl" onClick={zoomOut} disabled={!isZoomed} title="Riduci" aria-label="Riduci">−</button>
+          <button className="rd-bracket-ctrl" onClick={zoomIn} disabled={scale >= MAX_ZOOM - 0.01} title="Ingrandisci" aria-label="Ingrandisci">+</button>
+          {isZoomed && <button className="rd2-zoom-reset" onClick={resetView}>Reset</button>}
+        </div>
       </div>
 
       <div
         className="rd-symbracket-vp"
         ref={vpRef}
-        style={{
-          height: worldH * scale + 24,
-          overflow: 'hidden',
-          cursor: isZoomed ? (dragging.current ? 'grabbing' : 'grab') : 'default',
-          userSelect: 'none',
-        }}
-        onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        style={{
+          // Altezza fissa alla vista completa: lo zoom espande il contenuto
+          // dentro un viewport stabile, così il pan ha senso su entrambi gli assi.
+          height: worldH * autoScale + 16,
+          overflow: 'hidden',
+          userSelect: 'none',
+          cursor: isZoomed ? (dragging.current ? 'grabbing' : 'grab') : 'default',
+        }}
       >
         <div
           className="rd-symbracket-world"
@@ -215,7 +242,7 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
               <button key={`${p.roundIdx}-${p.matchIdx}`}
                 className={`rd-symbox ${isSel ? 'sel' : ''} ${p.side === 'C' ? 'final' : ''}`}
                 style={{ left: p.x, top: p.y, width: CARD_W, height: p.cardH }}
-                onClick={() => { if (!dragging.current) setSel(isSel ? null : { r: p.roundIdx, m: p.matchIdx }); }}>
+                onClick={() => { if (!moved.current) setSel(isSel ? null : { r: p.roundIdx, m: p.matchIdx }); }}>
                 <div className={`rd-side ${homeWon ? 'won' : 'lost'} ${m.homeId === favoriteTeam ? 'fav' : ''}`}>
                   <span className={`fi fi-${flag(m.homeId)} rd2-bracket-flag`} aria-hidden />
                   <span className="rd-side-name">{name(m.homeId)}</span>
@@ -293,7 +320,6 @@ function GroupsDetail({ sample, teamsById, favoriteTeam }: {
 
   const standings = sample.groupStandings[activeGroup] ?? [];
   const matches   = sample.groupResults[activeGroup] ?? [];
-  const maxPts    = Math.max(...standings.map(s => s.points), 1);
 
   return (
     <div className="gd-root">
@@ -319,30 +345,32 @@ function GroupsDetail({ sample, teamsById, favoriteTeam }: {
         {/* Classifica */}
         <div className="gd-standings">
           <div className="gd-standings-title">Classifica · Girone {activeGroup}</div>
+          {/* Intestazione colonne */}
+          <div className="gd-row gd-row--head">
+            <span className="gd-pos" />
+            <span className="gd-flag-h" />
+            <span className="gd-name gd-head-name">Squadra</span>
+            <span className="gd-num gd-head">Pt</span>
+            <span className="gd-num gd-head">GF</span>
+            <span className="gd-num gd-head">GS</span>
+            <span className="gd-num gd-head">DR</span>
+          </div>
           {standings.map((s, idx) => {
             const t = teamsById.get(s.teamId);
             const isQual  = idx < 2 || qualifiedThirds.has(s.teamId);
             const isThird = idx === 2 && qualifiedThirds.has(s.teamId);
             const isFav   = s.teamId === favoriteTeam;
-            const barPct  = (s.points / maxPts) * 100;
             return (
               <div key={s.teamId} className={`gd-row ${isQual ? (isThird ? 'third' : 'qual') : ''} ${isFav ? 'fav' : ''}`}>
                 <span className="gd-pos">{idx + 1}</span>
                 <span className={`fi fi-${t?.flag ?? flag(s.teamId)} gd-flag`} aria-hidden />
                 <span className="gd-name">{t?.name ?? s.teamId}</span>
-                <div className="gd-bar-wrap">
-                  <div className="gd-bar" style={{ width: `${barPct}%` }} />
-                </div>
-                <span className="gd-pts">{s.points}</span>
-                <span className="gd-record">{s.goalsFor}:{s.goalsAgainst}</span>
-                <span className={`gd-dr ${s.goalDifference > 0 ? 'pos' : s.goalDifference < 0 ? 'neg' : ''}`}>
+                <span className="gd-num gd-pts">{s.points}</span>
+                <span className="gd-num">{s.goalsFor}</span>
+                <span className="gd-num">{s.goalsAgainst}</span>
+                <span className={`gd-num gd-dr ${s.goalDifference > 0 ? 'pos' : s.goalDifference < 0 ? 'neg' : ''}`}>
                   {s.goalDifference > 0 ? '+' : ''}{s.goalDifference}
                 </span>
-                {isQual && (
-                  <span className={`gd-qual-badge ${isThird ? 'third' : ''}`}>
-                    {isThird ? '3ª ✓' : '✓'}
-                  </span>
-                )}
               </div>
             );
           })}

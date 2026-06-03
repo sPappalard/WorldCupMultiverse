@@ -3651,10 +3651,11 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
   font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--muted); margin-bottom: 6px;
 }
+/* Griglia classifica: pos | bandiera | nome | Pt | GF | GS | DR — colonne numeriche fisse e allineate */
 .gd-row {
   display: grid;
-  grid-template-columns: 18px 26px 1fr 80px 28px 36px 28px auto;
-  align-items: center; column-gap: 6px;
+  grid-template-columns: 20px 26px 1fr 34px 30px 30px 36px;
+  align-items: center; column-gap: 8px;
   padding: 5px 4px; border-radius: var(--r-xs);
   position: relative; transition: background 0.2s;
 }
@@ -3671,23 +3672,21 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
 .gd-row.fav { background: rgba(255,180,84,0.07); }
 .gd-row.fav::before { background: var(--fav); }
 
+/* Riga intestazione */
+.gd-row--head { padding-bottom: 3px; margin-bottom: 2px; border-bottom: 1px solid var(--border-soft); }
+.gd-row--head::before { display: none; }
+.gd-head { font-size: 0.6rem; font-weight: 800; color: var(--muted-dim); text-transform: uppercase; letter-spacing: 0.04em; }
+.gd-head-name { font-size: 0.6rem !important; font-weight: 800 !important; color: var(--muted-dim) !important; text-transform: uppercase; letter-spacing: 0.04em; }
+
 .gd-pos  { font-size: 0.72rem; font-weight: 800; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
 .gd-flag { width: 26px !important; height: 19px !important; border-radius: 2px; flex: none; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
 .gd-name { font-size: 0.88rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gd-bar-wrap { height: 4px; background: var(--surface-4); border-radius: 4px; overflow: hidden; }
-.gd-bar { height: 100%; background: var(--green-dim); border-radius: 4px; transition: width 0.4s var(--ease-out); }
-.gd-row.third .gd-bar { background: var(--cyan-dim); }
-.gd-row:not(.qual):not(.third) .gd-bar { background: var(--border-strong); }
-.gd-pts  { font-size: 0.95rem; font-weight: 900; font-variant-numeric: tabular-nums; text-align: right; }
-.gd-record { font-size: 0.7rem; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
-.gd-dr   { font-size: 0.72rem; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; min-width: 24px; }
+/* Tutte le colonne numeriche: stesso allineamento a destra, font tabellare */
+.gd-num  { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.gd-pts  { font-size: 0.92rem; font-weight: 900; color: var(--text); }
+.gd-dr   { font-weight: 700; }
 .gd-dr.pos { color: var(--green); }
 .gd-dr.neg { color: #ff8585; }
-.gd-qual-badge {
-  font-size: 0.58rem; font-weight: 800; padding: 1px 5px; border-radius: var(--r-pill);
-  background: rgba(47,224,138,0.15); color: var(--green-bright); white-space: nowrap;
-}
-.gd-qual-badge.third { background: rgba(47,214,224,0.12); color: var(--cyan-bright); }
 
 .gd-standings-legend {
   display: flex; gap: 12px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-soft);
@@ -3817,17 +3816,29 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
 /* ═══════════════════════════════════════════════════════════════════
    BRACKET — zoom con rotella + font più grandi
    ═══════════════════════════════════════════════════════════════════ */
-.rd2-zoom-hint {
-  display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
-  font-size: 0.72rem; color: var(--muted);
-}
-.rd2-zoom-hint svg { flex: none; color: var(--cyan); }
 .rd2-zoom-reset {
-  margin-left: 8px; padding: 2px 8px; border-radius: var(--r-pill);
+  margin-left: 4px; padding: 2px 10px; border-radius: var(--r-pill);
   border: 1px solid var(--border); background: var(--surface-3);
   color: var(--cyan); font: inherit; font-size: 0.68rem; font-weight: 700; cursor: pointer;
 }
 .rd2-zoom-reset:hover { background: rgba(24,214,236,0.1); }
+
+/* Controlli manuali bracket statico: zoom +/− e pad direzionale */
+.rd-bracket-controls {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 8px; flex-wrap: wrap;
+}
+.rd-bracket-hint { font-size: 0.72rem; color: var(--muted); }
+.rd-bracket-ctrl-group { display: flex; align-items: center; gap: 5px; }
+.rd-bracket-ctrl {
+  width: 30px; height: 30px; border-radius: var(--r-sm);
+  border: 1px solid var(--border); background: var(--surface-3);
+  color: var(--text-soft); font: inherit; font-size: 1rem; font-weight: 700; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.13s, border-color 0.13s, color 0.13s;
+}
+.rd-bracket-ctrl:hover:not(:disabled) { background: var(--surface-4); border-color: var(--border-strong); color: var(--text); }
+.rd-bracket-ctrl:disabled { opacity: 0.35; cursor: default; }
 
 /* Box partita nel bracket: più alta per ospitare font più grandi */
 .rd-symbox { min-height: 68px; }
