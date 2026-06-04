@@ -30,7 +30,7 @@ const MESSAGES_REAL = [
   "Verso la finale…",
 ];
 
-const TOTAL_MS = 5200; // durata scenica complessiva (~1s per frase, leggibile)
+const TOTAL_MS = 10000; // durata scenica complessiva (~2s per frase, leggibile)
 const NUM_RUNS_DEFAULT = 100000;
 
 export function SimLaunchOverlay({ italyActive, favoriteName, numRuns = NUM_RUNS_DEFAULT }: Props) {

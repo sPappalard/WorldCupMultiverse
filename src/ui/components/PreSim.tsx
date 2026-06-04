@@ -1,25 +1,28 @@
 /**
- * PreSim — schermata pre-simulazione. Riepiloga in modo minimale lo scenario
- * scelto e offre un grande bottone "Simula". Tutto è pensato per essere
- * immediato: si parte con un clic, oppure si torna indietro alla home.
+ * PreSim — schermata pre-simulazione con modal inline per modificare lo scenario.
+ * Niente onboarding completo: un overlay premium che permette di cambiare Italia
+ * e what-if, poi riporta al bottone Simula.
  */
+import { useState } from 'react';
 import type { Team } from '../../engine/types';
 import { whatIfFactors } from '../../config';
-import type { Scenario } from '../scenario';
+import { type Scenario, type AppliedFactor } from '../scenario';
 
 interface Props {
   scenario: Scenario;
   teams: Team[];
   running: boolean;
   onSimulate: () => void;
-  onEditScenario: () => void;
-  /** Torna alla home/griglia (mostrato solo se c'è già una simulazione). */
+  /** Salva lo scenario modificato e rimane in PreSim. */
+  onSaveScenario: (s: Scenario) => void;
+  /** Torna alla home/griglia (solo se c'è già una simulazione). */
   onBack?: () => void;
 }
 
 export function PreSim({
-  scenario, teams, running, onSimulate, onEditScenario, onBack,
+  scenario, teams, running, onSimulate, onSaveScenario, onBack,
 }: Props) {
+  const [editOpen, setEditOpen] = useState(false);
   const teamsById = new Map(teams.map((t) => [t.id, t]));
 
   const activeFactors = scenario.factors
@@ -41,11 +44,11 @@ export function PreSim({
           Il tuo scenario è impostato.<br />Premi simula e guarda come va a finire.
         </p>
 
-        {/* Card scenario — minimale ma curata: Italia + eventuali what-if */}
+        {/* Card scenario */}
         <div className="presim-card">
           <div className="presim-card-head">
             <span className="presim-card-title">Il tuo scenario</span>
-            <button className="presim-edit" onClick={onEditScenario}>
+            <button className="presim-edit" onClick={() => setEditOpen(true)}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
               </svg>
@@ -54,7 +57,6 @@ export function PreSim({
           </div>
 
           <div className="presim-card-body">
-            {/* Stato Italia come riga "etichetta → badge" */}
             <div className="presim-row">
               <span className="presim-row-label">Italia</span>
               {scenario.italy ? (
@@ -86,7 +88,7 @@ export function PreSim({
           </div>
         </div>
 
-        {/* Bottone gigante con profondità + shimmer */}
+        {/* CTA */}
         <button className="presim-go" onClick={onSimulate} disabled={running}>
           <span className="presim-go-shine" aria-hidden />
           <span className="presim-go-label">
@@ -99,6 +101,163 @@ export function PreSim({
             ← Torna indietro
           </button>
         )}
+      </div>
+
+      {/* Modal inline per modificare lo scenario */}
+      {editOpen && (
+        <ScenarioEditModal
+          scenario={scenario}
+          teams={teams}
+          onSave={(s) => { onSaveScenario(s); setEditOpen(false); }}
+          onClose={() => setEditOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ─── Modal modifica scenario ─── */
+function ScenarioEditModal({
+  scenario, teams, onSave, onClose,
+}: {
+  scenario: Scenario;
+  teams: Team[];
+  onSave: (s: Scenario) => void;
+  onClose: () => void;
+}) {
+  const [italy, setItaly] = useState(scenario.italy);
+  const [factors, setFactors] = useState<AppliedFactor[]>(scenario.factors);
+  const [chaos, setChaos] = useState(scenario.chaos);
+
+  const activePool = teams.filter((t) => t.active || (italy && t.id === 'ITA'));
+  const teamsById = new Map(activePool.map((t) => [t.id, t]));
+  const extraDefs = whatIfFactors.filter((f) => !f.flagship && !f.isSlider && f.needsTeam);
+
+  const toggleFactor = (id: AppliedFactor['id'], defaultDelta?: number) => {
+    setFactors((prev) =>
+      prev.some((f) => f.id === id)
+        ? prev.filter((f) => f.id !== id)
+        : [...prev, { id, teamIds: [], eloDelta: defaultDelta }]
+    );
+  };
+  const toggleFactorTeam = (id: AppliedFactor['id'], teamId: string) => {
+    setFactors((prev) =>
+      prev.map((f) => {
+        if (f.id !== id) return f;
+        const cur = f.teamIds ?? [];
+        return { ...f, teamIds: cur.includes(teamId) ? cur.filter((t) => t !== teamId) : [...cur, teamId] };
+      })
+    );
+  };
+
+  const save = () => {
+    const validFactors = factors.filter((f) => (f.teamIds?.length ?? 0) > 0);
+    onSave({ italy, factors: validFactors, chaos });
+  };
+
+  return (
+    <div className="sedit-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="sedit-panel">
+        <div className="sedit-header">
+          <h2 className="sedit-title">Modifica scenario</h2>
+          <button className="sedit-close" onClick={onClose} aria-label="Chiudi">✕</button>
+        </div>
+
+        <div className="sedit-body">
+          {/* Italia toggle */}
+          <div className="sedit-section">
+            <p className="sedit-label">Italia nel torneo?</p>
+            <div className="sedit-toggle-row">
+              <button
+                className={`sedit-toggle ${italy ? 'on' : ''}`}
+                onClick={() => setItaly(true)}
+              >
+                <span className="fi fi-it sedit-flag" aria-hidden />
+                Con l'Italia
+              </button>
+              <button
+                className={`sedit-toggle ${!italy ? 'on' : ''}`}
+                onClick={() => setItaly(false)}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+                  <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+                Senza l'Italia
+              </button>
+            </div>
+          </div>
+
+          {/* What-if factors */}
+          <div className="sedit-section">
+            <p className="sedit-label">Scenari what-if <span className="sedit-label-opt">(opzionale)</span></p>
+            <div className="ob-factors">
+              {extraDefs.map((f) => {
+                const applied = factors.find((a) => a.id === f.id);
+                const on = !!applied;
+                const selected = applied?.teamIds ?? [];
+                const delta = f.defaultEloDelta ?? 0;
+                return (
+                  <div key={f.id} className={`ob-factor-block ${on ? 'on' : ''}`}>
+                    <button className="ob-factor" onClick={() => toggleFactor(f.id, f.defaultEloDelta)}>
+                      <span className="ob-factor-emoji">{f.emoji}</span>
+                      <span className="ob-factor-body">
+                        <span className="ob-factor-label">
+                          {f.label}
+                          <span className={`ob-factor-delta ${delta >= 0 ? 'pos' : 'neg'}`}>
+                            {delta >= 0 ? '+' : ''}{delta} Elo
+                          </span>
+                        </span>
+                        <span className="ob-factor-desc">{f.description}</span>
+                      </span>
+                      <span className="ob-factor-check">{on ? '✓' : '+'}</span>
+                    </button>
+                    {on && (
+                      <div className="ob-factor-teams">
+                        {selected.length > 0 && (
+                          <div className="ob-factor-chips">
+                            {selected.map((tid) => (
+                              <button key={tid} className="ob-chip" onClick={() => toggleFactorTeam(f.id, tid)} title="Rimuovi">
+                                <span className={`fi fi-${teamsById.get(tid)?.flag}`} aria-hidden />
+                                {teamsById.get(tid)?.name ?? tid}
+                                <span className="ob-chip-x">×</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <select className="ob-team-select" value="" onChange={(e) => { if (e.target.value) toggleFactorTeam(f.id, e.target.value); }}>
+                          <option value="">{selected.length ? "+ Aggiungi un'altra squadra…" : '+ Scegli la squadra bersaglio…'}</option>
+                          {activePool.filter((t) => !selected.includes(t.id)).sort((a, b) => a.name.localeCompare(b.name, 'it')).map((t) => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                          ))}
+                        </select>
+                        {selected.length === 0 && <p className="ob-factor-warn">Scegli almeno una squadra, o resterà inattivo.</p>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Caos */}
+              <div className={`ob-factor-block ${chaos > 0 ? 'on' : ''}`}>
+                <div className="ob-factor ob-factor--static">
+                  <span className="ob-factor-emoji">🎲</span>
+                  <span className="ob-factor-body">
+                    <span className="ob-factor-label">Fattore Caos <span className="ob-factor-delta">{chaos}</span></span>
+                    <span className="ob-factor-desc">Aumenta la varianza: più sorprese, più Cenerentole.</span>
+                  </span>
+                </div>
+                <div className="ob-factor-teams">
+                  <input type="range" min={0} max={100} value={chaos} className="ob-chaos-range" onChange={(e) => setChaos(Number(e.target.value))} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="sedit-footer">
+          <button className="sedit-cancel" onClick={onClose}>Annulla</button>
+          <button className="sedit-save" onClick={save}>Salva scenario →</button>
+        </div>
       </div>
     </div>
   );

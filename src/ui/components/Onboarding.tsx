@@ -80,7 +80,13 @@ export function Onboarding({ teams, onComplete }: Props) {
     );
   };
 
-  const back = () => setStep((s) => Math.max(0, s - 1) as Step);
+  const back = () => {
+    if (step === 2 && wantWhatIf === true) {
+      setWantWhatIf(null);
+    } else {
+      setStep((s) => Math.max(0, s - 1) as Step);
+    }
+  };
 
   /** Step 0: clic sulla scelta Italia → micro-pausa per far "accendere" la card, poi avanza. */
   const pickItaly = (val: boolean) => {
@@ -244,7 +250,6 @@ export function Onboarding({ teams, onComplete }: Props) {
                     const applied = factors.find((a) => a.id === f.id);
                     const on = !!applied;
                     const selected = applied?.teamIds ?? [];
-                    const delta = f.defaultEloDelta ?? 0;
                     return (
                       <div key={f.id} className={`ob-factor-block ${on ? 'on' : ''}`}>
                         <button
@@ -253,12 +258,7 @@ export function Onboarding({ teams, onComplete }: Props) {
                         >
                           <span className="ob-factor-emoji">{f.emoji}</span>
                           <span className="ob-factor-body">
-                            <span className="ob-factor-label">
-                              {f.label}
-                              <span className={`ob-factor-delta ${delta >= 0 ? 'pos' : 'neg'}`}>
-                                {delta >= 0 ? '+' : ''}{delta} Elo
-                              </span>
-                            </span>
+                            <span className="ob-factor-label">{f.label}</span>
                             <span className="ob-factor-desc">{f.description}</span>
                           </span>
                           <span className="ob-factor-check">{on ? '✓' : '+'}</span>
@@ -314,10 +314,7 @@ export function Onboarding({ teams, onComplete }: Props) {
                     <div className="ob-factor ob-factor--static">
                       <span className="ob-factor-emoji">🎲</span>
                       <span className="ob-factor-body">
-                        <span className="ob-factor-label">
-                          Fattore Caos
-                          <span className="ob-factor-delta">{chaos}</span>
-                        </span>
+                        <span className="ob-factor-label">Fattore Caos</span>
                         <span className="ob-factor-desc">
                           Aumenta la varianza: più sorprese, più Cenerentole.
                         </span>
@@ -332,9 +329,6 @@ export function Onboarding({ teams, onComplete }: Props) {
                     </div>
                   </div>
                 </div>
-                <button className="ob-btn ob-btn-primary ob-btn-go ob-btn--block" onClick={() => finish()}>
-                  ▶ Lancia la simulazione
-                </button>
               </>
             )}
           </section>
@@ -354,6 +348,11 @@ export function Onboarding({ teams, onComplete }: Props) {
             {step === 1 && (
               <button className="ob-btn ob-btn-ghost" onClick={() => { setFavorite(null); setStep(2); }}>
                 Salta · nessuna squadra →
+              </button>
+            )}
+            {step === 2 && wantWhatIf === true && (
+              <button className="ob-btn ob-btn-primary ob-btn-go" onClick={() => finish()}>
+                ▶ Lancia
               </button>
             )}
           </div>

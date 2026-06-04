@@ -74,6 +74,8 @@ export function App() {
   /** Sample run (per il cinema): arriva PRIMA dell'aggregato completo. */
   const [sampleRun, setSampleRun] = useState<SampleRun | null>(null);
   const [running, setRunning] = useState(false);
+  /** Rimane true dal click "Simula" finché il cinema parte (evita il flash di PreSim). */
+  const [launching, setLaunching] = useState(false);
   /** Quando true, la messa in scena cinematografica copre lo schermo. */
   const [cinema, setCinema] = useState(false);
   /** True solo per l'autorun silenzioso da link condiviso (niente cinema). */
@@ -98,13 +100,14 @@ export function App() {
     if (!data || running) return;
     silentRunRef.current = silent;
     setRunning(true);
+    if (!silent) setLaunching(true);
     setSampleRun(null);
     revealTimers.current.forEach(clearTimeout);
     revealTimers.current = [];
     // Per dare tempo al loading scenico di "respirare" (la sim vera è quasi
     // istantanea), il passaggio al cinema attende un minimo dall'avvio.
     const launchAt = performance.now();
-    const MIN_LAUNCH_MS = silent ? 0 : 5000;
+    const MIN_LAUNCH_MS = silent ? 0 : 10000;
 
     const partial = scenarioToSimInput(scenario, data.teams, modulators);
     const base: SimInput = {
@@ -143,6 +146,7 @@ export function App() {
         if (!silentRunRef.current) {
           const wait = Math.max(0, MIN_LAUNCH_MS - (performance.now() - launchAt));
           const id = window.setTimeout(() => {
+            setLaunching(false);
             setCinema(true);
             setPhase('cinema');
           }, wait);
@@ -249,7 +253,8 @@ export function App() {
   if (phase === 'presim') {
     // Mentre la sim gira (e il cinema non è ancora partito) mostra il loading
     // scenico: copre l'attesa con un ingresso "epico", a tema Italia se attiva.
-    if (running) {
+    // `launching` rimane true fino al setTimeout del cinema, evitando il flash di PreSim.
+    if (running || launching) {
       return (
         <SimLaunchOverlay
           italyActive={scenario.italy}
@@ -264,7 +269,7 @@ export function App() {
         teams={data.teams}
         running={running}
         onSimulate={() => runSimulation(false)}
-        onEditScenario={() => setOnboarded(false)}
+        onSaveScenario={(s) => setScenario(s)}
         onBack={output ? () => setPhase('dashboard') : undefined}
       />
     );
@@ -309,10 +314,7 @@ export function App() {
   }
 
   // ── HOME A CARD ──
-  const champ = output ? teamsById.get(output.aggregates[0]?.teamId ?? '') : null;
   const favName = output && favoriteTeam ? teamsById.get(favoriteTeam)?.name : null;
-
-  const champProb = output?.aggregates[0]?.winProb;
 
   const cards: CardDef[] = [
     {
