@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { TeamAggregate, Team } from '../../engine/types';
+import { useT, useTeamName } from '../../i18n';
 
 interface Props {
   aggregates: TeamAggregate[];
@@ -28,6 +29,8 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 const DEFAULT_SHOWN = 10;
 
 export function Standings({ aggregates, teamsById, italyActive, favoriteTeam }: Props) {
+  const { t } = useT();
+  const teamName = useTeamName();
   const [showAll, setShowAll] = useState(false);
   const all = aggregates.filter((a) => a.winProb > 0);
   const maxProb = all[0]?.winProb ?? 1;
@@ -48,17 +51,17 @@ export function Standings({ aggregates, teamsById, italyActive, favoriteTeam }: 
   return (
     <section className="dash-section">
       <div className="dash-section-header">
-        <h2 className="dash-section-title">Chi vince il Mondiale?</h2>
-        <span className="dash-section-sub">Probabilità su 100.000 simulazioni · quota stile bookmaker</span>
+        <h2 className="dash-section-title">{t('standings.title')}</h2>
+        <span className="dash-section-sub">{t('standings.sub')}</span>
       </div>
 
       <div className="stn-table">
         <div className="stn-row stn-row--header">
           <span className="stn-rank">#</span>
-          <span className="stn-team-col">Squadra</span>
+          <span className="stn-team-col">{t('common.team')}</span>
           <span className="stn-bar-col" />
-          <span className="stn-odds-col">Quota</span>
-          <span className="stn-prob-col">Prob</span>
+          <span className="stn-odds-col">{t('common.odds')}</span>
+          <span className="stn-prob-col">{t('common.prob')}</span>
         </div>
 
         {rows.map((a) => {
@@ -89,7 +92,7 @@ export function Standings({ aggregates, teamsById, italyActive, favoriteTeam }: 
               <span className="stn-team-col">
                 <span className={`fi fi-${t?.flag}`} aria-hidden />
                 <span className="stn-name">
-                  {t?.name ?? a.teamId}
+                  {t ? teamName(t) : a.teamId}
                   {isFav && <span className="stn-fav"> ♥</span>}
                   {isItaly && <span className="stn-italy-badge">ITA</span>}
                 </span>
@@ -115,12 +118,12 @@ export function Standings({ aggregates, teamsById, italyActive, favoriteTeam }: 
           {showAll ? (
             <>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-              Mostra meno
+              {t('common.showLess')}
             </>
           ) : (
             <>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-              Mostra tutte le {all.length} squadre
+              {t('common.showAllTeams', { n: String(all.length) })}
             </>
           )}
         </button>

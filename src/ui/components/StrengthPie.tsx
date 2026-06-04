@@ -1,4 +1,5 @@
 import type { StrengthComponent } from '../../engine/strengthScore';
+import { useT } from '../../i18n';
 
 interface Props {
   components: StrengthComponent[];
@@ -20,6 +21,7 @@ const COLORS: Record<StrengthComponent['key'], string> = {
  * ogni componente sul Punteggio Forza. Si aggiorna quando cambiano i pesi.
  */
 export function StrengthPie({ components }: Props) {
+  const { t } = useT();
   // Costruisce gli stop del conic-gradient cumulando le percentuali.
   let acc = 0;
   const stops: string[] = [];
@@ -39,7 +41,7 @@ export function StrengthPie({ components }: Props) {
         {components.map((c) => (
           <li key={c.key} className="sp-legend-item">
             <span className="sp-swatch" style={{ background: COLORS[c.key] }} />
-            <span className="sp-legend-label">{c.label}</span>
+            <span className="sp-legend-label">{t(`strength.${c.key}`)}</span>
             <span className="sp-legend-pct">{c.pct.toFixed(1)}%</span>
           </li>
         ))}

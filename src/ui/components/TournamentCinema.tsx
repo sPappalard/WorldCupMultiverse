@@ -13,6 +13,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { SampleRun, Team, MatchResult } from '../../engine/types';
 import { cinemaAudio } from '../cinemaAudio';
 import { buildBracketLayout, CARD_W, CARD_H, type PlacedMatch } from '../bracketLayout';
+import { useT, useTeamName } from '../../i18n';
 
 interface Props {
   sample: SampleRun;
@@ -27,30 +28,6 @@ interface Props {
 const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
 interface Stop { key: string; label: string; date: string; }
-
-// Timeline: 7 stop (terze non è più step separato, è overlay dentro i gironi)
-const TIMELINE: Stop[] = [
-  { key: 'kickoff', label: "Calcio d'inizio", date: '11 GIU' },
-  { key: 'groups',  label: 'Gironi',          date: '11–27 GIU' },
-  { key: 'r32',     label: 'Sedicesimi',       date: '28 GIU' },
-  { key: 'r16',     label: 'Ottavi',           date: '4 LUG' },
-  { key: 'qf',      label: 'Quarti',           date: '9 LUG' },
-  { key: 'sf',      label: 'Semifinali',       date: '14 LUG' },
-  { key: 'final',   label: 'Finale',           date: '19 LUG' },
-];
-
-const ROUND_LABEL: Record<string, string> = {
-  'Round of 32': 'Sedicesimi', 'Round of 16': 'Ottavi',
-  'Quarter-finals': 'Quarti', 'Semi-finals': 'Semifinali',
-  Semifinali: 'Semifinali', Final: 'Finale', Finale: 'Finale',
-};
-
-// Etichette brevi per la striscia round su mobile (lo spazio è poco).
-const ROUND_SHORT: Record<string, string> = {
-  'Round of 32': '16°', 'Round of 16': '8°',
-  'Quarter-finals': 'QF', 'Semi-finals': 'SF',
-  Semifinali: 'SF', Final: 'Finale', Finale: 'Finale',
-};
 
 /** Vero su viewport stretti (smartphone). Solo per scegliere il rendering del
  *  bracket nel cinema: su mobile la "camera" zoomabile è illeggibile, quindi
@@ -85,10 +62,33 @@ const BASE = {
 };
 
 export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive, onDone, onSkip }: Props) {
+  const { t } = useT();
   const rounds = sample.knockoutRounds;
   const isMobile = useIsMobile();
   const [speed,   setSpeed]   = useState(1);
   const [leaving, setLeaving] = useState(false);
+
+  const TIMELINE: Stop[] = useMemo(() => [
+    { key: 'kickoff', label: t('cinema.tl.kickoff'), date: '11 JUN' },
+    { key: 'groups',  label: t('cinema.tl.groups'),  date: '11–27 JUN' },
+    { key: 'r32',     label: t('cinema.tl.r32'),     date: '28 JUN' },
+    { key: 'r16',     label: t('cinema.tl.r16'),     date: '4 JUL' },
+    { key: 'qf',      label: t('cinema.tl.qf'),      date: '9 JUL' },
+    { key: 'sf',      label: t('cinema.tl.sf'),      date: '14 JUL' },
+    { key: 'final',   label: t('cinema.tl.final'),   date: '19 JUL' },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [t]);
+
+  const ROUND_LABEL: Record<string, string> = useMemo(() => ({
+    'Round of 32':    t('cinema.round.r32'),
+    'Round of 16':    t('cinema.round.r16'),
+    'Quarter-finals': t('cinema.round.qf'),
+    'Semi-finals':    t('cinema.round.sf'),
+    Final:            t('cinema.round.final'),
+    Finale:           t('cinema.round.final'),
+    Semifinali:       t('cinema.round.sf'),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [t]);
 
   // Stato regia
   const [stage, setStage] = useState<'kickoff' | 'groups' | 'ko' | 'champion'>('kickoff');
@@ -118,7 +118,8 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
   useEffect(() => { cinemaAudio.setMuted(muted); }, [muted]);
   useEffect(() => () => { cinemaAudio.setTension(0); }, []);
 
-  const name  = (id: string) => teamsById.get(id)?.name ?? id;
+  const teamName = useTeamName();
+  const name  = (id: string) => { const tm = teamsById.get(id); return tm ? teamName(tm) : id; };
   const flag  = (id: string) => teamsById.get(id)?.flag ?? '';
   const isFav = (id: string) => id === favoriteTeam;
 
@@ -302,21 +303,21 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
 
   let title = '', sub = '';
   if (stage === 'groups' && thirdsState === 'hidden') {
-    title = `Girone ${GROUPS[activeGroup] ?? ''}`;
-    sub   = `${groupRevealed} / ${currentGroupMatches.length} partite`;
+    title = t('cinema.group', { g: GROUPS[activeGroup] ?? '' });
+    sub   = t('cinema.group.matches', { n: groupRevealed, total: currentGroupMatches.length });
   } else if (stage === 'groups' && thirdsState === 'showing') {
-    title = 'Migliori terze';
+    title = t('cinema.thirds.title');
     sub   = `${Math.min(thirdsRevealed, thirds.length)} / ${thirds.length}`;
   } else if (stage === 'groups' && thirdsState === 'done') {
-    title = 'Gironi completati';
-    sub   = 'Le qualificate ai sedicesimi';
+    title = t('cinema.groups.done');
+    sub   = t('cinema.groups.qualifiedSub');
   } else if (stage === 'ko') {
     title = ROUND_LABEL[rounds[koRound]?.name] ?? rounds[koRound]?.name ?? '';
-    sub   = koPhase === 'appear' ? 'Accoppiamenti'
-          : koRevealed < koTotal ? `${koRevealed} / ${koTotal} risultati`
-          : 'Round completato';
+    sub   = koPhase === 'appear' ? t('cinema.ko.pairings')
+          : koRevealed < koTotal ? t('cinema.ko.results', { n: koRevealed, total: koTotal })
+          : t('cinema.ko.roundDone');
   } else if (stage === 'champion') {
-    title = 'Campione del Mondo';
+    title = t('cinema.champion');
   }
 
   // I gironi svelati per la visualizzazione (quante partite di ogni girone sono note)
@@ -340,7 +341,7 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
       <div className="cin-stadium" aria-hidden />
 
       {/* ── TIMELINE ── */}
-      <Timeline stopIndex={stopIndex} onStopClick={goToStop} />
+      <Timeline stopIndex={stopIndex} onStopClick={goToStop} timeline={TIMELINE} t={t} />
 
       {/* ── TITLEBAR ── (nascosta durante overlay terze) */}
       {stage !== 'kickoff' && thirdsState !== 'showing' && (
@@ -354,11 +355,11 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
       <div className="cin-stage">
         {stage === 'kickoff' && (
           <div className="cin-scene cin-intro">
-            <p className="cin-kicker">FIFA World Cup 2026 · 48 nazionali</p>
-            <h1 className="cin-bigtitle">Il sorteggio è fatto.<br />Si gioca.</h1>
+            <p className="cin-kicker">{t('cinema.intro.kicker')}</p>
+            <h1 className="cin-bigtitle">{t('cinema.intro.title.line1')}<br />{t('cinema.intro.title.line2')}</h1>
             <p className="cin-sub">
-              Una simulazione possibile su {(100000).toLocaleString('it-IT')}.
-              {italyActive && <> Con l&apos;Italia nel Girone B. <span className="fi fi-it" style={{display:'inline-block',width:18,height:13,borderRadius:2,verticalAlign:'middle',marginLeft:3}} /></>}
+              {t('cinema.intro.sub', { n: (100000).toLocaleString() })}
+              {italyActive && <> {t('cinema.intro.sub.italy')} <span className="fi fi-it" style={{display:'inline-block',width:18,height:13,borderRadius:2,verticalAlign:'middle',marginLeft:3}} /></>}
             </p>
           </div>
         )}
@@ -404,22 +405,22 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
       {/* ── CONTROLLI ── */}
       <footer className="cin-controls">
         <div className="cin-ctrl-group">
-          <button className="cin-ctrl-btn" onClick={prevStop} disabled={stopIndex === 0} title="Fase precedente">‹</button>
+          <button className="cin-ctrl-btn" onClick={prevStop} disabled={stopIndex === 0} title={t('cinema.ctrl.prev')}>‹</button>
           {stage !== 'champion' ? (
-            <button className="cin-ctrl-btn cin-ctrl-play" onClick={() => setPaused((p) => !p)} title={paused ? 'Riprendi' : 'Pausa'}>
+            <button className="cin-ctrl-btn cin-ctrl-play" onClick={() => setPaused((p) => !p)} title={paused ? t('cinema.ctrl.resume') : t('cinema.ctrl.pause')}>
               {paused ? '►' : '❚❚'}
             </button>
           ) : (
-            <button className="cin-ctrl-btn cin-ctrl-play" onClick={() => goToStop(0)} title="Rivedi da capo">↺</button>
+            <button className="cin-ctrl-btn cin-ctrl-play" onClick={() => goToStop(0)} title={t('cinema.ctrl.replay')}>↺</button>
           )}
-          <button className="cin-ctrl-btn" onClick={nextStop} disabled={stopIndex >= TIMELINE.length - 1} title="Fase successiva">›</button>
-          <button className={`cin-ctrl-btn ${muted ? 'off' : ''}`} onClick={() => setMuted((m) => !m)} title={muted ? 'Riattiva audio' : 'Silenzia'}>
+          <button className="cin-ctrl-btn" onClick={nextStop} disabled={stopIndex >= TIMELINE.length - 1} title={t('cinema.ctrl.next')}>›</button>
+          <button className={`cin-ctrl-btn ${muted ? 'off' : ''}`} onClick={() => setMuted((m) => !m)} title={muted ? t('cinema.ctrl.unmute') : t('cinema.ctrl.mute')}>
             {muted ? '🔇' : '🔊'}
           </button>
         </div>
 
         <div className="cin-speed">
-          <span className="cin-speed-label">Velocità</span>
+          <span className="cin-speed-label">{t('cinema.speed')}</span>
           {[1, 2, 3].map((s) => (
             <button key={s} className={`cin-speed-btn ${speed === s ? 'on' : ''}`} onClick={() => setSpeed(s)}>
               {s}×
@@ -429,12 +430,12 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
 
         <div className="cin-skip-group">
           {stage !== 'champion' ? (
-            <button className="cin-skip" onClick={skip}>Salta alla fine →</button>
+            <button className="cin-skip" onClick={skip}>{t('cinema.skipToEnd')}</button>
           ) : (
-            <button className="cin-skip" onClick={finish}>Vedi statistiche ✕</button>
+            <button className="cin-skip" onClick={finish}>{t('cinema.seeStats')}</button>
           )}
           {onSkip && (
-            <button className="cin-skip cin-skip--dash" onClick={onSkip}>Dashboard →</button>
+            <button className="cin-skip cin-skip--dash" onClick={onSkip}>{t('cinema.dashboard')}</button>
           )}
         </div>
       </footer>
@@ -443,19 +444,19 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
 }
 
 /* ───────────── TIMELINE ───────────── */
-function Timeline({ stopIndex, onStopClick }: { stopIndex: number; onStopClick: (i: number) => void }) {
-  const pct = (stopIndex / (TIMELINE.length - 1)) * 100;
+function Timeline({ stopIndex, onStopClick, timeline, t }: { stopIndex: number; onStopClick: (i: number) => void; timeline: Stop[]; t: (key: string, vars?: Record<string, string | number>) => string }) {
+  const pct = (stopIndex / (timeline.length - 1)) * 100;
   return (
     <div className="cin-tl">
       <div className="cin-tl-track">
         <div className="cin-tl-fill" style={{ width: `${pct}%` }} />
         <div className="cin-tl-cursor" style={{ left: `${pct}%` }} />
-        {TIMELINE.map((s, i) => (
+        {timeline.map((s, i) => (
           <button
             key={s.key} type="button"
             className={`cin-tl-stop ${i === stopIndex ? 'active' : ''} ${i < stopIndex ? 'past' : ''}`}
-            style={{ left: `${(i / (TIMELINE.length - 1)) * 100}%` }}
-            onClick={() => onStopClick(i)} title={`Vai a: ${s.label}`}
+            style={{ left: `${(i / (timeline.length - 1)) * 100}%` }}
+            onClick={() => onStopClick(i)} title={t('cinema.tl.goto', { label: s.label })}
           >
             <span className="cin-tl-label">{s.label}</span>
             <span className="cin-tl-date">{s.date}</span>
@@ -481,6 +482,7 @@ function GroupsScene({
   isFav: (id: string) => boolean; italyActive: boolean;
   isMobile: boolean; activeGroupIdx: number;
 }) {
+  const { t } = useT();
   // Su smartphone i 12 gironi non entrano in una schermata: li mostriamo a
   // blocchi di 6 (A–F, poi G–L). Il blocco visibile è quello del girone attivo;
   // quando l'animazione supera il 6° girone, scatta automaticamente al blocco 2.
@@ -524,9 +526,9 @@ function GroupsScene({
             style={{ animationDelay: `${gi * 40}ms` }}
           >
             <div className="cin-group-head">
-              <span className="cin-group-title">Girone {g}</span>
+              <span className="cin-group-title">{t('cinema.group', { g })}</span>
               {isActive
-                ? <span className="cin-group-live">● LIVE</span>
+                ? <span className="cin-group-live">{t('cinema.group.live')}</span>
                 : <span className="cin-group-count">{shownCount}/{total}</span>}
             </div>
             <div className="cin-group-rows">
@@ -567,38 +569,39 @@ function ThirdsModal({
   name: (id: string) => string; flag: (id: string) => string;
   isFav: (id: string) => boolean; italyActive: boolean;
 }) {
+  const { t } = useT();
   return (
     <div className="cin-thirds-modal">
-      <p className="cin-thirds-modal-title">Calcolo migliori terze</p>
+      <p className="cin-thirds-modal-title">{t('cinema.thirds.modalTitle')}</p>
       <p className="cin-thirds-modal-sub">
-        Passano le <strong>8 migliori</strong> su 12 (punti → differenza reti)
+        {t('cinema.thirds.modalSub', { best: t('cinema.thirds.bestWord') })}
       </p>
       <div className="cin-thirds-list">
-        {thirds.map((t, i) => {
+        {thirds.map((row, i) => {
           const shown   = i < revealed;
           const cutoff  = i === 8;
           return (
-            <div key={t.teamId}>
-              {cutoff && shown && <div className="cin-thirds-cut">— linea di taglio · sotto, eliminate —</div>}
+            <div key={row.teamId}>
+              {cutoff && shown && <div className="cin-thirds-cut">{t('cinema.thirds.cutoff')}</div>}
               <div
                 className={[
                   'cin-thirds-row',
                   shown ? 'shown' : 'hidden',
-                  shown && t.qualified  ? 'ok'   : '',
-                  shown && !t.qualified ? 'ko'   : '',
-                  isFav(t.teamId) ? 'fav' : '',
-                  italyActive && t.teamId === 'ITA' ? 'italy' : '',
+                  shown && row.qualified  ? 'ok'   : '',
+                  shown && !row.qualified ? 'ko'   : '',
+                  isFav(row.teamId) ? 'fav' : '',
+                  italyActive && row.teamId === 'ITA' ? 'italy' : '',
                 ].filter(Boolean).join(' ')}
               >
                 <span className="cin-thirds-rank">{i + 1}</span>
-                <span className={`fi fi-${flag(t.teamId)}`} aria-hidden />
-                <span className="cin-thirds-name">{name(t.teamId)}</span>
-                <span className="cin-thirds-grp">Gir. {t.group}</span>
-                <span className="cin-thirds-stat">{t.points} pt</span>
-                <span className="cin-thirds-stat dim">{t.goalDifference >= 0 ? '+' : ''}{t.goalDifference}</span>
+                <span className={`fi fi-${flag(row.teamId)}`} aria-hidden />
+                <span className="cin-thirds-name">{name(row.teamId)}</span>
+                <span className="cin-thirds-grp">{t('cinema.thirds.groupShort', { g: row.group })}</span>
+                <span className="cin-thirds-stat">{t('cinema.thirds.points', { n: row.points })}</span>
+                <span className="cin-thirds-stat dim">{row.goalDifference >= 0 ? '+' : ''}{row.goalDifference}</span>
                 {shown && (
-                  <span className={`cin-thirds-badge ${t.qualified ? 'ok' : 'ko'}`}>
-                    {t.qualified ? '✓' : '✕'}
+                  <span className={`cin-thirds-badge ${row.qualified ? 'ok' : 'ko'}`}>
+                    {row.qualified ? '✓' : '✕'}
                   </span>
                 )}
               </div>
@@ -790,9 +793,14 @@ function BracketBox({
       <Side id={m.homeId} goals={m.homeGoals} won={homeWon} slotKnown={homeKnown} />
       <div className="cin-bx-divider" />
       <Side id={m.awayId} goals={m.awayGoals} won={awayWon} slotKnown={awayKnown} />
-      {decided && m.penalties && <div className="cin-bx-pen-bar">rigori</div>}
+      {decided && m.penalties && <PenBar />}
     </div>
   );
+}
+
+function PenBar() {
+  const { t } = useT();
+  return <div className="cin-bx-pen-bar">{t('common.penShort')}</div>;
 }
 
 /* ───────────── BRACKET MOBILE (lista verticale per round) ───────────── */
@@ -809,6 +817,16 @@ function BracketMobileScene({
   activeRound: number; phase: 'appear' | 'results'; revealed: number;
   name: (id: string) => string; flag: (id: string) => string; isFav: (id: string) => boolean;
 }) {
+  const { t } = useT();
+  const ROUND_SHORT_LOCAL: Record<string, string> = {
+    'Round of 32':    t('cinema.roundShort.r32'),
+    'Round of 16':    t('cinema.roundShort.r16'),
+    'Quarter-finals': t('cinema.roundShort.qf'),
+    'Semi-finals':    t('cinema.roundShort.sf'),
+    Final:            t('cinema.roundShort.final'),
+    Finale:           t('cinema.roundShort.final'),
+    Semifinali:       t('cinema.roundShort.sf'),
+  };
   const round   = rounds[activeRound];
   const matches = round?.matches ?? [];
   // Una partita è decisa (mostra punteggio) solo in fase results e già rivelata.
@@ -840,7 +858,7 @@ function BracketMobileScene({
             key={i}
             className={`cin-brm-pill ${i === activeRound ? 'on' : ''} ${i < activeRound ? 'past' : ''}`}
           >
-            {ROUND_SHORT[r.name] ?? r.name}
+            {ROUND_SHORT_LOCAL[r.name] ?? r.name}
           </div>
         ))}
       </div>
@@ -872,7 +890,7 @@ function BracketMobileScene({
                 id={m.awayId} goals={m.awayGoals} won={awayWon}
                 decided={decided} name={name} flag={flag} isFav={isFav}
               />
-              {decided && m.penalties && <span className="cin-brm-pen">rigori</span>}
+              {decided && m.penalties && <span className="cin-brm-pen">{t('common.penShort')}</span>}
             </div>
           );
         })}
@@ -903,6 +921,7 @@ function ChampionScene({
   championId: string; name: (id: string) => string; flag: (id: string) => string;
   isFav: (id: string) => boolean; italyActive: boolean; onClose: () => void;
 }) {
+  const { t } = useT();
   return (
     <div className="cin-scene cin-champion">
       <div className="cin-confetti" aria-hidden>
@@ -910,20 +929,17 @@ function ChampionScene({
           <span key={i} className="cin-confetto" style={confettoStyle(i)} />
         ))}
       </div>
-      <p className="cin-kicker">Campione del Mondo · 19 luglio 2026</p>
+      <p className="cin-kicker">{t('cinema.champion.kicker')}</p>
       <div className={`cin-trophy ${isFav(championId) ? 'fav' : ''}`}>
         <span className={`fi fi-${flag(championId)} cin-champ-flag`} aria-hidden />
       </div>
       <h1 className="cin-champ-name">{name(championId)}</h1>
-      {isFav(championId) && <p className="cin-champ-fav">La tua squadra del cuore ce l&apos;ha fatta ♥</p>}
+      {isFav(championId) && <p className="cin-champ-fav">{t('cinema.champion.favMsg')}</p>}
       {italyActive && championId === 'ITA' && (
-        <p className="cin-champ-fav"><span className="fi fi-it" style={{display:'inline-block',width:20,height:14,borderRadius:2,verticalAlign:'middle',marginRight:6}} /> L&apos;Italia campione del mondo. In questa run, almeno.</p>
+        <p className="cin-champ-fav"><span className="fi fi-it" style={{display:'inline-block',width:20,height:14,borderRadius:2,verticalAlign:'middle',marginRight:6}} /> {t('cinema.champion.italyMsg')}</p>
       )}
-      <p className="cin-champ-disclaimer">
-        È <strong>una</strong> delle 100.000 simulazioni. Le probabilità reali
-        sono nella dashboard qui sotto.
-      </p>
-      <button className="cin-cta" onClick={onClose}>Vedi le statistiche complete →</button>
+      <p className="cin-champ-disclaimer">{t('cinema.champion.disclaimer')}</p>
+      <button className="cin-cta" onClick={onClose}>{t('cinema.champion.cta')}</button>
     </div>
   );
 }

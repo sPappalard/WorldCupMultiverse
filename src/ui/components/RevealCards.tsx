@@ -7,6 +7,7 @@
 import { useState } from 'react';
 import type { TeamAggregate, Team } from '../../engine/types';
 import { oddsFromProb, pctSmart } from '../odds';
+import { useT, useTeamName } from '../../i18n';
 
 interface Props {
   aggregates: TeamAggregate[];
@@ -21,6 +22,8 @@ interface Props {
 export function RevealCards({
   aggregates, teamsById, numRuns, favoriteTeam, championId, onDone,
 }: Props) {
+  const { t, nf } = useT();
+  const teamName = useTeamName();
   const [step, setStep] = useState(0);
   const top5 = aggregates.filter((a) => a.winProb > 0).slice(0, 5);
   const champ = teamsById.get(championId);
@@ -32,17 +35,16 @@ export function RevealCards({
       key: 'honest',
       render: () => (
         <>
-          <p className="rev-kicker">Quella era una possibilità</p>
+          <p className="rev-kicker">{t('reveal.honest.kicker')}</p>
           <h1 className="rev-title">
-            1 simulazione<br />su {numRuns.toLocaleString('it-IT')}
+            {t('reveal.honest.title').split('{n}').map((part, i, arr) =>
+              i < arr.length - 1 ? <span key={i}>{part}<br />{nf(numRuns)}</span> : <span key={i}>{part}</span>
+            )}
           </h1>
           <p className="rev-body">
-            Il torneo che hai appena visto è <strong>una</strong> delle{' '}
-            {numRuns.toLocaleString('it-IT')} partite del Mondiale che abbiamo
-            simulato. Ogni volta può vincere una squadra diversa.
+            {t('reveal.honest.body', { n: nf(numRuns) })}
             {champ && champAgg && (
-              <> Stavolta ha vinto <strong>{champ.name}</strong>, che però vince
-              solo nel <strong>{pctSmart(champAgg.winProb)}</strong> dei casi.</>
+              t('reveal.honest.body.champ', { name: teamName(champ), pct: pctSmart(champAgg.winProb) })
             )}
           </p>
         </>
@@ -53,17 +55,17 @@ export function RevealCards({
       key: 'probs',
       render: () => (
         <>
-          <p className="rev-kicker">Ecco i numeri veri</p>
-          <h1 className="rev-title">Le probabilità reali</h1>
-          <p className="rev-body">Mettendo insieme tutte le simulazioni, ecco chi ha più probabilità di vincere.</p>
+          <p className="rev-kicker">{t('reveal.probs.kicker')}</p>
+          <h1 className="rev-title">{t('reveal.probs.title')}</h1>
+          <p className="rev-body">{t('reveal.probs.body')}</p>
           <div className="rev-top5">
             <div className="rev-top5-head" aria-hidden>
               <span />
               <span />
               <span />
               <span />
-              <span className="rev-top5-odds">Quota</span>
-              <span className="rev-top5-prob">Probab.</span>
+              <span className="rev-top5-odds">{t('common.odds')}</span>
+              <span className="rev-top5-prob">{t('common.probShort')}</span>
             </div>
             {top5.map((a, i) => {
               const t = teamsById.get(a.teamId);
@@ -71,7 +73,7 @@ export function RevealCards({
                 <div key={a.teamId} className={`rev-top5-row ${a.teamId === favoriteTeam ? 'fav' : ''}`}>
                   <span className="rev-top5-rank">{i + 1}</span>
                   <span className={`fi fi-${t?.flag}`} aria-hidden />
-                  <span className="rev-top5-name">{t?.name ?? a.teamId}</span>
+                  <span className="rev-top5-name">{t ? teamName(t) : a.teamId}</span>
                   <span className="rev-top5-bar">
                     <span className="rev-top5-fill" style={{ width: `${(a.winProb / top5[0].winProb) * 100}%` }} />
                   </span>
@@ -89,14 +91,9 @@ export function RevealCards({
       key: 'path',
       render: () => (
         <>
-          <p className="rev-kicker">C'è molto di più</p>
-          <h1 className="rev-title">Il percorso di ogni squadra</h1>
-          <p className="rev-body">
-            Nella dashboard trovi, per ogni nazionale, la probabilità (e la quota)
-            di superare i gironi, arrivare agli ottavi, ai quarti, in semifinale,
-            in finale e di alzare la coppa. Più il dettaglio della
-            <strong> tua </strong> simulazione, partita per partita.
-          </p>
+          <p className="rev-kicker">{t('reveal.path.kicker')}</p>
+          <h1 className="rev-title">{t('reveal.path.title')}</h1>
+          <p className="rev-body">{t('reveal.path.body')}</p>
         </>
       ),
     },
@@ -112,9 +109,9 @@ export function RevealCards({
 
         <div className="rev-actions">
           {!isLast ? (
-            <button className="rev-next" onClick={() => setStep((s) => s + 1)}>Avanti →</button>
+            <button className="rev-next" onClick={() => setStep((s) => s + 1)}>{t('common.next')}</button>
           ) : (
-            <button className="rev-next" onClick={onDone}>Apri la dashboard →</button>
+            <button className="rev-next" onClick={onDone}>{t('reveal.openDashboard')}</button>
           )}
         </div>
 

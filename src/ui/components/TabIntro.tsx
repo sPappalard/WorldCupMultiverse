@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useT } from '../../i18n';
 
 interface Props {
   icon: string;
@@ -12,6 +13,7 @@ interface Props {
  * I hints opzionali sono nascosti dietro un'icona (i) per non occupare spazio.
  */
 export function TabIntro({ title, subtitle, hints }: Props) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
 
   return (
@@ -25,8 +27,8 @@ export function TabIntro({ title, subtitle, hints }: Props) {
           <button
             className={`ti-info-btn ${open ? 'on' : ''}`}
             onClick={() => setOpen(v => !v)}
-            aria-label="Informazioni su questa sezione"
-            title="Come usare questa sezione"
+            aria-label={t('tabintro.info.aria')}
+            title={t('tabintro.info.title')}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10"/>

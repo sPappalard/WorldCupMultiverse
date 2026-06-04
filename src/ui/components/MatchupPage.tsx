@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Team, ModelParams, H2HRecord, TeamStats, ModulatorConfig } from '../../engine/types';
 import { scorelineDist, eloToStrength, buildModulatorStats } from '../../engine/matchModel';
 import { config } from '../../config';
+import { useT, useTeamName } from '../../i18n';
 
 interface Props {
   teams: Team[];
@@ -78,6 +79,7 @@ function AllOpponentsPanel({ focus, opponents, params, h2h, teamStats, effective
   h2h: Map<string, H2HRecord>; teamStats: Map<string, TeamStats>;
   effectiveMods: ModulatorConfig; onSelect: (id: string) => void;
 }) {
+  const { t } = useT();
   const BALANCE_THRESH = 0.05;
   const globalParams = params?.global ?? { intercept: config.modelDefaults.intercept, homeAdv: config.modelDefaults.homeAdv, rho: config.modelDefaults.rho };
   const activeOnly = opponents.filter(t => t.active);
@@ -117,20 +119,20 @@ function AllOpponentsPanel({ focus, opponents, params, h2h, teamStats, effective
     <div className="mu-all-panel">
       <div className="mu-all-header">
         <span className={`fi fi-${focus.flag} mu-all-flag`} aria-hidden />
-        <span className="mu-all-title">{focus.name} — panoramica vs tutte</span>
-        <span className="mu-all-hint">% vittoria / pareggio / sconfitta</span>
+        <span className="mu-all-title">{t('matchup.all.title', { name: focus.name })}</span>
+        <span className="mu-all-hint">{t('matchup.all.hint')}</span>
       </div>
       <div className="mu-all-cols">
         <div className="mu-all-col">
-          <div className="mu-all-col-head mu-all-col-head--fav">Favorita ({favored.length})</div>
+          <div className="mu-all-col-head mu-all-col-head--fav">{t('matchup.all.favored', { n: favored.length })}</div>
           {favored.map(({ opp, pWin, pDraw, pLoss }) => <OppRow key={opp.id} opp={opp} pWin={pWin} pDraw={pDraw} pLoss={pLoss} kind="fav" />)}
         </div>
         <div className="mu-all-col">
-          <div className="mu-all-col-head mu-all-col-head--bal">Equilibrata ({balanced.length})</div>
+          <div className="mu-all-col-head mu-all-col-head--bal">{t('matchup.all.balanced', { n: balanced.length })}</div>
           {balanced.map(({ opp, pWin, pDraw, pLoss }) => <OppRow key={opp.id} opp={opp} pWin={pWin} pDraw={pDraw} pLoss={pLoss} kind="bal" />)}
         </div>
         <div className="mu-all-col">
-          <div className="mu-all-col-head mu-all-col-head--und">Sfavorita ({underdog.length})</div>
+          <div className="mu-all-col-head mu-all-col-head--und">{t('matchup.all.underdog', { n: underdog.length })}</div>
           {underdog.map(({ opp, pWin, pDraw, pLoss }) => <OppRow key={opp.id} opp={opp} pWin={pWin} pDraw={pDraw} pLoss={pLoss} kind="und" />)}
         </div>
       </div>
@@ -139,6 +141,8 @@ function AllOpponentsPanel({ focus, opponents, params, h2h, teamStats, effective
 }
 
 export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props) {
+  const { t } = useT();
+  const teamName = useTeamName();
   const activeTeams = useMemo(() => teams.filter(t => t.active || t.substituteFor), [teams]);
   const [idxA, setIdxA] = useState(0);
   const [idxB, setIdxB] = useState(1);
@@ -208,25 +212,25 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
           <div className="mu2-side-top">
             {teamA && <span className={`fi fi-${teamA.flag} mu2-flag`} aria-hidden />}
             <div className="mu2-side-arrows">
-              <button className="mu2-arrow" onClick={() => stepA(-1)} title="Squadra precedente">
+              <button className="mu2-arrow" onClick={() => stepA(-1)} title={t('matchup.prevTeam')}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
               </button>
               <select className="mu2-select" value={idA} onChange={e => { setIdxA(activeTeams.findIndex(t => t.id === e.target.value)); setShowAll(false); }}>
-                {activeTeams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                {activeTeams.map(t => <option key={t.id} value={t.id}>{teamName(t)}</option>)}
               </select>
-              <button className="mu2-arrow" onClick={() => stepA(1)} title="Squadra successiva">
+              <button className="mu2-arrow" onClick={() => stepA(1)} title={t('matchup.nextTeam')}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
             </div>
           </div>
-          {teamA && <span className="mu2-team-name">{teamA.name}</span>}
-          {teamA && <span className="mu2-team-elo">Elo {teamA.elo}</span>}
+          {teamA && <span className="mu2-team-name">{teamName(teamA)}</span>}
+          {teamA && <span className="mu2-team-elo">{t('matchup.elo', { n: teamA.elo })}</span>}
           {teamA && (
             <button
               className={`mu2-all-btn ${showAll === 'A' ? 'on' : ''}`}
               onClick={() => setShowAll(v => v === 'A' ? false : 'A')}
             >
-              {showAll === 'A' ? '← Chiudi' : 'vs tutte'}
+              {showAll === 'A' ? t('matchup.closeLeft') : t('matchup.vsAll')}
             </button>
           )}
         </div>
@@ -236,12 +240,12 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
           <span className="mu2-vs">VS</span>
           <div className="mu2-ctx-btns">
             <button className={`mu2-ctx-btn ${context === 'group' ? 'on' : ''}`} onClick={() => setContext('group')}>
-              <span className="mu2-ctx-btn-label">Girone</span>
-              <span className="mu2-ctx-btn-sub">fase a gruppi</span>
+              <span className="mu2-ctx-btn-label">{t('matchup.ctx.group')}</span>
+              <span className="mu2-ctx-btn-sub">{t('matchup.ctx.group.sub')}</span>
             </button>
             <button className={`mu2-ctx-btn ${context === 'knockout' ? 'on' : ''}`} onClick={() => setContext('knockout')}>
-              <span className="mu2-ctx-btn-label">Eliminazione</span>
-              <span className="mu2-ctx-btn-sub">eliminazione diretta</span>
+              <span className="mu2-ctx-btn-label">{t('matchup.ctx.knockout')}</span>
+              <span className="mu2-ctx-btn-sub">{t('matchup.ctx.knockout.sub')}</span>
             </button>
           </div>
         </div>
@@ -250,26 +254,26 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
         <div className="mu2-side mu2-side--right">
           <div className="mu2-side-top">
             <div className="mu2-side-arrows">
-              <button className="mu2-arrow" onClick={() => stepB(-1)} title="Squadra precedente">
+              <button className="mu2-arrow" onClick={() => stepB(-1)} title={t('matchup.prevTeam')}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
               </button>
               <select className="mu2-select" value={idB} onChange={e => setIdxB(activeTeams.findIndex(t => t.id === e.target.value))}>
-                {activeTeams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                {activeTeams.map(t => <option key={t.id} value={t.id}>{teamName(t)}</option>)}
               </select>
-              <button className="mu2-arrow" onClick={() => stepB(1)} title="Squadra successiva">
+              <button className="mu2-arrow" onClick={() => stepB(1)} title={t('matchup.nextTeam')}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
             </div>
             {teamB && <span className={`fi fi-${teamB.flag} mu2-flag`} aria-hidden />}
           </div>
-          {teamB && <span className="mu2-team-name">{teamB.name}</span>}
-          {teamB && <span className="mu2-team-elo">Elo {teamB.elo}</span>}
+          {teamB && <span className="mu2-team-name">{teamName(teamB)}</span>}
+          {teamB && <span className="mu2-team-elo">{t('matchup.elo', { n: teamB.elo })}</span>}
           {teamB && (
             <button
               className={`mu2-all-btn ${showAll === 'B' ? 'on' : ''}`}
               onClick={() => setShowAll(v => v === 'B' ? false : 'B')}
             >
-              {showAll === 'B' ? 'Chiudi →' : 'vs tutte'}
+              {showAll === 'B' ? t('matchup.closeRight') : t('matchup.vsAll')}
             </button>
           )}
         </div>
@@ -309,7 +313,7 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
             </div>
             <div className="mu2-wdl-cell mu2-wdl-cell--c">
               <span className="mu2-wdl-pct">{pct(result.pDraw)}</span>
-              <span className="mu2-wdl-name">Pareggio</span>
+              <span className="mu2-wdl-name">{t('common.draw')}</span>
               <span className="mu2-wdl-quota">@{quota(result.pDraw)}</span>
             </div>
             <div className="mu2-wdl-cell mu2-wdl-cell--r">
@@ -319,8 +323,8 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
             </div>
           </div>
           <div className="mu2-lambda">
-            <span>{result.lambdaA.toFixed(2)} gol attesi</span>
-            <span>{result.lambdaB.toFixed(2)} gol attesi</span>
+            <span>{t('common.expectedGoals', { n: result.lambdaA.toFixed(2) })}</span>
+            <span>{t('common.expectedGoals', { n: result.lambdaB.toFixed(2) })}</span>
           </div>
 
           {/* KO extra */}
@@ -328,16 +332,16 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
             <div className="mu2-ko-row">
               <div className="mu2-ko-cell">
                 <span className="mu2-ko-pct mu2-ko-pct--a">{pct1(result.pKoA)}</span>
-                <span className="mu2-ko-label">Vittoria KO</span>
+                <span className="mu2-ko-label">{t('matchup.ko.win')}</span>
                 <span className="mu2-ko-quota">@{quota(result.pKoA)}</span>
               </div>
               <div className="mu2-ko-cell mu2-ko-cell--c">
-                <span className="mu2-ko-pen-label">Rigori se pari</span>
+                <span className="mu2-ko-pen-label">{t('matchup.ko.penIfTied')}</span>
                 <span className="mu2-ko-pen">{pct(result.pen.pA)} – {pct(result.pen.pB)}</span>
               </div>
               <div className="mu2-ko-cell mu2-ko-cell--r">
                 <span className="mu2-ko-pct mu2-ko-pct--b">{pct1(result.pKoB)}</span>
-                <span className="mu2-ko-label">Vittoria KO</span>
+                <span className="mu2-ko-label">{t('matchup.ko.win')}</span>
                 <span className="mu2-ko-quota">@{quota(result.pKoB)}</span>
               </div>
             </div>
@@ -345,10 +349,10 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
 
           {/* Tab bar */}
           <div className="mu2-tabs">
-            <button className={`mu2-tab ${tab === 'probs' ? 'on' : ''}`} onClick={() => setTab('probs')}>Risultati</button>
-            <button className={`mu2-tab ${tab === 'params' ? 'on' : ''}`} onClick={() => setTab('params')}>Parametri</button>
+            <button className={`mu2-tab ${tab === 'probs' ? 'on' : ''}`} onClick={() => setTab('probs')}>{t('matchup.tab.probs')}</button>
+            <button className={`mu2-tab ${tab === 'params' ? 'on' : ''}`} onClick={() => setTab('params')}>{t('matchup.tab.params')}</button>
             {result.h2hRec && result.h2hRec.n >= 3 && (
-              <button className={`mu2-tab ${tab === 'scores' ? 'on' : ''}`} onClick={() => setTab('scores')}>H2H</button>
+              <button className={`mu2-tab ${tab === 'scores' ? 'on' : ''}`} onClick={() => setTab('scores')}>{t('matchup.tab.h2h')}</button>
             )}
           </div>
 
@@ -374,21 +378,21 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
                 <span className="mu2-params-head-b">{teamB?.name}</span>
               </div>
               <CmpBar valA={teamA?.elo ?? 0} valB={teamB?.elo ?? 0} formatFn={v => String(v)} />
-              <div className="mu2-param-label-row"><span>Elo</span></div>
+              <div className="mu2-param-label-row"><span>{t('matchup.params.elo')}</span></div>
               <CmpBar valA={teamA?.squadValue ?? 0} valB={teamB?.squadValue ?? 0} formatFn={v => `€${v}M`} />
-              <div className="mu2-param-label-row"><span>Valore rosa</span></div>
+              <div className="mu2-param-label-row"><span>{t('matchup.params.squadValue')}</span></div>
               <CmpBar valA={result.strA.attack} valB={result.strB.attack} formatFn={v => v.toFixed(2)} />
-              <div className="mu2-param-label-row"><span>Attacco (log-λ)</span></div>
+              <div className="mu2-param-label-row"><span>{t('matchup.params.attack')}</span></div>
               <CmpBar valA={result.strA.defense} valB={result.strB.defense} formatFn={v => v.toFixed(2)} />
-              <div className="mu2-param-label-row"><span>Difesa (log-λ)</span></div>
+              <div className="mu2-param-label-row"><span>{t('matchup.params.defense')}</span></div>
               {statsA && statsB && (
                 <>
                   <CmpBar valA={statsA.form.score} valB={statsB.form.score} formatFn={v => `${Math.round(v)}/100`} />
-                  <div className="mu2-param-label-row"><span>Forma recente</span></div>
+                  <div className="mu2-param-label-row"><span>{t('matchup.params.form')}</span></div>
                   <CmpBar valA={statsA.knockout.score} valB={statsB.knockout.score} formatFn={v => `${Math.round(v)}/100`} />
-                  <div className="mu2-param-label-row"><span>Exp. KO</span></div>
+                  <div className="mu2-param-label-row"><span>{t('matchup.params.koExp')}</span></div>
                   <CmpBar valA={statsA.history.score} valB={statsB.history.score} formatFn={v => `${Math.round(v)}/100`} />
-                  <div className="mu2-param-label-row"><span>Storia nazionale</span></div>
+                  <div className="mu2-param-label-row"><span>{t('matchup.params.history')}</span></div>
                 </>
               )}
             </div>
@@ -402,16 +406,16 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
             const wB = aIsFirst ? rec.w_b : rec.w_a;
             return (
               <div className="mu2-h2h">
-                <div className="mu2-h2h-count">{rec.n} partite storiche dal 1994</div>
+                <div className="mu2-h2h-count">{t('matchup.h2h.count', { n: rec.n })}</div>
                 <div className="mu2-h2h-bar">
                   <div className="mu2-h2h-seg mu2-h2h-a" style={{ width: `${(wA / rec.n) * 100}%` }} />
                   <div className="mu2-h2h-seg mu2-h2h-d" style={{ width: `${(rec.d / rec.n) * 100}%` }} />
                   <div className="mu2-h2h-seg mu2-h2h-b" style={{ width: `${(wB / rec.n) * 100}%` }} />
                 </div>
                 <div className="mu2-h2h-labels">
-                  <span className="mu2-h2h-la">{teamA?.name} <strong>{wA}V</strong></span>
-                  <span className="mu2-h2h-ld"><strong>{rec.d}P</strong></span>
-                  <span className="mu2-h2h-lb"><strong>{wB}V</strong> {teamB?.name}</span>
+                  <span className="mu2-h2h-la">{teamA?.name} <strong>{wA}{t('common.winLetter')}</strong></span>
+                  <span className="mu2-h2h-ld"><strong>{rec.d}{t('common.drawLetter')}</strong></span>
+                  <span className="mu2-h2h-lb"><strong>{wB}{t('common.winLetter')}</strong> {teamB?.name}</span>
                 </div>
               </div>
             );
@@ -420,7 +424,7 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
       )}
 
       {idA === idB && !showAll && (
-        <div className="mu2-same-team">Seleziona due squadre diverse.</div>
+        <div className="mu2-same-team">{t('matchup.sameTeam')}</div>
       )}
     </div>
   );

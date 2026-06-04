@@ -3,6 +3,9 @@
 export interface Team {
   id: string;
   name: string;
+  nameEn?: string;
+  nameEs?: string;
+  nameFr?: string;
   group: string;
   flag: string;
   elo: number;

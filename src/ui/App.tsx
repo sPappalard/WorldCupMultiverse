@@ -28,6 +28,7 @@ import { HowItWorks } from './components/HowItWorks';
 import { pctSmart } from './odds';
 import { cinemaAudio } from './cinemaAudio';
 import { config } from '../config';
+import { useT, useTeamName, LANGUAGES } from '../i18n';
 
 /** Ferma il battito/tensione audio quando si salta il cinema. */
 const cinemaAudioStop = () => cinemaAudio.setTension(0);
@@ -47,19 +48,11 @@ const DEFAULT_MODULATORS: ModulatorConfig = {
   whatIf: { ...config.modulators.whatIf },
 };
 
-/** Fasi del flusso guidato. La dashboard è il punto d'arrivo (e di ritorno). */
 type AppPhase = 'presim' | 'cinema' | 'reveal' | 'dashboard';
 
-/** Lingue UI. `flag` = codice flag-icons (rende bene su Windows, non emoji). */
-type LangCode = 'it' | 'en' | 'es' | 'fr';
-const LANGUAGES: { code: LangCode; flag: string; label: string }[] = [
-  { code: 'it', flag: 'it', label: 'Italiano' },
-  { code: 'en', flag: 'gb', label: 'English' },
-  { code: 'es', flag: 'es', label: 'Español' },
-  { code: 'fr', flag: 'fr', label: 'Français' },
-];
-
 export function App() {
+  const { t, tList, nf, lang, setLang } = useT();
+  const teamName = useTeamName();
   /** Card aperta a schermo pieno nella home (null = griglia). */
   const [openCard, setOpenCard] = useState<CardId | null>(null);
   /** Pannello Admin (ingranaggio) a schermo pieno. */
@@ -77,9 +70,6 @@ export function App() {
     [sharedLink],
   );
   const [onboarded, setOnboarded] = useState(() => seenIntro);
-  /** Lingua UI selezionata (le traduzioni vere arriveranno dopo). */
-  const [lang, setLang] = useState<LangCode>('it');
-  /** Dropdown del selettore lingua aperto. */
   const [langOpen, setLangOpen] = useState(false);
   /**
    * Fase del flusso guidato. Chi ha già visto l'intro (o arriva da link
@@ -269,8 +259,8 @@ export function App() {
     }, 0);
   };
 
-  if (error) return <div className="app"><p className="error">Errore dati: {error}</p></div>;
-  if (!data) return <div className="app"><p className="muted">Caricamento dati…</p></div>;
+  if (error) return <div className="app"><p className="error">{t('app.error.data', { msg: error })}</p></div>;
+  if (!data) return <div className="app"><p className="muted">{t('app.loadingData')}</p></div>;
 
   if (!onboarded) {
     return <Onboarding teams={data.teams} onComplete={handleOnboardingComplete} />;
@@ -285,7 +275,7 @@ export function App() {
       return (
         <SimLaunchOverlay
           italyActive={scenario.italy}
-          favoriteName={favoriteTeam ? teamsById.get(favoriteTeam)?.name : null}
+          favoriteName={favoriteTeam ? (teamsById.get(favoriteTeam) ? teamName(teamsById.get(favoriteTeam)!) : null) : null}
           numRuns={config.numRuns}
         />
       );
@@ -335,18 +325,19 @@ export function App() {
     return (
       <div className="reveal-wait">
         <div className="reveal-spinner" aria-hidden />
-        <p>Calcolo delle probabilità…</p>
+        <p>{t('app.computingProbs')}</p>
       </div>
     );
   }
 
   // ── HOME A CARD ──
-  const favName = output && favoriteTeam ? teamsById.get(favoriteTeam)?.name : null;
+  const favTeam = output && favoriteTeam ? teamsById.get(favoriteTeam) : null;
+  const favName = favTeam ? teamName(favTeam) : null;
 
   const cards: CardDef[] = [
     {
-      id: 'results', icon: CARD_ICONS.results, title: 'Risultati Monte Carlo', theme: 'green', size: 'lg',
-      blurb: 'Probabilità di vittoria e percorso di ogni squadra su 100.000 simulazioni.',
+      id: 'results', icon: CARD_ICONS.results, title: t('card.results.title'), theme: 'green', size: 'lg',
+      blurb: t('card.results.blurb'),
       bigStat: output?.aggregates.length
         ? (
           <div className="bento-top10">
@@ -354,11 +345,11 @@ export function App() {
             <div className="bento-top5">
               {[0,2,4,6,8].map((idx, col) => {
                 const a = output.aggregates[idx]; if (!a) return null;
-                const t = teamsById.get(a.teamId);
+                const tm = teamsById.get(a.teamId);
                 return (
                   <div key={a.teamId} className={`bento-top5-row rank-${col + 1}`}>
                     <span className="bento-big-num">{pctSmart(a.winProb)}</span>
-                    <span className="bento-big-cap">{t?.name ?? a.teamId}</span>
+                    <span className="bento-big-cap">{tm ? teamName(tm) : a.teamId}</span>
                   </div>
                 );
               })}
@@ -367,11 +358,11 @@ export function App() {
             <div className="bento-top5 bento-top5--second">
               {[1,3,5,7,9].map((idx, col) => {
                 const a = output.aggregates[idx]; if (!a) return null;
-                const t = teamsById.get(a.teamId);
+                const tm = teamsById.get(a.teamId);
                 return (
                   <div key={a.teamId} className={`bento-top5-row rank-${col + 1}`}>
                     <span className="bento-big-num">{pctSmart(a.winProb)}</span>
-                    <span className="bento-big-cap">{t?.name ?? a.teamId}</span>
+                    <span className="bento-big-cap">{tm ? teamName(tm) : a.teamId}</span>
                   </div>
                 );
               })}
@@ -381,27 +372,32 @@ export function App() {
         : null,
     },
     {
-      id: 'sim', icon: CARD_ICONS.sim, title: 'La mia simulazione', theme: 'amber', size: 'md',
-      blurb: 'Gironi e tabellone della tua run. Una possibilità concreta su 100.000.',
-      stat: output ? <><strong>{teamsById.get(output.sample.championId)?.name}</strong> ha vinto</> : null,
+      id: 'sim', icon: CARD_ICONS.sim, title: t('card.sim.title'), theme: 'amber', size: 'md',
+      blurb: t('card.sim.blurb'),
+      stat: output ? (() => {
+        const champTeam = teamsById.get(output.sample.championId);
+        const nm = champTeam ? teamName(champTeam) : output.sample.championId;
+        const [pre, post] = t('card.sim.stat').split('{name}');
+        return <>{pre}<strong>{nm}</strong>{post}</>;
+      })() : null,
     },
     {
-      id: 'teams', icon: CARD_ICONS.teams, title: 'Squadre', theme: 'violet', size: 'md',
-      blurb: '49 nazionali con tutti i parametri: Elo, attacco, difesa, forma, esperienza KO.',
+      id: 'teams', icon: CARD_ICONS.teams, title: t('card.teams.title'), theme: 'violet', size: 'md',
+      blurb: t('card.teams.blurb'),
     },
     {
-      id: 'italy', icon: CARD_ICONS.italy, title: 'Focus Italia', theme: 'italy', size: 'lg',
-      blurb: scenario.italy ? 'Il cammino degli Azzurri in questo scenario.' : 'Cosa succederebbe se l\'Italia fosse nel Girone B — il what-if fondamentale.',
+      id: 'italy', icon: CARD_ICONS.italy, title: t('card.italy.title'), theme: 'italy', size: 'lg',
+      blurb: scenario.italy ? t('card.italy.blurb.active') : t('card.italy.blurb.inactive'),
       stat: favName ? <>♥ {favName}</> : null,
       slideshow: <ItalySlideshow />,
     },
     {
-      id: 'matchup', icon: CARD_ICONS.matchup, title: 'Confronto', theme: 'cyan', size: 'md',
-      blurb: 'Due nazionali una contro l\'altra: probabilità, risultati più probabili, parametri a confronto.',
+      id: 'matchup', icon: CARD_ICONS.matchup, title: t('card.matchup.title'), theme: 'cyan', size: 'md',
+      blurb: t('card.matchup.blurb'),
     },
     {
-      id: 'howto', icon: CARD_ICONS.howto, title: 'Come funziona', theme: 'slate', size: 'sm',
-      blurb: 'Metodologia, fonti dati, limiti del modello.',
+      id: 'howto', icon: CARD_ICONS.howto, title: t('card.howto.title'), theme: 'slate', size: 'sm',
+      blurb: t('card.howto.blurb'),
     },
   ];
 
@@ -424,23 +420,23 @@ export function App() {
           <span className="home-brand-ball">⚽</span>
           <div>
             <h1 className="home-brand-name">MonteCalcio</h1>
-            <span className="home-tagline">Mondiali 2026 · simulatore Monte Carlo</span>
+            <span className="home-tagline">{t('header.tagline')}</span>
           </div>
         </div>
         <div className="home-header-actions">
-          <button className="home-newsim-btn" onClick={() => setPhase('presim')} title="Cambia scenario e simula di nuovo">
+          <button className="home-newsim-btn" onClick={() => setPhase('presim')} title={t('header.newSim.title')}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
             </svg>
-            Nuova simulazione
+            {t('header.newSim')}
           </button>
           {/* Selettore lingua: bandiera della lingua attiva → dropdown premium. */}
           <div className="lang-switch">
             <button
               className="home-icon-btn lang-trigger"
               onClick={() => setLangOpen((o) => !o)}
-              title="Cambia lingua"
+              title={t('common.changeLanguage')}
               aria-haspopup="listbox"
               aria-expanded={langOpen}
             >
@@ -453,7 +449,7 @@ export function App() {
               <>
                 <div className="lang-backdrop" onClick={() => setLangOpen(false)} />
                 <div className="lang-menu" role="listbox">
-                  <div className="lang-menu-head">Lingua</div>
+                  <div className="lang-menu-head">{t('common.language')}</div>
                   {LANGUAGES.map((l) => (
                     <button
                       key={l.code}
@@ -475,7 +471,7 @@ export function App() {
               </>
             )}
           </div>
-          <button className="home-icon-btn" onClick={() => setAdminOpen(true)} title="Impostazioni avanzate">
+          <button className="home-icon-btn" onClick={() => setAdminOpen(true)} title={t('header.settings')}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
             </svg>
@@ -488,7 +484,7 @@ export function App() {
 
       {/* ── OVERLAY: La mia simulazione ── */}
       {openCard === 'sim' && (
-        <CardOverlay title="La mia simulazione" icon={CARD_ICONS.sim} onClose={() => setOpenCard(null)}>
+        <CardOverlay title={t('overlay.sim.title')} icon={CARD_ICONS.sim} onClose={() => setOpenCard(null)}>
           {output ? (
             <>
               <RunDetail
@@ -502,12 +498,10 @@ export function App() {
           ) : (
             <div className="ov-nosim">
               <div className="ov-nosim-icon">🎲</div>
-              <h3 className="ov-nosim-title">Nessuna simulazione ancora</h3>
-              <p className="ov-nosim-body">
-                Lancia una simulazione per vedere come va il torneo nella tua run.
-              </p>
+              <h3 className="ov-nosim-title">{t('nosim.title')}</h3>
+              <p className="ov-nosim-body">{t('nosim.sim.body')}</p>
               <button className="ov-nosim-btn" onClick={() => { setOpenCard(null); setPhase('presim'); }}>
-                Vai alla simulazione
+                {t('nosim.cta')}
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 8 }}>
                   <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                 </svg>
@@ -519,16 +513,14 @@ export function App() {
 
       {/* ── OVERLAY: Risultati Monte Carlo ── */}
       {openCard === 'results' && (
-        <CardOverlay title="Risultati Monte Carlo" icon={CARD_ICONS.results} onClose={() => setOpenCard(null)}>
+        <CardOverlay title={t('overlay.results.title')} icon={CARD_ICONS.results} onClose={() => setOpenCard(null)}>
           {!output && (
             <div className="ov-nosim">
               <div className="ov-nosim-icon">📊</div>
-              <h3 className="ov-nosim-title">Nessuna simulazione ancora</h3>
-              <p className="ov-nosim-body">
-                Lancia una simulazione per vedere le probabilità aggregate su 100.000 run.
-              </p>
+              <h3 className="ov-nosim-title">{t('nosim.title')}</h3>
+              <p className="ov-nosim-body">{t('nosim.results.body')}</p>
               <button className="ov-nosim-btn" onClick={() => { setOpenCard(null); setPhase('presim'); }}>
-                Vai alla simulazione
+                {t('nosim.cta')}
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 8 }}>
                   <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                 </svg>
@@ -538,8 +530,7 @@ export function App() {
           {output && (
             <>
               <p className="ov-lead">
-                Aggregato di {output.numRuns.toLocaleString('it-IT')} simulazioni: le probabilità
-                reali del torneo.{scenario.italy ? " 🇮🇹 Con l'Italia nel Girone B." : ''}
+                {t('results.lead', { n: nf(output.numRuns) })}{scenario.italy ? t('results.lead.italy') : ''}
               </p>
               <Standings
                 aggregates={output.aggregates}
@@ -561,11 +552,11 @@ export function App() {
 
       {/* ── OVERLAY: Confronto ── */}
       {openCard === 'matchup' && (
-        <CardOverlay title="Confronto tra squadre" icon={CARD_ICONS.matchup} onClose={() => setOpenCard(null)}>
+        <CardOverlay title={t('overlay.matchup.title')} icon={CARD_ICONS.matchup} onClose={() => setOpenCard(null)}>
           <TabIntro
-            icon="⚔️" title="Chi è favorita?"
-            subtitle="Scegli due nazionali: probabilità di vittoria, risultati più probabili, scontri diretti e parametri a confronto."
-            hints={['Frecce ‹ › o menu per cambiare squadra', '”Girone” = fase a gruppi (pareggio possibile), “Eliminazione” = fase a eliminazione diretta (con rigori)', '”vs tutte” sotto ogni squadra per vedere tutte le sfide']}
+            icon="⚔️" title={t('tabintro.matchup.title')}
+            subtitle={t('tabintro.matchup.subtitle')}
+            hints={tList('tabintro.matchup.hints')}
           />
           <MatchupPage
             teams={data.teams}
@@ -579,7 +570,7 @@ export function App() {
 
       {/* ── OVERLAY: Come funziona ── */}
       {openCard === 'howto' && (
-        <CardOverlay title="Come funziona" icon={CARD_ICONS.howto} onClose={() => setOpenCard(null)}>
+        <CardOverlay title={t('overlay.howto.title')} icon={CARD_ICONS.howto} onClose={() => setOpenCard(null)}>
           <HowItWorks
             modulators={modulators}
             onOpenAdmin={() => { setOpenCard(null); setTimeout(() => setAdminOpen(true), 80); }}
@@ -593,11 +584,11 @@ export function App() {
 
       {/* ── OVERLAY: Squadre ── */}
       {openCard === 'teams' && (
-        <CardOverlay title="Squadre partecipanti" icon={CARD_ICONS.teams} onClose={() => setOpenCard(null)}>
+        <CardOverlay title={t('overlay.teams.title')} icon={CARD_ICONS.teams} onClose={() => setOpenCard(null)}>
           <TabIntro
-            icon="🌍" title={`Le ${scenario.italy ? '49' : '48'} nazionali`}
-            subtitle="Tutti i parametri usati dal motore: Elo, valore rosa, forma, esperienza, storia."
-            hints={['Ordina coi pulsanti in alto', 'Clicca una squadra per il profilo e gli scontri diretti']}
+            icon="🌍" title={t('tabintro.teams.title', { n: scenario.italy ? '49' : '48' })}
+            subtitle={t('tabintro.teams.subtitle')}
+            hints={tList('tabintro.teams.hints')}
           />
           <TeamsPage
             teams={data.teams}
@@ -615,7 +606,7 @@ export function App() {
 
       {/* ── OVERLAY: Focus Italia ── */}
       {openCard === 'italy' && (
-        <CardOverlay title="Focus Italia" icon={CARD_ICONS.italy} onClose={() => setOpenCard(null)}>
+        <CardOverlay title={t('overlay.italy.title')} icon={CARD_ICONS.italy} onClose={() => setOpenCard(null)}>
           <ItalyCard
             teams={data.teams}
             params={data.params}
@@ -631,7 +622,7 @@ export function App() {
 
       {/* ── OVERLAY: Admin (ingranaggio) ── */}
       {adminOpen && (
-        <CardOverlay title="Impostazioni avanzate" icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>} onClose={() => setAdminOpen(false)}>
+        <CardOverlay title={t('overlay.admin.title')} icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>} onClose={() => setAdminOpen(false)}>
           <AdminPage
             modulators={modulators ?? DEFAULT_MODULATORS}
             teams={data.teams}

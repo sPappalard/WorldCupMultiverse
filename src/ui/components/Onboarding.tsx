@@ -14,6 +14,7 @@ import { useMemo, useState } from 'react';
 import type { Team } from '../../engine/types';
 import { whatIfFactors } from '../../config';
 import { emptyScenario, type Scenario, type AppliedFactor } from '../scenario';
+import { useT, useTeamName } from '../../i18n';
 
 export interface OnboardingResult {
   scenario: Scenario;
@@ -30,6 +31,8 @@ type Step = 0 | 1 | 2;
 const TOTAL_STEPS = 3;
 
 export function Onboarding({ teams, onComplete }: Props) {
+  const { t: tr } = useT();
+  const teamName = useTeamName();
   const [step, setStep] = useState<Step>(0);
   const [withItaly, setWithItaly] = useState<boolean | null>(null);
   /** Fattori what-if già configurati (con squadre bersaglio e intensità). */
@@ -60,8 +63,8 @@ export function Onboarding({ teams, onComplete }: Props) {
 
   const favPool = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const filtered = q ? activePool.filter((t) => t.name.toLowerCase().includes(q)) : activePool;
-    return [...filtered].sort((a, b) => a.name.localeCompare(b.name, 'it'));
+    const filtered = q ? activePool.filter((t) => teamName(t).toLowerCase().includes(q)) : activePool;
+    return [...filtered].sort((a, b) => teamName(a).localeCompare(teamName(b)));
   }, [activePool, search]);
 
   const extraDefs = whatIfFactors.filter((f) => !f.flagship && !f.isSlider && f.needsTeam);
@@ -135,13 +138,13 @@ export function Onboarding({ teams, onComplete }: Props) {
         {/* ── STEP 0 — Italia dentro o fuori (unica scelta vera) ── */}
         {step === 0 && (
           <section className="ob-step">
-            <p className="ob-kicker">Mondiali 2026</p>
+            <p className="ob-kicker">{tr('ob.step0.kicker')}</p>
             <h1 className="ob-title">
-              L'Italia non si è qualificata.<br />
-              <span className="ob-title-accent">Di nuovo.</span>
+              {tr('ob.step0.title.line1')}<br />
+              <span className="ob-title-accent">{tr('ob.step0.title.accent')}</span>
             </h1>
             <p className="ob-lead ob-lead--tight">
-              Però decidi tu: la rimettiamo in campo o guardiamo la cruda realtà?
+              {tr('ob.step0.lead')}
             </p>
 
             <div className="ob-choices">
@@ -152,11 +155,11 @@ export function Onboarding({ teams, onComplete }: Props) {
                 <span className="ob-choice-icon ob-choice-icon--italy">
                   <span className="fi fi-it" aria-hidden />
                 </span>
-                <span className="ob-choice-title">Con l'Italia</span>
+                <span className="ob-choice-title">{tr('ob.step0.withItaly.title')}</span>
                 <span className="ob-choice-desc">
-                  Azzurri nel Girone B, al posto della Bosnia. Di parte? Sì. Divertente? Tantissimo.
+                  {tr('ob.step0.withItaly.desc')}
                 </span>
-                <span className="ob-choice-tag ob-tag-italy">What-if · consigliata</span>
+                <span className="ob-choice-tag ob-tag-italy">{tr('ob.step0.withItaly.tag')}</span>
               </button>
 
               <button
@@ -170,11 +173,11 @@ export function Onboarding({ teams, onComplete }: Props) {
                     <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
                   </svg>
                 </span>
-                <span className="ob-choice-title">Senza l'Italia</span>
+                <span className="ob-choice-title">{tr('ob.step0.withoutItaly.title')}</span>
                 <span className="ob-choice-desc">
-                  Il Mondiale com'è davvero: 48 squadre, niente Azzurri. Realistico, ma un po' triste.
+                  {tr('ob.step0.withoutItaly.desc')}
                 </span>
-                <span className="ob-choice-tag ob-tag-real">Versione realistica</span>
+                <span className="ob-choice-tag ob-tag-real">{tr('ob.step0.withoutItaly.tag')}</span>
               </button>
             </div>
           </section>
@@ -183,15 +186,15 @@ export function Onboarding({ teams, onComplete }: Props) {
         {/* ── STEP 1 — Squadra del cuore (minimal, saltabile) ── */}
         {step === 1 && (
           <section className="ob-step">
-            <p className="ob-kicker">Per chi fai il tifo?</p>
-            <h1 className="ob-title">Scegli la tua squadra</h1>
+            <p className="ob-kicker">{tr('ob.step1.kicker')}</p>
+            <h1 className="ob-title">{tr('ob.step1.title')}</h1>
             <p className="ob-lead ob-lead--tight">
-              La seguiremo per te in tutto il torneo. Nessun vantaggio: la matematica non bara.
+              {tr('ob.step1.lead')}
             </p>
 
             <input
               className="ob-search"
-              placeholder="Cerca una nazionale…"
+              placeholder={tr('common.searchTeam')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
@@ -205,11 +208,11 @@ export function Onboarding({ teams, onComplete }: Props) {
                   onClick={() => { setFavorite(t.id); setTimeout(() => setStep(2), 320); }}
                 >
                   <span className={`fi fi-${t.flag}`} aria-hidden />
-                  <span className="ob-team-name">{t.name}</span>
+                  <span className="ob-team-name">{teamName(t)}</span>
                 </button>
               ))}
               {favPool.length === 0 && (
-                <p className="ob-empty muted">Nessuna squadra trovata.</p>
+                <p className="ob-empty muted">{tr('common.noTeamFound')}</p>
               )}
             </div>
           </section>
@@ -218,11 +221,10 @@ export function Onboarding({ teams, onComplete }: Props) {
         {/* ── STEP 2 — What-if extra (opzionali, nascosti finché non richiesti) ── */}
         {step === 2 && (
           <section className="ob-step">
-            <p className="ob-kicker">Ultimo tocco · opzionale</p>
-            <h1 className="ob-title">Vuoi forzare un po' il destino?</h1>
+            <p className="ob-kicker">{tr('ob.step2.kicker')}</p>
+            <h1 className="ob-title">{tr('ob.step2.title')}</h1>
             <p className="ob-lead ob-lead--tight">
-              Infortuni, rientri, squalifiche: scenari "what-if" che alterano la forza di una squadra.
-              Puoi anche aggiungerli dopo.
+              {tr('ob.step2.lead')}
             </p>
 
             {wantWhatIf !== true ? (
@@ -234,8 +236,8 @@ export function Onboarding({ teams, onComplete }: Props) {
                       <polygon points="5 3 19 12 5 21 5 3"/>
                     </svg>
                   </span>
-                  <span className="ob-choice-title">No, si parte!</span>
-                  <span className="ob-choice-desc">Lancia subito la simulazione.</span>
+                  <span className="ob-choice-title">{tr('ob.step2.no.title')}</span>
+                  <span className="ob-choice-desc">{tr('ob.step2.no.desc')}</span>
                 </button>
                 <button className="ob-choice ob-choice--mini" onClick={() => setWantWhatIf(true)}>
                   <span className="ob-choice-icon ob-choice-icon--tune">
@@ -245,8 +247,8 @@ export function Onboarding({ teams, onComplete }: Props) {
                       <circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="9" cy="18" r="2" fill="currentColor" stroke="none"/>
                     </svg>
                   </span>
-                  <span className="ob-choice-title">Sì, personalizza</span>
-                  <span className="ob-choice-desc">Aggiungi qualche what-if.</span>
+                  <span className="ob-choice-title">{tr('ob.step2.yes.title')}</span>
+                  <span className="ob-choice-desc">{tr('ob.step2.yes.desc')}</span>
                 </button>
               </div>
             ) : (
@@ -264,8 +266,8 @@ export function Onboarding({ teams, onComplete }: Props) {
                         >
                           <span className="ob-factor-emoji">{f.emoji}</span>
                           <span className="ob-factor-body">
-                            <span className="ob-factor-label">{f.label}</span>
-                            <span className="ob-factor-desc">{f.description}</span>
+                            <span className="ob-factor-label">{tr(f.labelKey)}</span>
+                            <span className="ob-factor-desc">{tr(f.descKey)}</span>
                           </span>
                           <span className="ob-factor-check">{on ? '✓' : '+'}</span>
                         </button>
@@ -279,10 +281,10 @@ export function Onboarding({ teams, onComplete }: Props) {
                                     key={tid}
                                     className="ob-chip"
                                     onClick={() => toggleFactorTeam(f.id, tid)}
-                                    title="Rimuovi"
+                                    title={tr('ob.factor.removeTeam')}
                                   >
                                     <span className={`fi fi-${teamsById.get(tid)?.flag}`} aria-hidden />
-                                    {teamsById.get(tid)?.name ?? tid}
+                                    {(() => { const tm = teamsById.get(tid); return tm ? teamName(tm) : tid; })()}
                                     <span className="ob-chip-x">×</span>
                                   </button>
                                 ))}
@@ -296,18 +298,18 @@ export function Onboarding({ teams, onComplete }: Props) {
                               }}
                             >
                               <option value="">
-                                {selected.length ? '+ Aggiungi un’altra squadra…' : '+ Scegli la squadra bersaglio…'}
+                                {selected.length ? tr('ob.factor.addAnother') : tr('ob.factor.chooseTarget')}
                               </option>
                               {activePool
                                 .filter((t) => !selected.includes(t.id))
                                 .slice()
-                                .sort((a, b) => a.name.localeCompare(b.name, 'it'))
+                                .sort((a, b) => teamName(a).localeCompare(teamName(b)))
                                 .map((t) => (
-                                  <option key={t.id} value={t.id}>{t.name}</option>
+                                  <option key={t.id} value={t.id}>{teamName(t)}</option>
                                 ))}
                             </select>
                             {selected.length === 0 && (
-                              <p className="ob-factor-warn">Scegli almeno una squadra, o resterà inattivo.</p>
+                              <p className="ob-factor-warn">{tr('ob.factor.warnNoTeam')}</p>
                             )}
                           </div>
                         )}
@@ -320,9 +322,9 @@ export function Onboarding({ teams, onComplete }: Props) {
                     <div className="ob-factor ob-factor--static">
                       <span className="ob-factor-emoji">🎲</span>
                       <span className="ob-factor-body">
-                        <span className="ob-factor-label">Fattore Caos</span>
+                        <span className="ob-factor-label">{tr('ob.chaos.title')}</span>
                         <span className="ob-factor-desc">
-                          Aumenta la varianza: più sorprese, più Cenerentole.
+                          {tr('ob.chaos.desc')}
                         </span>
                       </span>
                     </div>
@@ -344,7 +346,7 @@ export function Onboarding({ teams, onComplete }: Props) {
         <footer className="ob-actions">
           {step > 0 ? (
             <button className="ob-btn ob-btn-ghost" onClick={back}>
-              ← Indietro
+              {tr('ob.back')}
             </button>
           ) : (
             <span />
@@ -353,12 +355,12 @@ export function Onboarding({ teams, onComplete }: Props) {
           <div className="ob-actions-right">
             {step === 1 && (
               <button className="ob-btn ob-btn-ghost" onClick={() => { setFavorite(null); setStep(2); }}>
-                Salta · nessuna squadra →
+                {tr('ob.step1.skip')}
               </button>
             )}
             {step === 2 && wantWhatIf === true && (
               <button className="ob-btn ob-btn-primary ob-btn-go" onClick={() => finish()}>
-                ▶ Lancia
+                {tr('ob.step2.launch')}
               </button>
             )}
           </div>

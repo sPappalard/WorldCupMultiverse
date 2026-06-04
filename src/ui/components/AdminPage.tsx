@@ -14,6 +14,7 @@ import type { ModulatorConfig, Team, ModelParams, H2HRecord, TeamStats } from '.
 import { config } from '../../config';
 import { computeStrengthBreakdown } from '../../engine/strengthScore';
 import { StrengthPie } from './StrengthPie';
+import { useT } from '../../i18n';
 
 interface Props {
   modulators: ModulatorConfig;
@@ -30,13 +31,13 @@ interface Props {
 }
 
 /** Sezioni del pannello, per la navigazione ad ancore. */
-const ADM_SECTIONS = [
-  { id: 'adm-sec-lambda', label: 'Modulatori λ' },
-  { id: 'adm-sec-h2h', label: 'Storico H2H' },
-  { id: 'adm-sec-home', label: 'Vantaggio campo' },
-  { id: 'adm-sec-ko', label: 'Esperienza KO' },
-  { id: 'adm-sec-whatif', label: 'What-if' },
-  { id: 'adm-sec-ranking', label: 'Classifica forza' },
+const ADM_SECTION_IDS = [
+  { id: 'adm-sec-lambda', key: 'admin.nav.lambda' },
+  { id: 'adm-sec-h2h',    key: 'admin.nav.h2h' },
+  { id: 'adm-sec-home',   key: 'admin.nav.home' },
+  { id: 'adm-sec-ko',     key: 'admin.nav.ko' },
+  { id: 'adm-sec-whatif', key: 'admin.nav.whatif' },
+  { id: 'adm-sec-ranking',key: 'admin.nav.ranking' },
 ];
 
 /** Converte un coefficiente log-lambda in percentuale di variazione gol. */
@@ -72,13 +73,17 @@ interface SliderProps {
   onChange: (v: number) => void;
   onReset: () => void;
   defaultValue: number;
+  resetTitle: string;
+  resetLabel: string;
+  coeffLabel: string;
   /** Override del testo a sinistra (default: "coeff: X.XXX"). */
   valueLabel?: React.ReactNode;
 }
 
 function ModSlider({
   label, description, value, min, max, step,
-  effectLabel, effectValue, color, onChange, onReset, defaultValue, valueLabel,
+  effectLabel, effectValue, color, onChange, onReset, defaultValue,
+  resetTitle, resetLabel, coeffLabel, valueLabel,
 }: SliderProps) {
   const pct = ((value - min) / (max - min)) * 100;
   const isModified = Math.abs(value - defaultValue) > 1e-6;
@@ -91,8 +96,8 @@ function ModSlider({
           {label}
         </span>
         {isModified && (
-          <button className="adm-reset-btn" onClick={onReset} title="Ripristina default">
-            ↺ reset
+          <button className="adm-reset-btn" onClick={onReset} title={resetTitle}>
+            {resetLabel}
           </button>
         )}
       </div>
@@ -108,7 +113,7 @@ function ModSlider({
         />
         <div className="adm-slider-vals">
           <span className="adm-val-current" style={{ color }}>
-            {valueLabel ?? <>coeff: <strong>{value.toFixed(3)}</strong></>}
+            {valueLabel ?? <>{coeffLabel} <strong>{value.toFixed(3)}</strong></>}
           </span>
           <span className="adm-val-effect">
             {effectLabel}: <strong>{effectValue}</strong>
@@ -121,73 +126,69 @@ function ModSlider({
 
 /** Mostra un esempio concreto di partita con i modulatori correnti. */
 function LiveExample({ mod }: { mod: ModulatorConfig }) {
-  // Esempio: squadra "in forma" (score 85) vs squadra "in crisi" (score 30)
+  const { t } = useT();
   const formBoostHot  = (Math.exp(((85 - 50) / 50) * mod.formCoeff) - 1) * 100;
   const formBoostCold = (Math.exp(((30 - 50) / 50) * mod.formCoeff) - 1) * 100;
-  // Valore rosa: z-score +2 (es. Francia ~1480M€) vs z-score -0.5 (es. Haiti)
   const valueBoostRich = (Math.exp(2.0 * mod.squadValueCoeff) - 1) * 100;
   const valueBoostPoor = (Math.exp(-0.5 * mod.squadValueCoeff) - 1) * 100;
-  // Elo: +230 punti sopra media (Brasile ~1988 vs media ~1780) vs -200 sotto
   const eloBoostTop  = (Math.exp((230 / 200) * mod.eloCoeff) - 1) * 100;
   const eloBoostLow  = (Math.exp((-200 / 200) * mod.eloCoeff) - 1) * 100;
-  // Rigori: Italia (KO-exp ~72) vs Norvegia (KO-exp ~28)
   const koEdge = ((72 - 28) / 100) * mod.koExperienceCoeff * 100;
-  // Vantaggio campo: quanto % di gol in più per le host
   const homeAdvPct = (Math.exp(mod.homeAdvBoost) - 1) * 100;
 
   const up = <span className="adm-ex-arrow up" aria-hidden>▲</span>;
   const down = <span className="adm-ex-arrow down" aria-hidden>▼</span>;
   return (
     <div className="adm-example">
-      <h3 className="adm-example-title">Effetti concreti con i valori correnti</h3>
+      <h3 className="adm-example-title">{t('admin.ex.title')}</h3>
       <div className="adm-example-grid">
         <div className="adm-ex-card">
           <div className="adm-ex-icon">{up}</div>
-          <div className="adm-ex-title">Forma eccellente (score 85)</div>
-          <div className="adm-ex-val positive">+{formBoostHot.toFixed(1)}% gol attesi</div>
-          <div className="adm-ex-sub">es. Senegal, Norvegia, Inghilterra</div>
+          <div className="adm-ex-title">{t('admin.ex.formHot.title')}</div>
+          <div className="adm-ex-val positive">+{formBoostHot.toFixed(1)}% {t('admin.ex.goals', { v: '' }).replace('% ', '')}</div>
+          <div className="adm-ex-sub">{t('admin.ex.formHot.sub')}</div>
         </div>
         <div className="adm-ex-card">
           <div className="adm-ex-icon">{down}</div>
-          <div className="adm-ex-title">Forma negativa (score 30)</div>
-          <div className="adm-ex-val negative">{formBoostCold.toFixed(1)}% gol attesi</div>
-          <div className="adm-ex-sub">squadra in crisi profonda</div>
+          <div className="adm-ex-title">{t('admin.ex.formCold.title')}</div>
+          <div className="adm-ex-val negative">{formBoostCold.toFixed(1)}% {t('admin.ex.goals', { v: '' }).replace('% ', '')}</div>
+          <div className="adm-ex-sub">{t('admin.ex.formCold.sub')}</div>
         </div>
         <div className="adm-ex-card">
           <div className="adm-ex-icon">{up}</div>
-          <div className="adm-ex-title">Rosa ricchissima (z+2, ~€1400M)</div>
-          <div className="adm-ex-val positive">+{valueBoostRich.toFixed(1)}% gol attesi</div>
-          <div className="adm-ex-sub">es. Francia, Inghilterra</div>
+          <div className="adm-ex-title">{t('admin.ex.rich.title')}</div>
+          <div className="adm-ex-val positive">+{valueBoostRich.toFixed(1)}% {t('admin.ex.goals', { v: '' }).replace('% ', '')}</div>
+          <div className="adm-ex-sub">{t('admin.ex.rich.sub')}</div>
         </div>
         <div className="adm-ex-card">
           <div className="adm-ex-icon">{down}</div>
-          <div className="adm-ex-title">Rosa modesta (z−0.5)</div>
-          <div className="adm-ex-val negative">{valueBoostPoor.toFixed(1)}% gol attesi</div>
-          <div className="adm-ex-sub">es. Haiti, Curaçao</div>
+          <div className="adm-ex-title">{t('admin.ex.poor.title')}</div>
+          <div className="adm-ex-val negative">{valueBoostPoor.toFixed(1)}% {t('admin.ex.goals', { v: '' }).replace('% ', '')}</div>
+          <div className="adm-ex-sub">{t('admin.ex.poor.sub')}</div>
         </div>
         <div className="adm-ex-card">
           <div className="adm-ex-icon">{up}</div>
-          <div className="adm-ex-title">Elo top (+230 dalla media)</div>
-          <div className="adm-ex-val positive">+{eloBoostTop.toFixed(1)}% gol attesi</div>
-          <div className="adm-ex-sub">es. Brasile (Elo 1988)</div>
+          <div className="adm-ex-title">{t('admin.ex.eloTop.title')}</div>
+          <div className="adm-ex-val positive">+{eloBoostTop.toFixed(1)}% {t('admin.ex.goals', { v: '' }).replace('% ', '')}</div>
+          <div className="adm-ex-sub">{t('admin.ex.eloTop.sub')}</div>
         </div>
         <div className="adm-ex-card">
           <div className="adm-ex-icon">{down}</div>
-          <div className="adm-ex-title">Elo basso (−200 dalla media)</div>
-          <div className="adm-ex-val negative">{eloBoostLow.toFixed(1)}% gol attesi</div>
-          <div className="adm-ex-sub">es. Curaçao, Qatar</div>
+          <div className="adm-ex-title">{t('admin.ex.eloLow.title')}</div>
+          <div className="adm-ex-val negative">{eloBoostLow.toFixed(1)}% {t('admin.ex.goals', { v: '' }).replace('% ', '')}</div>
+          <div className="adm-ex-sub">{t('admin.ex.eloLow.sub')}</div>
         </div>
         <div className="adm-ex-card">
           <div className="adm-ex-icon">{up}</div>
-          <div className="adm-ex-title">Vantaggio campo (USA/CAN/MEX)</div>
-          <div className="adm-ex-val positive">+{homeAdvPct.toFixed(1)}% gol in casa</div>
-          <div className="adm-ex-sub">exp({mod.homeAdvBoost.toFixed(3)}) applicato solo alle 3 ospitanti</div>
+          <div className="adm-ex-title">{t('admin.ex.home.title')}</div>
+          <div className="adm-ex-val positive">{t('admin.ex.home.goals', { v: homeAdvPct.toFixed(1) })}</div>
+          <div className="adm-ex-sub">{t('admin.ex.home.sub', { v: mod.homeAdvBoost.toFixed(3) })}</div>
         </div>
         <div className="adm-ex-card adm-ex-card--wide">
           <div className="adm-ex-icon">{up}</div>
-          <div className="adm-ex-title">Rigori KO: Italia (exp 72) vs Norvegia (exp 28)</div>
-          <div className="adm-ex-val positive">Italia +{koEdge.toFixed(1)}% probabilità</div>
-          <div className="adm-ex-sub">bonus esperienza su base coin-flip inclinato verso i λ</div>
+          <div className="adm-ex-title">{t('admin.ex.ko.title')}</div>
+          <div className="adm-ex-val positive">{t('admin.ex.ko.val', { v: koEdge.toFixed(1) })}</div>
+          <div className="adm-ex-sub">{t('admin.ex.ko.sub')}</div>
         </div>
       </div>
     </div>
@@ -196,8 +197,6 @@ function LiveExample({ mod }: { mod: ModulatorConfig }) {
 
 /* ════════════════════════════════════════════════════════════════════
    LIVELLO SEMPLICE — poche leve concettuali, niente gergo.
-   Ogni leva ha 3 livelli; "Medio" coincide coi default calibrati.
-   I valori mappano su uno o più coefficienti reali del motore.
    ════════════════════════════════════════════════════════════════════ */
 
 type LeverLevel = 'low' | 'mid' | 'high';
@@ -236,135 +235,109 @@ const IconAdvanced = () => (
   <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
 );
 
-interface SimpleLever {
+interface SimpleLeverDef {
   id: string;
   icon: React.ReactNode;
-  title: string;
-  /** Una riga, linguaggio quotidiano. */
-  blurb: string;
-  /** Etichette dei tre livelli mostrate sul selettore. */
-  levels: { low: string; mid: string; high: string };
-  /** Spiega in una riga cosa succede su ogni livello (sotto il selettore). */
-  hint: { low: string; mid: string; high: string };
-  /** Applica il livello scelto ai modulatori (mid = default). */
   apply: (m: ModulatorConfig, level: LeverLevel) => ModulatorConfig;
-  /** Ricava il livello corrente dai modulatori (per evidenziare la scelta). */
   read: (m: ModulatorConfig) => LeverLevel;
 }
 
-const SIMPLE_LEVERS: SimpleLever[] = [
+const SIMPLE_LEVER_DEFS: SimpleLeverDef[] = [
   {
     id: 'surprises',
     icon: <IconDice />,
-    title: 'Quanto sono pazzi i Mondiali',
-    blurb: 'Sposta l’equilibrio tra «vincono i più forti» e «tutto può succedere».',
-    levels: { low: 'Pochi ribaltoni', mid: 'Equilibrato', high: 'Tante sorprese' },
-    hint: {
-      low: 'Le favorite dominano: poche Cenerentole.',
-      mid: 'Il bilanciamento consigliato, realistico.',
-      high: 'Più imprevisti: le piccole arrivano lontano più spesso.',
-    },
     apply: (m, l) => ({ ...m, lambdaShrink: l === 'low' ? 0.15 : l === 'high' ? 0.45 : DEFAULTS.lambdaShrink }),
     read: (m) => (m.lambdaShrink <= 0.22 ? 'low' : m.lambdaShrink >= 0.38 ? 'high' : 'mid'),
   },
   {
     id: 'home',
     icon: <IconHome />,
-    title: 'Spinta dei padroni di casa',
-    blurb: 'Quanto aiuta giocare in casa (USA, Canada, Messico).',
-    levels: { low: 'Quasi nulla', mid: 'Normale', high: 'Forte' },
-    hint: {
-      low: 'Il fattore campo conta pochissimo.',
-      mid: 'Vantaggio realistico per le ospitanti.',
-      high: 'Le ospitanti hanno una spinta marcata.',
-    },
     apply: (m, l) => ({ ...m, homeAdvBoost: l === 'low' ? 0.08 : l === 'high' ? 0.40 : DEFAULTS.homeAdvBoost }),
     read: (m) => (m.homeAdvBoost <= 0.14 ? 'low' : m.homeAdvBoost >= 0.31 ? 'high' : 'mid'),
   },
   {
     id: 'form',
     icon: <IconPulse />,
-    title: 'Peso dello stato di forma',
-    blurb: 'Quanto conta il momento (squadra in fiducia o in crisi).',
-    levels: { low: 'Poco', mid: 'Normale', high: 'Molto' },
-    hint: {
-      low: 'Conta solo il valore di fondo della squadra.',
-      mid: 'La forma pesa, ma senza esagerare.',
-      high: 'Il momento di forma incide parecchio.',
-    },
     apply: (m, l) => ({ ...m, formCoeff: l === 'low' ? 0.005 : l === 'high' ? 0.08 : DEFAULTS.formCoeff }),
     read: (m) => (m.formCoeff <= 0.012 ? 'low' : m.formCoeff >= 0.05 ? 'high' : 'mid'),
   },
 ];
 
 /** Selettore a 3 livelli, stile segmented-control premium. */
-function LeverCard({ lever, mod, onPick }: {
-  lever: SimpleLever;
+function LeverCard({ def, mod, onPick }: {
+  def: SimpleLeverDef;
   mod: ModulatorConfig;
   onPick: (level: LeverLevel) => void;
 }) {
-  const current = lever.read(mod);
+  const { t } = useT();
+  const current = def.read(mod);
   const order: LeverLevel[] = ['low', 'mid', 'high'];
+  const id = def.id;
+  const title = t(`admin.lever.${id}.title`);
+  const blurb = t(`admin.lever.${id}.blurb`);
+  const levels = { low: t(`admin.lever.${id}.low`), mid: t(`admin.lever.${id}.mid`), high: t(`admin.lever.${id}.high`) };
+  const hint = t(`admin.lever.${id}.hint.${current}`);
   return (
     <div className="lever-card">
       <div className="lever-head">
-        <span className="lever-ico">{lever.icon}</span>
+        <span className="lever-ico">{def.icon}</span>
         <div className="lever-text">
-          <span className="lever-title">{lever.title}</span>
-          <span className="lever-blurb">{lever.blurb}</span>
+          <span className="lever-title">{title}</span>
+          <span className="lever-blurb">{blurb}</span>
         </div>
       </div>
-      <div className="lever-seg" role="group" aria-label={lever.title}>
+      <div className="lever-seg" role="group" aria-label={title}>
         {order.map((lv) => (
           <button
             key={lv}
             className={`lever-seg-btn ${current === lv ? 'active' : ''}`}
             onClick={() => onPick(lv)}
           >
-            {lever.levels[lv]}
+            {levels[lv]}
           </button>
         ))}
       </div>
-      <p className="lever-hint">{lever.hint[current]}</p>
+      <p className="lever-hint">{hint}</p>
     </div>
   );
 }
 
 /** Card scenario what-if (intuitivo): mostra solo l'intensità, niente "pt Elo". */
 function SimpleWhatIf({ mod, onChange }: { mod: ModulatorConfig; onChange: (m: ModulatorConfig) => void }) {
-  const items: { key: keyof ModulatorConfig['whatIf']; icon: React.ReactNode; label: string; sign: 'neg' | 'pos' }[] = [
-    { key: 'missingStar', icon: <IconUserMinus />, label: 'Assenza di un big', sign: 'neg' },
-    { key: 'injuries', icon: <IconBandage />, label: 'Più infortuni pesanti', sign: 'neg' },
-    { key: 'starReturn', icon: <IconSpark />, label: 'Rientro / stato di grazia', sign: 'pos' },
-    { key: 'suspension', icon: <IconCard />, label: 'Squalifica chiave', sign: 'neg' },
+  const { t } = useT();
+  const items: { key: keyof ModulatorConfig['whatIf']; icon: React.ReactNode; labelKey: string; sign: 'neg' | 'pos' }[] = [
+    { key: 'missingStar', icon: <IconUserMinus />, labelKey: 'admin.swi.missingStar', sign: 'neg' },
+    { key: 'injuries',    icon: <IconBandage />,   labelKey: 'admin.swi.injuries',    sign: 'neg' },
+    { key: 'starReturn',  icon: <IconSpark />,     labelKey: 'admin.swi.starReturn',  sign: 'pos' },
+    { key: 'suspension',  icon: <IconCard />,      labelKey: 'admin.swi.suspension',  sign: 'neg' },
   ];
-  // Intensità 1–3 (lieve/medio/forte) mappata sul valore in punti.
   const magToLevel = (v: number) => {
     const a = Math.abs(v);
     return a <= 30 ? 1 : a <= 70 ? 2 : 3;
   };
   const levelToMag = (lv: number, sign: 'neg' | 'pos') => {
     const base = lv === 1 ? 25 : lv === 2 ? 55 : 95;
-    return sign === 'neg' ? -base : Math.round(base * 0.55); // i bonus sono più piccoli
+    return sign === 'neg' ? -base : Math.round(base * 0.55);
   };
   return (
     <div className="swi-grid">
       {items.map((it) => {
         const lv = magToLevel(mod.whatIf[it.key]);
+        const label = t(it.labelKey);
         return (
           <div key={it.key} className="swi-card">
             <div className="swi-head">
               <span className="swi-ico">{it.icon}</span>
-              <span className="swi-label">{it.label}</span>
+              <span className="swi-label">{label}</span>
             </div>
-            <div className="swi-seg" role="group" aria-label={it.label}>
+            <div className="swi-seg" role="group" aria-label={label}>
               {[1, 2, 3].map((n) => (
                 <button
                   key={n}
                   className={`swi-seg-btn ${lv === n ? 'active' : ''}`}
                   onClick={() => onChange({ ...mod, whatIf: { ...mod.whatIf, [it.key]: levelToMag(n, it.sign) } })}
                 >
-                  {n === 1 ? 'Lieve' : n === 2 ? 'Medio' : 'Forte'}
+                  {n === 1 ? t('admin.swi.light') : n === 2 ? t('admin.swi.medium') : t('admin.swi.strong')}
                 </button>
               ))}
             </div>
@@ -376,19 +349,16 @@ function SimpleWhatIf({ mod, onChange }: { mod: ModulatorConfig; onChange: (m: M
 }
 
 export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerateRanking, teams, params, h2h, teamStats }: Props) {
+  const { t } = useT();
   const [localMod, setLocalMod] = useState<ModulatorConfig>({ ...modulators });
   const [applied, setApplied] = useState(false);
-  /** Livello del pannello: parte semplice, "Opzioni avanzate" lo sblocca. */
   const [mode, setMode] = useState<'simple' | 'advanced'>('simple');
-  /** Avviso una-tantum all'apertura ("tutto è già calibrato…"). */
   const [showIntro, setShowIntro] = useState(true);
-  /** Dialog di conferma per sbloccare la modalità avanzata. */
   const [showUnlock, setShowUnlock] = useState(false);
 
   const update = useCallback((key: keyof ModulatorConfig, value: number) => {
     setLocalMod((prev) => {
       const next = { ...prev, [key]: value };
-      // KO weights devono sommare a 1
       if (key === 'koKnockoutWeight') {
         next.koHistoryWeight = Math.round((1 - value) * 100) / 100;
       } else if (key === 'koHistoryWeight') {
@@ -409,8 +379,6 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
     setApplied(false);
   };
 
-  // "Applica" nella vista avanzata: aggiorna solo i pesi (lo specialista può
-  // continuare a smanettare). Per rilanciare c'è il bottone dedicato in fondo.
   const apply = () => {
     onChange(localMod);
     setApplied(true);
@@ -418,46 +386,44 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
 
   const isModified = JSON.stringify(localMod) !== JSON.stringify(DEFAULTS);
 
-  // Scomposizione del Punteggio Forza, reattiva agli slider correnti.
   const breakdown = useMemo(
     () => computeStrengthBreakdown({ teams, params, h2h, teamStats, modulators: localMod }),
     [teams, params, h2h, teamStats, localMod],
   );
 
-  // Le leve aggiornano solo lo stato locale: l'utente conferma con il bottone
-  // "Applica e rilancia". Così niente ri-simulazioni a ogni click.
-  const applyLever = (lever: SimpleLever, level: LeverLevel) => {
-    setLocalMod(lever.apply(localMod, level));
+  const applyLever = (def: SimpleLeverDef, level: LeverLevel) => {
+    setLocalMod(def.apply(localMod, level));
     setApplied(false);
   };
   const applySimpleWhatIf = (next: ModulatorConfig) => {
     setLocalMod(next);
     setApplied(false);
   };
-  /** Applica i valori correnti e rilancia la simulazione (chiude il pannello). */
   const applyAndSimulate = () => {
     if (onApplyAndSimulate) onApplyAndSimulate(localMod);
     else { onChange(localMod); setApplied(true); }
   };
 
-  // ── DIALOG condivisi (intro una-tantum + sblocco avanzato) ──
+  const resetTitle = t('admin.resetTitle');
+  const resetLabel = t('admin.reset');
+  const coeffLabel = t('admin.coeff');
+
+  // ── DIALOG condivisi ──
   const dialogs = (
     <>
       {showIntro && (
         <div className="adm-modal-backdrop" onClick={() => setShowIntro(false)}>
           <div className="adm-modal" onClick={(e) => e.stopPropagation()}>
             <div className="adm-modal-icon"><IconSliders /></div>
-            <h3 className="adm-modal-title">Zona regolazioni</h3>
+            <h3 className="adm-modal-title">{t('admin.intro.title')}</h3>
             <p className="adm-modal-body">
-              Qui puoi <strong>giocare con le impostazioni</strong> della simulazione.
-              Sappi però che è <strong>già tutto calibrato</strong> con cura: non serve
-              toccare niente per avere risultati sensati.
+              {t('admin.intro.body1.pre')}<strong>{t('admin.intro.body1.b1')}</strong>{t('admin.intro.body1.mid')}<strong>{t('admin.intro.body1.b2')}</strong>{t('admin.intro.body1.post')}
             </p>
             <p className="adm-modal-body adm-modal-body--soft">
-              Se ti va di sperimentare, accomodati pure — puoi sempre ripristinare tutto.
+              {t('admin.intro.body2')}
             </p>
             <button className="adm-modal-cta" onClick={() => setShowIntro(false)}>
-              Ho capito, entro
+              {t('admin.intro.cta')}
             </button>
           </div>
         </div>
@@ -467,23 +433,22 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
         <div className="adm-modal-backdrop" onClick={() => setShowUnlock(false)}>
           <div className="adm-modal" onClick={(e) => e.stopPropagation()}>
             <div className="adm-modal-icon"><IconAdvanced /></div>
-            <h3 className="adm-modal-title">Opzioni avanzate</h3>
+            <h3 className="adm-modal-title">{t('admin.unlock.title')}</h3>
             <p className="adm-modal-body">
-              Stai per sbloccare i <strong>controlli tecnici</strong>: coefficienti grezzi,
-              effetti in percentuale, pesi del modello. Roba per chi <strong>mastica i dati</strong>.
+              {t('admin.unlock.body1.pre')}<strong>{t('admin.unlock.body1.b1')}</strong>{t('admin.unlock.body1.mid')}<strong>{t('admin.unlock.body1.b2')}</strong>{t('admin.unlock.body1.post')}
             </p>
             <p className="adm-modal-body adm-modal-body--soft">
-              Tutto resta reversibile, ma le scritte diventano parecchio più dense.
+              {t('admin.unlock.body2')}
             </p>
             <div className="adm-modal-actions">
               <button className="adm-modal-ghost" onClick={() => setShowUnlock(false)}>
-                No, resto qui
+                {t('admin.unlock.no')}
               </button>
               <button
                 className="adm-modal-cta"
                 onClick={() => { setMode('advanced'); setShowUnlock(false); }}
               >
-                Sì, sblocca
+                {t('admin.unlock.yes')}
               </button>
             </div>
           </div>
@@ -493,7 +458,7 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
   );
 
   // ════════════════════════════════════════════════════════════════
-  // VISTA SEMPLICE — leve grandi, niente gergo. (default)
+  // VISTA SEMPLICE
   // ════════════════════════════════════════════════════════════════
   if (mode === 'simple') {
     return (
@@ -501,34 +466,30 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
         {dialogs}
 
         <div className="adm-simple-head">
-          <h2 className="adm-simple-title">Regola la simulazione</h2>
-          <p className="adm-simple-sub">
-            È già tutto impostato bene. Tocca solo se ti va.
-          </p>
+          <h2 className="adm-simple-title">{t('admin.simple.title')}</h2>
+          <p className="adm-simple-sub">{t('admin.simple.sub')}</p>
         </div>
 
         <div className="lever-list">
-          {SIMPLE_LEVERS.map((lever) => (
-            <LeverCard key={lever.id} lever={lever} mod={localMod} onPick={(lv) => applyLever(lever, lv)} />
+          {SIMPLE_LEVER_DEFS.map((def) => (
+            <LeverCard key={def.id} def={def} mod={localMod} onPick={(lv) => applyLever(def, lv)} />
           ))}
         </div>
 
         <div className="adm-simple-block">
-          <h3 className="adm-simple-block-title">Scenari «e se…»</h3>
-          <p className="adm-simple-block-sub">
-            Quanto pesano gli imprevisti su una squadra.
-          </p>
+          <h3 className="adm-simple-block-title">{t('admin.simple.whatifTitle')}</h3>
+          <p className="adm-simple-block-sub">{t('admin.simple.whatifSub')}</p>
           <SimpleWhatIf mod={localMod} onChange={applySimpleWhatIf} />
         </div>
 
         <button className="adm-simple-cta" onClick={applyAndSimulate}>
-          ▶ Applica e vai alla simulazione
+          {t('admin.simple.cta')}
         </button>
 
         {isModified && (
           <div className="adm-simple-actions">
             <button className="adm-btn-reset" onClick={resetAll}>
-              ↺ Rimetti tutto com'era
+              {t('admin.simple.resetAll')}
             </button>
           </div>
         )}
@@ -536,14 +497,12 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
         <button className="adm-unlock-card" onClick={() => setShowUnlock(true)}>
           <span className="adm-unlock-ico"><IconAdvanced /></span>
           <span className="adm-unlock-text">
-            <span className="adm-unlock-title">Opzioni avanzate</span>
-            <span className="adm-unlock-sub">Sblocca i controlli tecnici · per chi mastica i dati</span>
+            <span className="adm-unlock-title">{t('admin.simple.unlock.title')}</span>
+            <span className="adm-unlock-sub">{t('admin.simple.unlock.sub')}</span>
           </span>
           <span className="adm-unlock-arrow" aria-hidden>→</span>
         </button>
-        <p className="adm-simple-foot">
-          Le modifiche valgono solo per te, in questa sessione.
-        </p>
+        <p className="adm-simple-foot">{t('admin.simple.foot')}</p>
       </div>
     );
   }
@@ -557,29 +516,28 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
       <div className="adm-header">
         <div className="adm-back-row">
           <button className="adm-back-btn" onClick={() => setMode('simple')}>
-            ← Torna alla vista semplice
+            {t('admin.adv.back')}
           </button>
         </div>
-        <h2 className="adm-title">Pannello Admin — Coefficienti Simulatore</h2>
+        <h2 className="adm-title">{t('admin.adv.title')}</h2>
         <p className="adm-subtitle">
-          Modifica i pesi dei modulatori e premi <strong>Applica</strong> per ri-simulare con i nuovi valori.
-          Le modifiche sono valide solo per questa sessione.
+          {t('admin.adv.subtitle.pre')}<strong>{t('admin.adv.subtitle.apply')}</strong>{t('admin.adv.subtitle.post')}
         </p>
         <div className="adm-header-actions">
           {isModified && (
-            <button className="adm-btn-reset" onClick={resetAll}>↺ Ripristina tutti i default</button>
+            <button className="adm-btn-reset" onClick={resetAll}>{t('admin.adv.resetAllDefaults')}</button>
           )}
           <button className="adm-btn-apply" onClick={apply} disabled={applied}>
-            {applied ? '✓ Applicato' : '▶ Applica al simulatore'}
+            {applied ? t('admin.adv.applied') : t('admin.adv.applyToSim')}
           </button>
         </div>
       </div>
 
       {/* Navigazione rapida tra le sezioni */}
       <nav className="adm-nav">
-        {ADM_SECTIONS.map((s) => (
+        {ADM_SECTION_IDS.map((s) => (
           <a key={s.id} href={`#${s.id}`} className="adm-nav-link">
-            {s.label}
+            {t(s.key)}
           </a>
         ))}
       </nav>
@@ -589,165 +547,156 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
         {/* SEZIONE 1: Modulatori su ogni partita */}
         <section className="adm-section" id="adm-sec-lambda">
           <h3 className="adm-section-title">
-            Modulatori λ — agiscono su <em>ogni</em> partita
+            {t('admin.sec.lambda.title.pre')}<em>{t('admin.sec.lambda.title.em')}</em>{t('admin.sec.lambda.title.post')}
           </h3>
-          <p className="adm-section-desc">
-            Questi coefficienti moltiplicano i gol attesi (<em>λ</em>) calcolati dal modello bayesiano core.
-            Effetti piccoli e proporzionali: non ribaltano un mismatch, spostano l'ago nelle sfide equilibrate.
-          </p>
+          <p className="adm-section-desc">{t('admin.sec.lambda.desc')}</p>
 
           <ModSlider
-            label="Forma recente"
-            description="Ultime 30 partite (score 0–100, media ≈ 50). Peso volutamente marginale: una squadra in grande forma segna pochissimo di più, una in crisi pochissimo di meno."
+            label={t('admin.slider.form.label')}
+            description={t('admin.slider.form.desc')}
             value={localMod.formCoeff}
             min={0} max={0.15} step={0.005}
-            effectLabel="effetto max (score 0 o 100)"
+            effectLabel={t('admin.slider.form.effect')}
             effectValue={toGolPct(localMod.formCoeff, 1)}
             color="#22c55e"
             onChange={(v) => update('formCoeff', v)}
             onReset={() => update('formCoeff', DEFAULTS.formCoeff)}
             defaultValue={DEFAULTS.formCoeff}
+            resetTitle={resetTitle} resetLabel={resetLabel} coeffLabel={coeffLabel}
           />
 
           <ModSlider
-            label="Valore rosa"
-            description="Valore di mercato della rosa (z-score sulle 48 squadre). Riflette la qualità media dei calciatori, non già catturata del tutto dall'Elo."
+            label={t('admin.slider.value.label')}
+            description={t('admin.slider.value.desc')}
             value={localMod.squadValueCoeff}
             min={0} max={0.25} step={0.005}
-            effectLabel="effetto max (z ≈ ±2)"
+            effectLabel={t('admin.slider.value.effect')}
             effectValue={toGolPct(localMod.squadValueCoeff, 2)}
             color="#f59e0b"
             onChange={(v) => update('squadValueCoeff', v)}
             onReset={() => update('squadValueCoeff', DEFAULTS.squadValueCoeff)}
             defaultValue={DEFAULTS.squadValueCoeff}
+            resetTitle={resetTitle} resetLabel={resetLabel} coeffLabel={coeffLabel}
           />
 
           <ModSlider
-            label="Elo corrente"
-            description="Rating Elo snapshot giugno 2026. Corregge le distorsioni del fit bayesiano sulle big europee/sudamericane. Calibrato su quote bookmaker giugno 2026."
+            label={t('admin.slider.elo.label')}
+            description={t('admin.slider.elo.desc')}
             value={localMod.eloCoeff}
             min={0} max={0.35} step={0.005}
-            effectLabel="effetto max (±230 pt Elo)"
+            effectLabel={t('admin.slider.elo.effect')}
             effectValue={toGolPct(localMod.eloCoeff, 230 / 200)}
             color="#3b82f6"
             onChange={(v) => update('eloCoeff', v)}
             onReset={() => update('eloCoeff', DEFAULTS.eloCoeff)}
             defaultValue={DEFAULTS.eloCoeff}
+            resetTitle={resetTitle} resetLabel={resetLabel} coeffLabel={coeffLabel}
           />
 
           <ModSlider
-            label="Equilibratore (shrink)"
-            description="Avvicina i gol attesi delle due squadre verso la loro media. Più alto = partite più equilibrate e più sorprese, distribuzione di vittoria del torneo meno concentrata sulle big. A 0 nessun effetto."
+            label={t('admin.slider.shrink.label')}
+            description={t('admin.slider.shrink.desc')}
             value={localMod.lambdaShrink}
             min={0} max={0.5} step={0.01}
-            effectLabel="riduzione scarto favorita/sfavorita"
+            effectLabel={t('admin.slider.shrink.effect')}
             effectValue={`${(localMod.lambdaShrink * 100).toFixed(0)}%`}
             color="#a855f7"
             onChange={(v) => update('lambdaShrink', v)}
             onReset={() => update('lambdaShrink', DEFAULTS.lambdaShrink)}
             defaultValue={DEFAULTS.lambdaShrink}
+            resetTitle={resetTitle} resetLabel={resetLabel} coeffLabel={coeffLabel}
           />
         </section>
 
         {/* SEZIONE 2: Scontri diretti H2H */}
         <section className="adm-section" id="adm-sec-h2h">
           <h3 className="adm-section-title">
-            Storico H2H — agisce su <em>coppie con almeno 3 precedenti</em>
+            {t('admin.sec.h2h.title.pre')}<em>{t('admin.sec.h2h.title.em')}</em>
           </h3>
-          <p className="adm-section-desc">
-            Per ogni coppia con storico disponibile (dataset 1994–2026), i lambda vengono aggiustati
-            in base al win-rate reale vs quello implicito nel modello. Il peso cresce con √n partite
-            (massimo a n=20). A 0 lo storico diretto viene ignorato completamente.
-            Nota: la maggior parte delle partite dei gironi 2026 ha solo 2–4 precedenti → effetto piccolo (±5–15%).
-          </p>
+          <p className="adm-section-desc">{t('admin.sec.h2h.desc')}</p>
           <ModSlider
-            label="Max boost H2H"
-            description="Moltiplicatore massimo applicabile ai λ per effetto H2H. Es. 0.25 = ±25% sui gol attesi. Agisce solo se la coppia ha storico sufficiente."
+            label={t('admin.slider.h2h.label')}
+            description={t('admin.slider.h2h.desc')}
             value={localMod.h2hMaxBoost}
             min={0} max={0.50} step={0.01}
-            effectLabel="boost massimo sui λ"
+            effectLabel={t('admin.slider.h2h.effect')}
             effectValue={`±${(localMod.h2hMaxBoost * 100).toFixed(0)}%`}
             color="#8b5cf6"
             onChange={(v) => update('h2hMaxBoost', v)}
             onReset={() => update('h2hMaxBoost', DEFAULTS.h2hMaxBoost)}
             defaultValue={DEFAULTS.h2hMaxBoost}
+            resetTitle={resetTitle} resetLabel={resetLabel} coeffLabel={coeffLabel}
           />
         </section>
 
         {/* SEZIONE 3: Vantaggio campo */}
         <section className="adm-section" id="adm-sec-home">
           <h3 className="adm-section-title">
-            Vantaggio campo — agisce su <em>ogni partita delle 3 ospitanti</em>
+            {t('admin.sec.home.title.pre')}<em>{t('admin.sec.home.title.em')}</em>
           </h3>
-          <p className="adm-section-desc">
-            USA, Canada e Messico giocano in casa propria. Il vantaggio è in scala log-lambda:
-            più è alto, più gol si aspettano dalla squadra ospitante. A 0 il campo non conta nulla.
-          </p>
+          <p className="adm-section-desc">{t('admin.sec.home.desc')}</p>
 
           <ModSlider
-            label="Bonus campo (log-λ)"
-            description="Applicato ai λ della squadra ospitante (solo USA/CAN/MEX). exp(0.27) ≈ +31% gol attesi. A parità di tutto, la host ha una spinta offensiva."
+            label={t('admin.slider.home.label')}
+            description={t('admin.slider.home.desc')}
             value={localMod.homeAdvBoost}
             min={0} max={0.60} step={0.01}
-            effectLabel="gol attesi in più in casa"
+            effectLabel={t('admin.slider.home.effect')}
             effectValue={`+${((Math.exp(localMod.homeAdvBoost) - 1) * 100).toFixed(1)}%`}
             color="#f97316"
             onChange={(v) => update('homeAdvBoost', v)}
             onReset={() => update('homeAdvBoost', DEFAULTS.homeAdvBoost)}
             defaultValue={DEFAULTS.homeAdvBoost}
+            resetTitle={resetTitle} resetLabel={resetLabel} coeffLabel={coeffLabel}
           />
         </section>
 
         {/* SEZIONE 4: Esperienza KO */}
         <section className="adm-section" id="adm-sec-ko">
           <h3 className="adm-section-title">
-            Esperienza/Maturità — agisce <em>nelle fasi a eliminazione</em>
+            {t('admin.sec.ko.title.pre')}<em>{t('admin.sec.ko.title.em')}</em>
           </h3>
-          <p className="adm-section-desc">
-            Chi è abituato alle fasi finali (storia + rendimento knockout) ha un leggero
-            vantaggio nelle partite a eliminazione diretta: sia sull'intera gara, sia ai
-            rigori in caso di parità. Effetti piccoli, non ribaltano i valori.
-          </p>
+          <p className="adm-section-desc">{t('admin.sec.ko.desc')}</p>
 
           <ModSlider
-            label="Bonus partita KO"
-            description="Quanto l'esperienza sposta i gol attesi nell'INTERA partita a eliminazione diretta (Round of 32 in poi). Con gap massimo (100 pt) e coeff 0.05 → ~±5% gol per la squadra più esperta."
+            label={t('admin.slider.koMatch.label')}
+            description={t('admin.slider.koMatch.desc')}
             value={localMod.koMatchCoeff}
             min={0} max={0.15} step={0.005}
-            effectLabel="effetto max sui gol (gap 100 pt)"
+            effectLabel={t('admin.slider.koMatch.effect')}
             effectValue={`±${((Math.exp(localMod.koMatchCoeff) - 1) * 100).toFixed(1)}%`}
             color="#a855f7"
             onChange={(v) => update('koMatchCoeff', v)}
             onReset={() => update('koMatchCoeff', DEFAULTS.koMatchCoeff)}
             defaultValue={DEFAULTS.koMatchCoeff}
+            resetTitle={resetTitle} resetLabel={resetLabel} coeffLabel={coeffLabel}
           />
 
           <ModSlider
-            label="Bonus rigori KO"
-            description="Quanto l'esperienza sposta la probabilità ai rigori (quando la partita finisce in parità nei 90'). Con gap massimo (100 pt) e coeff 0.08 → +8pp sulla probabilità base (es. 52% → 60%)."
+            label={t('admin.slider.koPen.label')}
+            description={t('admin.slider.koPen.desc')}
             value={localMod.koExperienceCoeff}
             min={0} max={0.20} step={0.005}
-            effectLabel="effetto max (gap exp 100 pt)"
-            effectValue={`±${(localMod.koExperienceCoeff * 100).toFixed(1)}pp prob. rigori`}
+            effectLabel={t('admin.slider.koPen.effect')}
+            effectValue={t('admin.slider.koPen.effectUnit', { v: (localMod.koExperienceCoeff * 100).toFixed(1) })}
             color="#a855f7"
             onChange={(v) => update('koExperienceCoeff', v)}
             onReset={() => update('koExperienceCoeff', DEFAULTS.koExperienceCoeff)}
             defaultValue={DEFAULTS.koExperienceCoeff}
+            resetTitle={resetTitle} resetLabel={resetLabel} coeffLabel={coeffLabel}
           />
 
           <div className="adm-mix-row">
             <div className="adm-mix-header">
-              <span className="adm-slider-label">Mix Knockout / Storia nell'indice esperienza</span>
+              <span className="adm-slider-label">{t('admin.mix.label')}</span>
               <span className="adm-mix-vals">
-                KO: <strong>{Math.round(localMod.koKnockoutWeight * 100)}%</strong>
-                {' · '}
-                Storia: <strong>{Math.round(localMod.koHistoryWeight * 100)}%</strong>
+                {t('admin.mix.vals', {
+                  ko: Math.round(localMod.koKnockoutWeight * 100),
+                  hist: Math.round(localMod.koHistoryWeight * 100),
+                })}
               </span>
             </div>
-            <p className="adm-slider-desc">
-              Knockout = rendimento nelle fasi finali dal 1994 (win rate pesato per torneo).
-              Storia = titoli storici nella storia completa del torneo.
-            </p>
+            <p className="adm-slider-desc">{t('admin.mix.desc')}</p>
             <input
               type="range"
               min={0} max={1} step={0.05}
@@ -760,8 +709,8 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
               className="adm-range"
             />
             <div className="adm-mix-labels">
-              <span>← 100% Storia</span>
-              <span>100% Knockout →</span>
+              <span>{t('admin.mix.leftLabel')}</span>
+              <span>{t('admin.mix.rightLabel')}</span>
             </div>
           </div>
         </section>
@@ -769,86 +718,79 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
         {/* SEZIONE 5: Pesi degli scenari what-if */}
         <section className="adm-section" id="adm-sec-whatif">
           <h3 className="adm-section-title">
-            Scenari what-if — <em>magnitudine degli effetti</em>
+            {t('admin.sec.whatif.title.pre')}<em>{t('admin.sec.whatif.title.em')}</em>
           </h3>
-          <p className="adm-section-desc">
-            Quanto ogni scenario sposta la forza della squadra selezionata, in
-            punti Elo-equivalenti. Valori negativi indeboliscono, positivi
-            rafforzano. Si applicano alle squadre scelte nel pannello what-if.
-          </p>
+          <p className="adm-section-desc">{t('admin.sec.whatif.desc')}</p>
 
           <ModSlider
-            label="Assenza di un big"
-            description="Una stella out (es. infortunio dell'ultimo minuto). Indebolisce la squadra."
+            label={t('admin.whatif.missingStar.label')}
+            description={t('admin.whatif.missingStar.desc')}
             value={localMod.whatIf.missingStar}
             min={-120} max={0} step={5}
-            valueLabel={<>valore: <strong>{localMod.whatIf.missingStar} pt</strong></>}
-            effectLabel="forza squadra"
-            effectValue={`${localMod.whatIf.missingStar} pt Elo`}
+            valueLabel={<>{t('admin.whatif.valueLabel', { v: localMod.whatIf.missingStar })}</>}
+            effectLabel={t('admin.whatif.strength')}
+            effectValue={t('admin.whatif.effectVal', { v: localMod.whatIf.missingStar })}
             color="#f59e0b"
             onChange={(v) => updateWhatIf('missingStar', v)}
             onReset={() => updateWhatIf('missingStar', DEFAULTS.whatIf.missingStar)}
             defaultValue={DEFAULTS.whatIf.missingStar}
+            resetTitle={resetTitle} resetLabel={resetLabel} coeffLabel={coeffLabel}
           />
           <ModSlider
-            label="Infortuni a 2–3 titolari"
-            description="Più assenze pesanti. Riduzione maggiore della forza della squadra."
+            label={t('admin.whatif.injuries.label')}
+            description={t('admin.whatif.injuries.desc')}
             value={localMod.whatIf.injuries}
             min={-160} max={0} step={5}
-            valueLabel={<>valore: <strong>{localMod.whatIf.injuries} pt</strong></>}
-            effectLabel="forza squadra"
-            effectValue={`${localMod.whatIf.injuries} pt Elo`}
+            valueLabel={<>{t('admin.whatif.valueLabel', { v: localMod.whatIf.injuries })}</>}
+            effectLabel={t('admin.whatif.strength')}
+            effectValue={t('admin.whatif.effectVal', { v: localMod.whatIf.injuries })}
             color="#ef4444"
             onChange={(v) => updateWhatIf('injuries', v)}
             onReset={() => updateWhatIf('injuries', DEFAULTS.whatIf.injuries)}
             defaultValue={DEFAULTS.whatIf.injuries}
+            resetTitle={resetTitle} resetLabel={resetLabel} coeffLabel={coeffLabel}
           />
           <ModSlider
-            label="Rientro / stato di grazia"
-            description="Un big torna al top o la squadra è in forma smagliante. Piccolo bonus."
+            label={t('admin.whatif.starReturn.label')}
+            description={t('admin.whatif.starReturn.desc')}
             value={localMod.whatIf.starReturn}
             min={0} max={80} step={5}
-            valueLabel={<>valore: <strong>+{localMod.whatIf.starReturn} pt</strong></>}
-            effectLabel="forza squadra"
-            effectValue={`+${localMod.whatIf.starReturn} pt Elo`}
+            valueLabel={<>{t('admin.whatif.valueLabelPos', { v: localMod.whatIf.starReturn })}</>}
+            effectLabel={t('admin.whatif.strength')}
+            effectValue={t('admin.whatif.effectValPos', { v: localMod.whatIf.starReturn })}
             color="#22c55e"
             onChange={(v) => updateWhatIf('starReturn', v)}
             onReset={() => updateWhatIf('starReturn', DEFAULTS.whatIf.starReturn)}
             defaultValue={DEFAULTS.whatIf.starReturn}
+            resetTitle={resetTitle} resetLabel={resetLabel} coeffLabel={coeffLabel}
           />
           <ModSlider
-            label="Squalifica chiave"
-            description="Un titolare squalificato. Penalità una-tantum sulla forza."
+            label={t('admin.whatif.suspension.label')}
+            description={t('admin.whatif.suspension.desc')}
             value={localMod.whatIf.suspension}
             min={-120} max={0} step={5}
-            valueLabel={<>valore: <strong>{localMod.whatIf.suspension} pt</strong></>}
-            effectLabel="forza squadra"
-            effectValue={`${localMod.whatIf.suspension} pt Elo`}
+            valueLabel={<>{t('admin.whatif.valueLabel', { v: localMod.whatIf.suspension })}</>}
+            effectLabel={t('admin.whatif.strength')}
+            effectValue={t('admin.whatif.effectVal', { v: localMod.whatIf.suspension })}
             color="#f97316"
             onChange={(v) => updateWhatIf('suspension', v)}
             onReset={() => updateWhatIf('suspension', DEFAULTS.whatIf.suspension)}
             defaultValue={DEFAULTS.whatIf.suspension}
+            resetTitle={resetTitle} resetLabel={resetLabel} coeffLabel={coeffLabel}
           />
         </section>
 
         {/* SEZIONE 6: Genera classifica forza */}
         <section className="adm-section" id="adm-sec-ranking">
           <h3 className="adm-section-title">
-            Classifica forza — <em>squadre ordinate per punteggio</em>
+            {t('admin.sec.ranking.title.pre')}<em>{t('admin.sec.ranking.title.em')}</em>
           </h3>
-          <p className="adm-section-desc">
-            Genera la lista delle 48 squadre con un <strong>Punteggio Forza</strong> (0–100)
-            che tiene conto di tutto: parametri del modello, Elo, valore rosa, forma,
-            esperienza KO/storia, vantaggio campo e tutti i pesi qui sopra. La lista si
-            apre nella pagina <strong>Squadre</strong>, ordinata per forza; clicca una
-            squadra per i dettagli (incluso il win-rate medio contro tutte le altre).
-          </p>
+          <p className="adm-section-desc">{t('admin.sec.ranking.desc')}</p>
 
-          {/* Torta: quanto pesa ogni componente sul Punteggio Forza */}
           <div className="adm-pie-block">
             <div className="adm-pie-title">
-              Composizione del Punteggio Forza
-              <span className="adm-pie-hint">si aggiorna mentre modifichi i pesi</span>
+              {t('admin.pie.title')}
+              <span className="adm-pie-hint">{t('admin.pie.hint')}</span>
             </div>
             <StrengthPie components={breakdown} />
           </div>
@@ -857,7 +799,7 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
             className="adm-btn-apply adm-btn-apply--big"
             onClick={() => onGenerateRanking?.(localMod)}
           >
-            Genera classifica forza con questi pesi
+            {t('admin.ranking.generate')}
           </button>
         </section>
 
@@ -867,13 +809,13 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
         {/* Tasto applica in fondo */}
         <div className="adm-footer-actions">
           {isModified && (
-            <button className="adm-btn-reset" onClick={resetAll}>↺ Ripristina default</button>
+            <button className="adm-btn-reset" onClick={resetAll}>{t('admin.adv.resetAllDefaults')}</button>
           )}
           <button className="adm-btn-apply" onClick={apply} disabled={applied}>
-            {applied ? '✓ Valori pronti' : 'Applica (senza simulare)'}
+            {applied ? t('admin.footer.valuesReady') : t('admin.footer.applyNoSim')}
           </button>
           <button className="adm-btn-apply adm-btn-apply--big" onClick={applyAndSimulate}>
-            ▶ Applica e vai alla simulazione
+            {t('admin.footer.applyAndSim')}
           </button>
         </div>
       </div>

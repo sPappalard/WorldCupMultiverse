@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import type { Team, ModelParams, TeamStats, TeamAggregate } from '../../engine/types';
 import { pctSmart, oddsFromProb } from '../odds';
+import { useT } from '../../i18n';
 
 interface Props {
   teams: Team[];
@@ -18,37 +19,16 @@ interface Props {
 }
 
 const ITALY_ID = 'ITA';
-
-const LOADING_MESSAGES = [
-  "Sto chiedendo alla Bosnia se ci fa il favore di farci giocare al posto loro…",
-  "Convinco il sorteggio FIFA che era solo un errore di stampa…",
-  "Spiego alla UEFA che tre play-off persi sono una fase di costruzione…",
-  "Preparo le scuse del ct per quando usciremo ai gironi nella realtà…",
-  "Ok, la Bosnia ha accettato. In bocca al lupo, Italia.",
-];
-const LOADING_DURATION = 12000; // ms totali
-const MSG_INTERVAL = LOADING_DURATION / LOADING_MESSAGES.length;
-
-function getIronicQuote(italyActive: boolean, winProb?: number): string {
-  if (!italyActive) return '';
-  if (winProb === undefined) return '';
-
-  const winPct = Math.round(winProb * 100);
-
-  if (winPct >= 10) {
-    return `${winPct}% di vincere. Quattro stelle sul petto, zero presenze negli ultimi due Mondiali. Il modello ha la memoria corta — fortuna nostra.`;
-  }
-  return `Avremmo avuto il ${winPct}% di vincere. A quanto pare il problema non era solo qualificarsi.`;
-}
+const LOADING_DURATION = 12000;
 
 const PHASES = [
-  { label: 'Fase a gironi',  field: 'reachRo32Prob'    as const, color: 'var(--cyan)',         emoji: '🏟️' },
-  { label: 'Sedicesimi',     field: 'reachRo32Prob'    as const, color: 'var(--cyan-bright)',   emoji: '⚡' },
-  { label: 'Ottavi',         field: 'reachRo16Prob'    as const, color: '#60a5fa',              emoji: '🔵' },
-  { label: 'Quarti',         field: 'reachQuarterProb' as const, color: 'var(--green)',         emoji: '🟢' },
-  { label: 'Semifinale',     field: 'reachSemiProb'    as const, color: 'var(--green-bright)',  emoji: '🔥' },
-  { label: 'Finale',         field: 'reachFinalProb'   as const, color: 'var(--amber)',         emoji: '⭐' },
-  { label: 'Campione',       field: 'winProb'          as const, color: '#fbbf24',              emoji: '🏆' },
+  { labelKey: 'italy.phase.groups',   field: 'reachRo32Prob'    as const, color: 'var(--cyan)',         emoji: '🏟️' },
+  { labelKey: 'italy.phase.r32',      field: 'reachRo32Prob'    as const, color: 'var(--cyan-bright)',  emoji: '⚡' },
+  { labelKey: 'italy.phase.r16',      field: 'reachRo16Prob'    as const, color: '#60a5fa',             emoji: '🔵' },
+  { labelKey: 'italy.phase.quarter',  field: 'reachQuarterProb' as const, color: 'var(--green)',        emoji: '🟢' },
+  { labelKey: 'italy.phase.semi',     field: 'reachSemiProb'    as const, color: 'var(--green-bright)', emoji: '🔥' },
+  { labelKey: 'italy.phase.final',    field: 'reachFinalProb'   as const, color: 'var(--amber)',        emoji: '⭐' },
+  { labelKey: 'italy.phase.champion', field: 'winProb'          as const, color: '#fbbf24',             emoji: '🏆' },
 ];
 
 function StatRow({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
@@ -74,17 +54,20 @@ function BarRow({ label, pct, value, color }: { label: string; pct: number; valu
 }
 
 export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, numRuns, onActivate }: Props) {
+  const { t, tList, nf } = useT();
+  const loadingMessages = tList('italy.loadingMessages');
+  const MSG_INTERVAL = LOADING_DURATION / Math.max(1, loadingMessages.length);
   const [loading, setLoading] = useState(false);
   const [msgIdx, setMsgIdx] = useState(0);
 
   function handleActivate() {
     setLoading(true);
     setMsgIdx(0);
-    onActivate(); // avvia subito la simulazione in parallelo
+    onActivate();
     let i = 0;
     const interval = setInterval(() => {
       i++;
-      if (i < LOADING_MESSAGES.length) {
+      if (i < loadingMessages.length) {
         setMsgIdx(i);
       } else {
         clearInterval(interval);
@@ -95,15 +78,15 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
     }, LOADING_DURATION);
   }
 
-  const italy = teams.find((t) => t.id === ITALY_ID);
-  if (!italy) return <p className="muted">Dati Italia non disponibili.</p>;
+  const italy = teams.find((tm) => tm.id === ITALY_ID);
+  if (!italy) return <p className="muted">{t('italy.unavailable')}</p>;
 
   if (loading) {
     return (
       <div className="itc-loading">
         <span className="fi fi-it itc-loading-flag" aria-hidden />
         <div className="itc-loading-spinner" />
-        <p className="itc-loading-msg">{LOADING_MESSAGES[msgIdx]}</p>
+        <p className="itc-loading-msg">{loadingMessages[msgIdx] ?? ''}</p>
         <div className="itc-loading-dots"><span /><span /><span /></div>
       </div>
     );
@@ -113,8 +96,12 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
   const ts = teamStats.get(ITALY_ID);
   const agg = italyActive ? aggregates?.find((a) => a.teamId === ITALY_ID) : undefined;
 
-  // Storico tornei dall'oggetto knockout
-  const quote = getIronicQuote(italyActive, agg?.winProb);
+  const winPct = agg?.winProb !== undefined ? Math.round(agg.winProb * 100) : undefined;
+  const quote = italyActive && winPct !== undefined
+    ? (winPct >= 10
+      ? t('italy.quote.high', { pct: String(winPct) })
+      : t('italy.quote.low', { pct: String(winPct) }))
+    : '';
 
   const worldCup = ts?.knockout.byTournament.find(t => t.label.includes('Mondiali'));
   const euros    = ts?.knockout.byTournament.find(t => t.label.includes('Euro'));
@@ -127,11 +114,9 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
       <div className="itc-header">
         <span className="fi fi-it itc-flag" aria-hidden />
         <div className="itc-header-text">
-          <h2 className="itc-name">Italia</h2>
+          <h2 className="itc-name">{t('italy.name')}</h2>
           <p className="itc-tagline">
-            {italyActive
-              ? <>Girone B — scenario what-if attivo</>
-              : <>Non qualificata ai Mondiali 2026 — <strong>scenario what-if</strong></>}
+            {italyActive ? t('italy.tagline.active') : t('italy.tagline.inactive')}
           </p>
         </div>
         <div className="itc-header-elo">
@@ -144,27 +129,27 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
       {italyActive && agg && numRuns && (
         <div className="itc-sim-hero">
           <div className="itc-sim-hero-header">
-            <span className="itc-sim-hero-title">🇮🇹 Risultati simulazione</span>
-            <span className="itc-sim-badge">su {numRuns.toLocaleString('it-IT')} simulazioni</span>
+            <span className="itc-sim-hero-title">{t('italy.sim.title')}</span>
+            <span className="itc-sim-badge">{t('italy.sim.badge', { n: nf(numRuns) })}</span>
           </div>
 
           {/* Stat chiave: Campione + Finale in grande */}
           <div className="itc-sim-hero-stats">
             <div className="itc-sim-hero-stat">
               <span className="itc-sim-hero-val" style={{ color: '#fbbf24' }}>{pctSmart(agg.winProb)}</span>
-              <span className="itc-sim-hero-label">🏆 Campione</span>
+              <span className="itc-sim-hero-label">{t('italy.label.champion')}</span>
               <span className="itc-sim-hero-odds">@{oddsFromProb(agg.winProb)}</span>
             </div>
             <div className="itc-sim-hero-divider" />
             <div className="itc-sim-hero-stat">
               <span className="itc-sim-hero-val" style={{ color: 'var(--amber)' }}>{pctSmart(agg.reachFinalProb)}</span>
-              <span className="itc-sim-hero-label">⭐ Finale</span>
+              <span className="itc-sim-hero-label">{t('italy.label.final')}</span>
               <span className="itc-sim-hero-odds">@{oddsFromProb(agg.reachFinalProb)}</span>
             </div>
             <div className="itc-sim-hero-divider" />
             <div className="itc-sim-hero-stat">
               <span className="itc-sim-hero-val" style={{ color: 'var(--green-bright)' }}>{pctSmart(agg.reachSemiProb)}</span>
-              <span className="itc-sim-hero-label">🔥 Semifinale</span>
+              <span className="itc-sim-hero-label">{t('italy.label.semi')}</span>
               <span className="itc-sim-hero-odds">@{oddsFromProb(agg.reachSemiProb)}</span>
             </div>
           </div>
@@ -182,8 +167,8 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
             {PHASES.map((p) => {
               const prob = agg[p.field] as number;
               return (
-                <div key={p.label} className="itc-phase-row">
-                  <span className="itc-phase-label">{p.label}</span>
+                <div key={p.labelKey} className="itc-phase-row">
+                  <span className="itc-phase-label">{t(p.labelKey)}</span>
                   <div className="itc-phase-track">
                     <div className="itc-phase-fill" style={{ width: `${prob * 100}%`, background: p.color }} />
                   </div>
@@ -209,62 +194,62 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
 
         {/* Blocco 1: Parametri modello */}
         <div className="itc-block">
-          <div className="itc-block-title">Parametri del modello</div>
+          <div className="itc-block-title">{t('italy.block.modelParams')}</div>
           <div className="itc-bars">
-            <BarRow label="Elo" pct={((italy.elo - 1400) / 800) * 100} value={String(italy.elo)} color="var(--green)" />
-            <BarRow label="Valore rosa" pct={((italy.squadValue ?? 0) / 1500) * 100} value={`€${italy.squadValue ?? 0}M`} color="var(--cyan)" />
-            {tp && <BarRow label="Attacco" pct={((tp.attack + 0.6) / 1.8) * 100} value={tp.attack.toFixed(2)} color="var(--green-bright)" />}
-            {tp && <BarRow label="Difesa" pct={((tp.defense + 0.6) / 1.8) * 100} value={tp.defense.toFixed(2)} color="var(--cyan-bright)" />}
+            <BarRow label={t('italy.bar.elo')} pct={((italy.elo - 1400) / 800) * 100} value={String(italy.elo)} color="var(--green)" />
+            <BarRow label={t('italy.bar.squadValue')} pct={((italy.squadValue ?? 0) / 1500) * 100} value={`€${italy.squadValue ?? 0}M`} color="var(--cyan)" />
+            {tp && <BarRow label={t('italy.bar.attack')} pct={((tp.attack + 0.6) / 1.8) * 100} value={tp.attack.toFixed(2)} color="var(--green-bright)" />}
+            {tp && <BarRow label={t('italy.bar.defense')} pct={((tp.defense + 0.6) / 1.8) * 100} value={tp.defense.toFixed(2)} color="var(--cyan-bright)" />}
           </div>
         </div>
 
         {/* Blocco 2: Forma e score */}
         <div className="itc-block">
-          <div className="itc-block-title">Forma e indici</div>
+          <div className="itc-block-title">{t('italy.block.formAndIndices')}</div>
           <div className="itc-bars">
-            {ts && <BarRow label="Forma recente" pct={ts.form.score} value={`${Math.round(ts.form.score)}/100`} color="var(--amber)" />}
-            {ts && <BarRow label="Esperienza KO" pct={ts.knockout.score} value={`${Math.round(ts.knockout.score)}/100`} color="var(--violet)" />}
-            {ts && <BarRow label="Storia" pct={ts.history.score} value={`${Math.round(ts.history.score)}/100`} color="var(--pink)" />}
+            {ts && <BarRow label={t('italy.bar.form')} pct={ts.form.score} value={`${Math.round(ts.form.score)}/100`} color="var(--amber)" />}
+            {ts && <BarRow label={t('italy.bar.koExp')} pct={ts.knockout.score} value={`${Math.round(ts.knockout.score)}/100`} color="var(--violet)" />}
+            {ts && <BarRow label={t('italy.bar.history')} pct={ts.history.score} value={`${Math.round(ts.history.score)}/100`} color="var(--pink)" />}
           </div>
           {ts && (
             <div className="itc-form-record">
-              <span>Ultime {ts.form.n} partite:</span>
-              <span className="itc-form-w">{ts.form.w}V</span>
-              <span className="itc-form-d">{ts.form.d}P</span>
-              <span className="itc-form-l">{ts.form.l}S</span>
+              <span>{t('italy.formRecord.last', { n: String(ts.form.n) })}</span>
+              <span className="itc-form-w">{ts.form.w}{t('common.winLetter')}</span>
+              <span className="itc-form-d">{ts.form.d}{t('common.drawLetter')}</span>
+              <span className="itc-form-l">{ts.form.l}{t('common.lossLetter')}</span>
             </div>
           )}
         </div>
 
         {/* Blocco 3: Palmarès Mondiali */}
         <div className="itc-block">
-          <div className="itc-block-title">Palmarès Mondiali FIFA</div>
+          <div className="itc-block-title">{t('italy.block.worldCup')}</div>
           <div className="itc-stats-col">
-            <StatRow label="Titoli" value={histWC ? String(histWC.titles) : '4'} color="var(--amber)" />
-            <StatRow label="Finali raggiunte" value={histWC ? String(histWC.finals) : '6'} />
+            <StatRow label={t('italy.stat.titles')} value={histWC ? String(histWC.titles) : '4'} color="var(--amber)" />
+            <StatRow label={t('italy.stat.finals')} value={histWC ? String(histWC.finals) : '6'} />
             {worldCup && <>
-              <StatRow label="Partite KO" value={`${worldCup.w + worldCup.d + worldCup.l}`} />
-              <StatRow label="Record KO" value={`${worldCup.w}V ${worldCup.d}P ${worldCup.l}S`} />
-              <StatRow label="Score KO" value={`${Math.round(worldCup.score)}/100`} color="var(--violet)" />
+              <StatRow label={t('italy.stat.koMatches')} value={`${worldCup.w + worldCup.d + worldCup.l}`} />
+              <StatRow label={t('italy.stat.koRecord')} value={`${worldCup.w}${t('common.winLetter')} ${worldCup.d}${t('common.drawLetter')} ${worldCup.l}${t('common.lossLetter')}`} />
+              <StatRow label={t('italy.stat.koScore')} value={`${Math.round(worldCup.score)}/100`} color="var(--violet)" />
             </>}
           </div>
         </div>
 
         {/* Blocco 4: Palmarès Europei */}
         <div className="itc-block">
-          <div className="itc-block-title">Europei UEFA</div>
+          <div className="itc-block-title">{t('italy.block.euros')}</div>
           <div className="itc-stats-col">
             {ts && (() => {
-              const histEU = ts.history.byTournament.find(t => t.label.includes('Euro'));
+              const histEU = ts.history.byTournament.find(tm => tm.label.includes('Euro'));
               return <>
-                <StatRow label="Titoli" value={histEU ? String(histEU.titles) : '2'} color="var(--amber)" />
-                <StatRow label="Finali raggiunte" value={histEU ? String(histEU.finals) : '3'} />
+                <StatRow label={t('italy.stat.titles')} value={histEU ? String(histEU.titles) : '2'} color="var(--amber)" />
+                <StatRow label={t('italy.stat.finals')} value={histEU ? String(histEU.finals) : '3'} />
               </>;
             })()}
             {euros && <>
-              <StatRow label="Partite KO" value={`${euros.w + euros.d + euros.l}`} />
-              <StatRow label="Record KO" value={`${euros.w}V ${euros.d}P ${euros.l}S`} />
-              <StatRow label="Score KO" value={`${Math.round(euros.score)}/100`} color="var(--violet)" />
+              <StatRow label={t('italy.stat.koMatches')} value={`${euros.w + euros.d + euros.l}`} />
+              <StatRow label={t('italy.stat.koRecord')} value={`${euros.w}${t('common.winLetter')} ${euros.d}${t('common.drawLetter')} ${euros.l}${t('common.lossLetter')}`} />
+              <StatRow label={t('italy.stat.koScore')} value={`${Math.round(euros.score)}/100`} color="var(--violet)" />
             </>}
           </div>
         </div>
@@ -278,15 +263,15 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
             <div className="itc-cta-text">
               <span className="fi fi-it itc-cta-flag" aria-hidden />
               <div>
-                <strong>Tre qualificazioni mondiali mancate di fila.</strong>
-                <p>A questo punto ci siamo presi una piccola libertà: cambiare la storia. Simula il torneo e scopri cosa sarebbe successo con l'Italia in campo.</p>
+                <strong>{t('italy.cta.title')}</strong>
+                <p>{t('italy.cta.body')}</p>
               </div>
             </div>
             <button className="itc-cta-btn" onClick={handleActivate}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="5 3 19 12 5 21 5 3"/>
               </svg>
-              Inserisci l'Italia e simula
+              {t('italy.cta.btn')}
             </button>
           </div>
         </div>

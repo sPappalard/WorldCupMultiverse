@@ -8,6 +8,7 @@
  * rende l'ingresso più gustoso. Quando la sample è pronta, App smonta l'overlay.
  */
 import { useEffect, useState } from 'react';
+import { useT } from '../../i18n';
 
 interface Props {
   italyActive: boolean;
@@ -15,26 +16,12 @@ interface Props {
   numRuns?: number;
 }
 
-const MESSAGES_ITALY = [
-  "Convinco la Bosnia a farci giocare al posto loro…",
-  "Spiego alla FIFA che era solo un errore di stampa…",
-  "Rimetto gli Azzurri nel Girone B…",
-  "Tre play-off persi? Una fase di costruzione…",
-  "Ok, ci siamo. Forza Italia.",
-];
-const MESSAGES_REAL = [
-  "Sorteggio i gironi…",
-  "Distribuisco le 48 nazionali…",
-  "Lancio 100.000 mondiali paralleli…",
-  "Conto le migliori terze…",
-  "Verso la finale…",
-];
-
-const TOTAL_MS = 10000; // durata scenica complessiva (~2s per frase, leggibile)
+const TOTAL_MS = 10000;
 const NUM_RUNS_DEFAULT = 100000;
 
 export function SimLaunchOverlay({ italyActive, favoriteName, numRuns = NUM_RUNS_DEFAULT }: Props) {
-  const messages = italyActive ? MESSAGES_ITALY : MESSAGES_REAL;
+  const { t, tList, nf } = useT();
+  const messages = italyActive ? tList('launch.messages.italy') : tList('launch.messages.real');
   const [progress, setProgress] = useState(0);
   const [msgIdx, setMsgIdx] = useState(0);
 
@@ -78,7 +65,7 @@ export function SimLaunchOverlay({ italyActive, favoriteName, numRuns = NUM_RUNS
         </div>
 
         <h2 className="simlaunch-title">
-          {italyActive ? 'Si torna in campo.' : 'Si gioca.'}
+          {italyActive ? t('launch.title.italy') : t('launch.title.real')}
         </h2>
         <p className="simlaunch-msg" key={msgIdx}>{messages[msgIdx]}</p>
 
@@ -88,12 +75,12 @@ export function SimLaunchOverlay({ italyActive, favoriteName, numRuns = NUM_RUNS
         <div className="simlaunch-stats">
           <span className="simlaunch-pct">{pct}%</span>
           <span className="simlaunch-runs">
-            {runsDone.toLocaleString('it-IT')} / {numRuns.toLocaleString('it-IT')} mondiali simulati
+            {t('launch.runs', { done: nf(runsDone), total: nf(numRuns) })}
           </span>
         </div>
 
         {favoriteName && (
-          <p className="simlaunch-fav">Occhi puntati su <strong>{favoriteName}</strong> ♥</p>
+          <p className="simlaunch-fav">{t('launch.fav', { name: favoriteName })}</p>
         )}
       </div>
     </div>

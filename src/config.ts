@@ -182,19 +182,19 @@ export type WhatIfFactorId =
 
 export interface WhatIfFactorDef {
   id: WhatIfFactorId;
+  /** Etichetta IT (fallback). La UI mostra la traduzione via `labelKey`. */
   label: string;
+  /** Chiave i18n per l'etichetta. */
+  labelKey: string;
   emoji: string;
-  /** Descrizione breve mostrata in UI. */
+  /** Descrizione breve mostrata in UI (IT, fallback). */
   description: string;
+  /** Chiave i18n per la descrizione. */
+  descKey: string;
   /** True per il fattore flagship Italia (UI dedicata). */
   flagship?: boolean;
   /** True se richiede di scegliere una squadra target. */
   needsTeam?: boolean;
-  /**
-   * Magnitudine di riferimento (punti Elo-equivalenti). NB: il valore
-   * effettivo usato a runtime viene da config.modulators.whatIf (gestibile
-   * da Admin); questo resta solo come riferimento/documentazione.
-   */
   defaultEloDelta?: number;
   /** True se è uno slider 0–100 (fattore caos). */
   isSlider?: boolean;
@@ -203,50 +203,60 @@ export interface WhatIfFactorDef {
 export const whatIfFactors: WhatIfFactorDef[] = [
   {
     id: 'italy',
-    label: 'Inserisci l’Italia',
+    label: "Inserisci l'Italia",
+    labelKey: 'wif.italy.label',
     emoji: '🇮🇹',
-    description:
-      'L’Italia non si è qualificata (eliminata dalla Bosnia ai rigori). Questo toggle la rimette nel Girone B al posto della Bosnia e rilancia la simulazione.',
+    description: "L'Italia non si è qualificata (eliminata dalla Bosnia ai rigori). Questo toggle la rimette nel Girone B al posto della Bosnia e rilancia la simulazione.",
+    descKey: 'wif.italy.desc',
     flagship: true,
   },
   {
     id: 'missingStar',
     label: 'Assenza di un big',
+    labelKey: 'wif.missingStar.label',
     emoji: '🚑',
-    description: 'Una stella out (es. infortunio dell’ultimo minuto). Indebolisce la squadra.',
+    description: "Una stella out (es. infortunio dell'ultimo minuto). Indebolisce la squadra.",
+    descKey: 'wif.missingStar.desc',
     needsTeam: true,
     defaultEloDelta: -40,
   },
   {
     id: 'injuries',
     label: 'Infortuni a 2–3 titolari',
+    labelKey: 'wif.injuries.label',
     emoji: '🩼',
     description: 'Più assenze pesanti. Riduzione maggiore della forza della squadra.',
+    descKey: 'wif.injuries.desc',
     needsTeam: true,
     defaultEloDelta: -80,
   },
   {
     id: 'starReturn',
     label: 'Rientro / stato di grazia',
+    labelKey: 'wif.starReturn.label',
     emoji: '🔥',
     description: 'Un big torna al top o la squadra è in forma smagliante. Piccolo bonus.',
+    descKey: 'wif.starReturn.desc',
     needsTeam: true,
     defaultEloDelta: 30,
   },
   {
     id: 'suspension',
     label: 'Squalifica chiave',
+    labelKey: 'wif.suspension.label',
     emoji: '🟥',
     description: 'Un titolare squalificato. Penalità una-tantum sulla forza.',
+    descKey: 'wif.suspension.desc',
     needsTeam: true,
     defaultEloDelta: -35,
   },
   {
     id: 'chaos',
     label: 'Fattore Caos',
+    labelKey: 'wif.chaos.label',
     emoji: '🎲',
-    description:
-      'Aumenta la varianza: appiattisce le probabilità verso il 50/50. Più sorprese.',
+    description: 'Aumenta la varianza: appiattisce le probabilità verso il 50/50. Più sorprese.',
+    descKey: 'wif.chaos.desc',
     isSlider: true,
   },
 ];

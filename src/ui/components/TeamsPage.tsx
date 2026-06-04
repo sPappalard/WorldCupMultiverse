@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Team, H2HRecord, ModelParams, TeamStats, ModulatorConfig } from '../../engine/types';
 import { computeStrengthScores, type TeamStrengthScore } from '../../engine/strengthScore';
-
-const LAST_REAL_MATCH_DATE = '31 marzo 2026';
+import { useT, useTeamName } from '../../i18n';
 
 interface Props {
   teams: Team[];
@@ -24,12 +23,12 @@ function valueBar(v: number)  { return Math.max(0, Math.min(100, (v / 1500) * 10
 function strengthBar(v: number){ return Math.max(0, Math.min(100, ((v + 0.6) / 1.8) * 100)); }
 function strengthScore(v: number){ return Math.round(Math.max(0, Math.min(100, ((v + 0.6) / 1.8) * 100))); }
 
-function eloTier(elo: number): { label: string; cls: string } {
-  if (elo >= 2100) return { label: 'Elite',    cls: 'tier-elite' };
-  if (elo >= 1950) return { label: 'Top',       cls: 'tier-top' };
-  if (elo >= 1820) return { label: 'Contender', cls: 'tier-contender' };
-  if (elo >= 1650) return { label: 'Solid',     cls: 'tier-solid' };
-  return               { label: 'Outsider',  cls: 'tier-outsider' };
+function eloTier(elo: number): { cls: string; label: string } {
+  if (elo >= 2100) return { cls: 'tier-elite',     label: 'Elite' };
+  if (elo >= 1950) return { cls: 'tier-top',       label: 'Top' };
+  if (elo >= 1820) return { cls: 'tier-contender', label: 'Contender' };
+  if (elo >= 1650) return { cls: 'tier-solid',     label: 'Solid' };
+  return               { cls: 'tier-outsider',  label: 'Outsider' };
 }
 function strengthScoreTier(s: number): string {
   if (s >= 80) return 'tier-elite';
@@ -40,26 +39,27 @@ function strengthScoreTier(s: number): string {
 }
 
 /* Valore numerico del sort corrente — mostrato nella card come statistica principale */
-function getSortValue(team: Team, sortKey: SortKey, params: ModelParams | null, teamStats: Map<string, TeamStats>, strengthScores: Map<string, TeamStrengthScore>): { value: string; label: string } | null {
+function getSortValue(team: Team, sortKey: SortKey, params: ModelParams | null, teamStats: Map<string, TeamStats>, strengthScores: Map<string, TeamStrengthScore>, tFn: (k: string, v?: Record<string, string | number>) => string): { value: string; label: string } | null {
   const tp = params?.teams[team.id];
   const ts = teamStats.get(team.id);
   const sc = strengthScores.get(team.id);
   switch (sortKey) {
-    case 'strength':   return sc ? { value: String(sc.score), label: 'Forza' } : null;
-    case 'elo':        return { value: String(team.elo), label: 'Elo' };
-    case 'squadValue': return team.squadValue != null ? { value: `€${team.squadValue}M`, label: 'Rosa' } : null;
-    case 'attack':     return tp ? { value: String(strengthScore(tp.attack)), label: 'Attacco' } : null;
-    case 'defense':    return tp ? { value: String(strengthScore(tp.defense)), label: 'Difesa' } : null;
-    case 'form':       return ts ? { value: String(Math.round(ts.form.score)), label: 'Forma' } : null;
-    case 'knockout':   return ts ? { value: String(Math.round(ts.knockout.score)), label: 'KO Exp' } : null;
-    case 'history':    return ts ? { value: String(Math.round(ts.history.score)), label: 'Storia' } : null;
-    case 'group':      return { value: `Girone ${team.group}`, label: '' };
+    case 'strength':   return sc ? { value: String(sc.score), label: tFn('teams.cardStat.strength') } : null;
+    case 'elo':        return { value: String(team.elo), label: tFn('teams.cardStat.elo') };
+    case 'squadValue': return team.squadValue != null ? { value: `€${team.squadValue}M`, label: tFn('teams.cardStat.squadValue') } : null;
+    case 'attack':     return tp ? { value: String(strengthScore(tp.attack)), label: tFn('teams.cardStat.attack') } : null;
+    case 'defense':    return tp ? { value: String(strengthScore(tp.defense)), label: tFn('teams.cardStat.defense') } : null;
+    case 'form':       return ts ? { value: String(Math.round(ts.form.score)), label: tFn('teams.cardStat.form') } : null;
+    case 'knockout':   return ts ? { value: String(Math.round(ts.knockout.score)), label: tFn('teams.cardStat.knockout') } : null;
+    case 'history':    return ts ? { value: String(Math.round(ts.history.score)), label: tFn('teams.cardStat.history') } : null;
+    case 'group':      return { value: tFn('teams.group', { g: team.group }), label: '' };
     default:           return null;
   }
 }
 
 function H2HBadge({ rec, teamIsFirstAlpha }: { rec: H2HRecord | null; teamIsFirstAlpha: boolean }) {
-  if (!rec || rec.n === 0) return <span className="h2h-badge h2h-unknown">Nessun precedente</span>;
+  const { t } = useT();
+  if (!rec || rec.n === 0) return <span className="h2h-badge h2h-unknown">{t('teams.h2h.none')}</span>;
   const w = teamIsFirstAlpha ? rec.w_a : rec.w_b;
   const l = teamIsFirstAlpha ? rec.w_b : rec.w_a;
   const cls = w > l ? 'h2h-pos' : l > w ? 'h2h-neg' : 'h2h-neutral';
@@ -86,6 +86,8 @@ function DetailStat({ label, value, pct, barCls, sub }: {
 }
 
 export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamStats, modulators, rankByStrength, onConsumeRankByStrength }: Props) {
+  const { t } = useT();
+  const teamName = useTeamName();
   const [sortKey, setSortKey] = useState<SortKey>('strength');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch]   = useState('');
@@ -110,7 +112,7 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
 
   const sorted = useMemo(() => {
     const filtered = visibleTeams.filter(t =>
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
+      teamName(t).toLowerCase().includes(search.toLowerCase()) ||
       t.id.toLowerCase().includes(search.toLowerCase()),
     );
     return [...filtered].sort((a, b) => {
@@ -119,7 +121,7 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
       switch (sortKey) {
         case 'elo':        return b.elo - a.elo;
         case 'squadValue': return (b.squadValue ?? 0) - (a.squadValue ?? 0);
-        case 'name':       return a.name.localeCompare(b.name, 'it');
+        case 'name':       return teamName(a).localeCompare(teamName(b));
         case 'attack':     return (pb?.attack ?? 0) - (pa?.attack ?? 0);
         case 'defense':    return (pb?.defense ?? 0) - (pa?.defense ?? 0);
         case 'form':       return (sb?.form.score ?? 50) - (sa?.form.score ?? 50);
@@ -156,20 +158,19 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
   }, [selected, allIds, h2h]);
 
   // Classifiche: generano un rank numerico
-  const RANK_SORTS: { key: SortKey; label: string; needsParams?: boolean; needsStats?: boolean }[] = [
-    { key: 'strength',   label: 'Forza' },
-    { key: 'elo',        label: 'Elo' },
-    { key: 'attack',     label: 'Attacco',  needsParams: true },
-    { key: 'defense',    label: 'Difesa',   needsParams: true },
-    { key: 'form',       label: 'Forma',    needsStats: true },
-    { key: 'knockout',   label: 'KO Exp',   needsStats: true },
-    { key: 'history',    label: 'Storia',   needsStats: true },
-    { key: 'squadValue', label: 'Valore' },
+  const RANK_SORTS: { key: SortKey; labelKey: string; needsParams?: boolean; needsStats?: boolean }[] = [
+    { key: 'strength',   labelKey: 'teams.sort.strength' },
+    { key: 'elo',        labelKey: 'teams.sort.elo' },
+    { key: 'attack',     labelKey: 'teams.sort.attack',  needsParams: true },
+    { key: 'defense',    labelKey: 'teams.sort.defense', needsParams: true },
+    { key: 'form',       labelKey: 'teams.sort.form',    needsStats: true },
+    { key: 'knockout',   labelKey: 'teams.sort.knockout',needsStats: true },
+    { key: 'history',    labelKey: 'teams.sort.history', needsStats: true },
+    { key: 'squadValue', labelKey: 'teams.sort.squadValue' },
   ];
-  // Raggruppamento: non generano una classifica numerica
-  const GROUP_SORTS: { key: SortKey; label: string }[] = [
-    { key: 'group', label: 'Girone' },
-    { key: 'name',  label: 'A→Z' },
+  const GROUP_SORTS: { key: SortKey; labelKey: string }[] = [
+    { key: 'group', labelKey: 'teams.sort.group' },
+    { key: 'name',  labelKey: 'teams.sort.az' },
   ];
   const isRankSort = RANK_SORTS.some(s => s.key === sortKey);
 
@@ -189,17 +190,17 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
       <div className="tp2-filter-bar">
         {/* Classifiche (generano rank numerico) */}
         <div className="tp2-filter-group">
-          <span className="tp2-filter-label">Classifica per</span>
+          <span className="tp2-filter-label">{t('teams.rankBy')}</span>
           <div className="tp2-tabs">
-            {RANK_SORTS.map(({ key, label, needsParams, needsStats }) => {
+            {RANK_SORTS.map(({ key, labelKey, needsParams, needsStats }) => {
               const disabled = (needsParams && !params) || (needsStats && teamStats.size === 0);
               return (
                 <button key={key}
                   className={`tp2-tab ${sortKey === key ? 'on' : ''} ${disabled ? 'off' : ''}`}
                   onClick={() => { if (!disabled) setSortKey(key); }}
                   disabled={disabled}
-                  title={disabled ? 'Dati non disponibili' : undefined}
-                >{label}</button>
+                  title={disabled ? t('teams.dataUnavailable') : undefined}
+                >{t(labelKey)}</button>
               );
             })}
           </div>
@@ -209,13 +210,13 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
         <div className="tp2-filter-right">
           {/* Raggruppa */}
           <div className="tp2-filter-group tp2-filter-group--group">
-            <span className="tp2-filter-label tp2-filter-label--dim">Raggruppa</span>
+            <span className="tp2-filter-label tp2-filter-label--dim">{t('teams.groupBy')}</span>
             <div className="tp2-tabs tp2-tabs--group">
-              {GROUP_SORTS.map(({ key, label }) => (
+              {GROUP_SORTS.map(({ key, labelKey }) => (
                 <button key={key}
                   className={`tp2-tab tp2-tab--group ${sortKey === key ? 'on' : ''}`}
                   onClick={() => setSortKey(key)}
-                >{label}</button>
+                >{t(labelKey)}</button>
               ))}
             </div>
           </div>
@@ -224,7 +225,7 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <input className="tp2-search" placeholder="Cerca…" value={search} onChange={e => setSearch(e.target.value)} />
+            <input className="tp2-search" placeholder={t('teams.search')} value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
       </div>
@@ -285,7 +286,8 @@ interface TeamListProps {
 }
 
 function TeamList({ sorted, sortKey, isRankSort, isGridMode, selectedId, params, teamStats, strengthScores, onSelect }: TeamListProps) {
-  if (sorted.length === 0) return <p className="tp2-empty">Nessuna squadra trovata.</p>;
+  const { t } = useT();
+  if (sorted.length === 0) return <p className="tp2-empty">{t('teams.empty')}</p>;
 
   const isGroupSort = sortKey === 'group';
 
@@ -304,7 +306,7 @@ function TeamList({ sorted, sortKey, isRankSort, isGridMode, selectedId, params,
           <div key={g} className="tp2-group-section">
             <div className="tp2-group-header">
               <span className="tp2-group-letter">{g}</span>
-              <span className="tp2-group-title">Girone {g}</span>
+              <span className="tp2-group-title">{t('teams.group', { g })}</span>
             </div>
             <div className={isGridMode ? 'tp2-group-grid' : 'tp2-group-rows'}>
               {byGroup.get(g)!.map(team =>
@@ -338,8 +340,10 @@ interface CardProps {
   strengthScores: Map<string, TeamStrengthScore>; onSelect: (id: string) => void;
 }
 function TeamCard({ team, sortKey, rank, params, teamStats, strengthScores, onSelect }: CardProps) {
+  const { t } = useT();
+  const teamName = useTeamName();
   const isItaly = team.id === 'ITA';
-  const sortVal = getSortValue(team, sortKey, params, teamStats, strengthScores);
+  const sortVal = getSortValue(team, sortKey, params, teamStats, strengthScores, t);
 
   return (
     <button className={`tp2-card ${isItaly ? 'italy' : ''}`} onClick={() => onSelect(team.id)}>
@@ -351,7 +355,7 @@ function TeamCard({ team, sortKey, rank, params, teamStats, strengthScores, onSe
       )}
       <span className={`fi fi-${team.flag} tp2-card-flag`} aria-hidden />
       <div className="tp2-card-info">
-        <span className="tp2-card-name">{team.name}</span>
+        <span className="tp2-card-name">{teamName(team)}</span>
         {isItaly && <span className="tp2-card-whatif">🔀 what-if</span>}
       </div>
       {sortVal && sortKey !== 'group' && (
@@ -367,8 +371,10 @@ function TeamCard({ team, sortKey, rank, params, teamStats, strengthScores, onSe
 /* ── Row (modalità split) ── */
 interface RowProps extends CardProps { isSelected: boolean; }
 function TeamRow({ team, sortKey, rank, isSelected, params, teamStats, strengthScores, onSelect }: RowProps) {
+  const { t } = useT();
+  const teamName = useTeamName();
   const isItaly = team.id === 'ITA';
-  const sortVal = getSortValue(team, sortKey, params, teamStats, strengthScores);
+  const sortVal = getSortValue(team, sortKey, params, teamStats, strengthScores, t);
 
   return (
     <button className={`tp2-row ${isSelected ? 'selected' : ''} ${isItaly ? 'italy' : ''}`} onClick={() => onSelect(team.id)}>
@@ -378,7 +384,7 @@ function TeamRow({ team, sortKey, rank, isSelected, params, teamStats, strengthS
       <span className={`fi fi-${team.flag} tp2-row-flag`} aria-hidden />
       <div className="tp2-row-info">
         <div className="tp2-row-nameline">
-          <span className="tp2-row-name">{team.name}</span>
+          <span className="tp2-row-name">{teamName(team)}</span>
           {isItaly && <span className="tp2-row-whatif">🔀 what-if</span>}
         </div>
       </div>
@@ -403,6 +409,8 @@ interface DetailProps {
 }
 
 function TeamDetail({ team, params, paramsSource, teamStats, strengthScores, groupH2H, h2hSummary, onClose }: DetailProps) {
+  const { t } = useT();
+  const teamName = useTeamName();
   const [tab, setTab] = useState<'stats' | 'h2h'>('stats');
   const tp  = params?.teams[team.id];
   const ts  = teamStats.get(team.id);
@@ -412,77 +420,74 @@ function TeamDetail({ team, params, paramsSource, teamStats, strengthScores, gro
   return (
     <div className="tpd-root">
 
-      {/* Header con bandiera grande e nome */}
       <div className="tpd-header">
         <span className={`fi fi-${team.flag} tpd-flag`} aria-hidden />
         <div className="tpd-header-text">
-          <h3 className="tpd-name">{team.name}</h3>
+          <h3 className="tpd-name">{teamName(team)}</h3>
           <div className="tpd-badges">
             <span className={`tier-chip ${tier.cls}`}>{tier.label}</span>
-            <span className="tpd-group-badge">Girone {team.group}</span>
-            {team.isHost && <span className="badge badge-host">Casa</span>}
-            {team.id === 'ITA' && <span className="badge badge-italy">what-if</span>}
+            <span className="tpd-group-badge">{t('teams.group', { g: team.group })}</span>
+            {team.isHost && <span className="badge badge-host">{t('teams.detail.host')}</span>}
+            {team.id === 'ITA' && <span className="badge badge-italy">{t('teams.detail.whatif')}</span>}
           </div>
         </div>
-        <button className="tpd-close" onClick={onClose} aria-label="Chiudi">
+        <button className="tpd-close" onClick={onClose} aria-label={t('common.close')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
       </div>
 
-      {/* Banner punteggio forza */}
       {sc && (
         <div className="tpd-strength-banner">
           <div className="tpd-sb-item">
-            <span className="tpd-sb-label">Punteggio Forza</span>
+            <span className="tpd-sb-label">{t('teams.detail.strengthScore')}</span>
             <span className={`tpd-sb-value ${strengthScoreTier(sc.score)}`}>{sc.score}<span className="tpd-sb-unit">/100</span></span>
           </div>
           <div className="tpd-sb-sep" />
           <div className="tpd-sb-item">
-            <span className="tpd-sb-label">Win rate medio</span>
+            <span className="tpd-sb-label">{t('teams.detail.avgWinRate')}</span>
             <span className="tpd-sb-value">{Math.round(sc.avgWinRate * 100)}<span className="tpd-sb-unit">%</span></span>
           </div>
           <div className="tpd-sb-sep" />
           <div className="tpd-sb-item">
-            <span className="tpd-sb-label">Non perde vs</span>
+            <span className="tpd-sb-label">{t('teams.detail.notLoseVs')}</span>
             <span className="tpd-sb-value">{Math.round(sc.avgNotLoseRate * 100)}<span className="tpd-sb-unit">%</span></span>
           </div>
         </div>
       )}
 
-      {/* Tab bar */}
       <div className="tpd-tabs">
-        <button className={`tpd-tab ${tab === 'stats' ? 'on' : ''}`} onClick={() => setTab('stats')}>Parametri</button>
-        <button className={`tpd-tab ${tab === 'h2h'  ? 'on' : ''}`} onClick={() => setTab('h2h')}>Scontri diretti</button>
+        <button className={`tpd-tab ${tab === 'stats' ? 'on' : ''}`} onClick={() => setTab('stats')}>{t('teams.detail.tab.stats')}</button>
+        <button className={`tpd-tab ${tab === 'h2h'  ? 'on' : ''}`} onClick={() => setTab('h2h')}>{t('teams.detail.tab.h2h')}</button>
       </div>
 
       <div className="tpd-body">
         {tab === 'stats' && (
           <div className="tpd-stats-grid">
-            <DetailStat label="Elo" value={String(team.elo)} pct={eloBar(team.elo)} barCls="bar-elo" sub="Snapshot 19/01/2026 · eloratings.net" />
-            <DetailStat label="Valore rosa" value={team.squadValue != null ? `€${team.squadValue}M` : 'N/D'} pct={team.squadValue != null ? valueBar(team.squadValue) : undefined} barCls="bar-val" sub="Stima ispirata a Transfermarkt · giu 2026" />
+            <DetailStat label="Elo" value={String(team.elo)} pct={eloBar(team.elo)} barCls="bar-elo" sub={t('teams.detail.elo.sub')} />
+            <DetailStat label={t('teams.detail.squadValue')} value={team.squadValue != null ? `€${team.squadValue}M` : t('teams.detail.squadValue.na')} pct={team.squadValue != null ? valueBar(team.squadValue) : undefined} barCls="bar-val" sub={t('teams.detail.squadValue.sub')} />
             {tp ? (
               <>
-                <DetailStat label="Attacco" value={`${strengthScore(tp.attack)}/100`} pct={strengthBar(tp.attack)} barCls="bar-atk" sub={`log-λ: ${tp.attack.toFixed(3)}${tp.attackSd != null ? ` ± ${tp.attackSd.toFixed(3)}` : ''}`} />
-                <DetailStat label="Difesa"  value={`${strengthScore(tp.defense)}/100`} pct={strengthBar(tp.defense)} barCls="bar-def" sub={`log-λ: ${tp.defense.toFixed(3)}${tp.defenseSd != null ? ` ± ${tp.defenseSd.toFixed(3)}` : ''}`} />
+                <DetailStat label={t('teams.detail.attack')} value={`${strengthScore(tp.attack)}/100`} pct={strengthBar(tp.attack)} barCls="bar-atk" sub={`log-λ: ${tp.attack.toFixed(3)}${tp.attackSd != null ? ` ± ${tp.attackSd.toFixed(3)}` : ''}`} />
+                <DetailStat label={t('teams.detail.defense')} value={`${strengthScore(tp.defense)}/100`} pct={strengthBar(tp.defense)} barCls="bar-def" sub={`log-λ: ${tp.defense.toFixed(3)}${tp.defenseSd != null ? ` ± ${tp.defenseSd.toFixed(3)}` : ''}`} />
               </>
             ) : (
-              <div className="tpd-note">Attacco/Difesa derivati da Elo — modello non fittato.</div>
+              <div className="tpd-note">{t('teams.detail.noParams')}</div>
             )}
-            {ts && <DetailStat label="Forma recente" value={`${Math.round(ts.form.score)}/100`} pct={ts.form.score} barCls="bar-form" sub={`${ts.form.w}V ${ts.form.d}P ${ts.form.l}S su ${ts.form.n} partite${ts.form.lastDate ? ` · ultima: ${ts.form.lastDate}` : ''}`} />}
-            {ts && <DetailStat label="Rendimento KO" value={`${Math.round(ts.knockout.score)}/100`} pct={ts.knockout.score} barCls="bar-ko" sub={`${ts.knockout.w}V ${ts.knockout.d}P ${ts.knockout.l}S · ${ts.knockout.n} partite KO dal 1994`} />}
-            {ts && <DetailStat label="Storia nazionale" value={`${Math.round(ts.history.score)}/100`} pct={ts.history.score} barCls="bar-history" sub={ts.history.score === 0 ? 'Nessun titolo major' : ts.history.byTournament.filter(t => t.titles > 0).map(t => `${t.label}: ${'🏆'.repeat(Math.min(t.titles, 5))}`).join(' · ')} />}
+            {ts && <DetailStat label={t('teams.detail.form')} value={`${Math.round(ts.form.score)}/100`} pct={ts.form.score} barCls="bar-form" sub={t('teams.detail.form.sub', { w: ts.form.w, d: ts.form.d, l: ts.form.l, n: ts.form.n }) + (ts.form.lastDate ? t('teams.detail.form.last', { date: ts.form.lastDate }) : '')} />}
+            {ts && <DetailStat label={t('teams.detail.ko')} value={`${Math.round(ts.knockout.score)}/100`} pct={ts.knockout.score} barCls="bar-ko" sub={t('teams.detail.ko.sub', { w: ts.knockout.w, d: ts.knockout.d, l: ts.knockout.l, n: ts.knockout.n })} />}
+            {ts && <DetailStat label={t('teams.detail.history')} value={`${Math.round(ts.history.score)}/100`} pct={ts.history.score} barCls="bar-history" sub={ts.history.score === 0 ? t('teams.detail.history.none') : ts.history.byTournament.filter(tm => tm.titles > 0).map(tm => `${tm.label}: ${'🏆'.repeat(Math.min(tm.titles, 5))}`).join(' · ')} />}
             {team.isHost && (
               <div className="tpd-host-banner">
                 <span className="tpd-host-icon">🏟</span>
                 <div>
-                  <span className="tpd-host-label">Paese ospitante</span>
-                  <span className="tpd-host-sub">+35% λ gol in casa · {params?.global.homeAdv.toFixed(3) ?? '0.271'} log-λ</span>
+                  <span className="tpd-host-label">{t('teams.detail.host.label')}</span>
+                  <span className="tpd-host-sub">{t('teams.detail.host.sub', { v: params?.global.homeAdv.toFixed(3) ?? '0.271' })}</span>
                 </div>
               </div>
             )}
-            <div className="tpd-source">{paramsSource === 'bayesian' ? `Modello bayesiano · dati fino al ${LAST_REAL_MATCH_DATE}` : 'Fallback Elo — modello bayesiano non disponibile'}</div>
+            <div className="tpd-source">{paramsSource === 'bayesian' ? t('teams.detail.source.bayesian', { date: t('teams.detail.lastRealMatch') }) : t('teams.detail.source.fallback')}</div>
           </div>
         )}
 
@@ -490,22 +495,25 @@ function TeamDetail({ team, params, paramsSource, teamStats, strengthScores, gro
           <div className="tpd-h2h-section">
             {h2hSummary && h2hSummary.n > 0 && (
               <div className="tpd-h2h-summary">
-                <span className="tpd-h2h-sum-label">vs tutti i partecipanti</span>
-                <span className="tpd-h2h-sum-record">{h2hSummary.w}V {h2hSummary.d}P {h2hSummary.l}S <span className="tpd-h2h-sum-n">· {h2hSummary.n} partite</span></span>
-                <span className="tpd-h2h-sum-pct">{Math.round((h2hSummary.w / h2hSummary.n) * 100)}% win rate</span>
+                <span className="tpd-h2h-sum-label">{t('teams.h2h.summaryLabel')}</span>
+                <span className="tpd-h2h-sum-record">
+                  {t('teams.h2h.summaryRecord', { w: h2hSummary.w, d: h2hSummary.d, l: h2hSummary.l })}
+                  <span className="tpd-h2h-sum-n">{t('teams.h2h.summaryN', { n: h2hSummary.n })}</span>
+                </span>
+                <span className="tpd-h2h-sum-pct">{t('teams.h2h.winRate', { pct: Math.round((h2hSummary.w / h2hSummary.n) * 100) })}</span>
               </div>
             )}
-            <div className="tpd-h2h-section-label">Scontri diretti · Girone {team.group}</div>
+            <div className="tpd-h2h-section-label">{t('teams.h2h.sectionLabel', { g: team.group })}</div>
             <div className="tpd-h2h-list">
               {groupH2H.map(({ opp, rec }) => (
                 <div key={opp.id} className="tpd-h2h-row">
                   <span className={`fi fi-${opp.flag} tpd-h2h-flag`} aria-hidden />
-                  <span className="tpd-h2h-name">{opp.name}</span>
+                  <span className="tpd-h2h-name">{teamName(opp)}</span>
                   <H2HBadge rec={rec} teamIsFirstAlpha={team.id < opp.id} />
                 </div>
               ))}
             </div>
-            <div className="tpd-source">H2H calcolato su dati dal 1994 · 4.078 partite · 805 coppie</div>
+            <div className="tpd-source">{t('teams.h2h.source')}</div>
           </div>
         )}
       </div>

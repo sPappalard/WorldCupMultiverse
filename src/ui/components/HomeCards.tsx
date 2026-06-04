@@ -5,6 +5,7 @@
  */
 import { useState, useCallback } from 'react';
 import type { ReactNode, CSSProperties } from 'react';
+import { useT } from '../../i18n';
 
 export type CardId = 'sim' | 'results' | 'matchup' | 'teams' | 'italy' | 'howto';
 
@@ -107,6 +108,7 @@ interface OverlayProps {
 }
 
 export function CardOverlay({ title, icon, onClose, children }: OverlayProps) {
+  const { t } = useT();
   const [leaving, setLeaving] = useState(false);
 
   const handleClose = useCallback(() => {
@@ -122,7 +124,7 @@ export function CardOverlay({ title, icon, onClose, children }: OverlayProps) {
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
           </svg>
-          Indietro
+          {t('common.back')}
         </button>
         <h2 className="hc-overlay-title">
           <span className="hc-overlay-icon">{icon}</span>
