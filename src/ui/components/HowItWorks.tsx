@@ -46,7 +46,11 @@ export function HowItWorks({ modulators, onOpenAdmin, teams = [], params = null,
       {/* ── Hero ── */}
       <header className="hiw-hero">
         <p className="hiw-eyebrow">{t('hiw.eyebrow')}</p>
-        <h1 className="hiw-h1">{t('hiw.h1')}</h1>
+        <h1 className="hiw-h1">
+          {t('hiw.h1').split('. ').filter(Boolean).map((s, i, arr) => (
+            <span key={i}>{s}{i < arr.length - 1 ? '.' : ''}<br /></span>
+          ))}
+        </h1>
         <p className="hiw-deck">{t('hiw.deck')}</p>
       </header>
 
