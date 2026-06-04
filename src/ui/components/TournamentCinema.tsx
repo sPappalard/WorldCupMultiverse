@@ -45,6 +45,29 @@ const ROUND_LABEL: Record<string, string> = {
   Semifinali: 'Semifinali', Final: 'Finale', Finale: 'Finale',
 };
 
+// Etichette brevi per la striscia round su mobile (lo spazio è poco).
+const ROUND_SHORT: Record<string, string> = {
+  'Round of 32': '16°', 'Round of 16': '8°',
+  'Quarter-finals': 'QF', 'Semi-finals': 'SF',
+  Semifinali: 'SF', Final: 'Finale', Finale: 'Finale',
+};
+
+/** Vero su viewport stretti (smartphone). Solo per scegliere il rendering del
+ *  bracket nel cinema: su mobile la "camera" zoomabile è illeggibile, quindi
+ *  passiamo a una lista verticale per round. Allineato al breakpoint CSS. */
+function useIsMobile(maxWidth = 720): boolean {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(`(max-width: ${maxWidth}px)`).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${maxWidth}px)`);
+    const onChange = () => setIsMobile(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [maxWidth]);
+  return isMobile;
+}
+
 // Geometria bracket condivisa con la dashboard (src/ui/bracketLayout.ts).
 
 // ── Durate base (ms) ─────────────────────────────────────────────────────────
@@ -63,6 +86,7 @@ const BASE = {
 
 export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive, onDone, onSkip }: Props) {
   const rounds = sample.knockoutRounds;
+  const isMobile = useIsMobile();
   const [speed,   setSpeed]   = useState(1);
   const [leaving, setLeaving] = useState(false);
 
@@ -161,6 +185,14 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
     } else if (stage === 'groups' && thirdsState === 'showing') {
       if (thirdsRevealed < thirds.length) {
         after(BASE.thirdsReveal, () => setThirdsRevealed((n) => n + 1));
+      } else if (isMobile) {
+        // Mobile: niente recap dei gironi con le terze in verde — lo schermo non
+        // li mostra tutti insieme. Dopo il calcolo terze si va dritti ai sedicesimi.
+        after(BASE.thirdsTail, () => {
+          cinemaAudio.advance();
+          setThirdsState('done');
+          setStage('ko'); setKoRound(0); setKoPhase('appear'); setKoRevealed(0);
+        });
       } else {
         // Overlay completato: chiudi, mostra gironi con terze in verde per 3s, poi KO.
         // Il secondo timer è un window.setTimeout diretto (non passa per after/clearTimers)
@@ -340,6 +372,7 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
               groupMatches={groupMatches}
               thirdsQualified={thirdsState === 'done' ? new Set(thirds.filter(t => t.qualified).map(t => t.teamId)) : undefined}
               name={name} flag={flag} isFav={isFav} italyActive={italyActive}
+              isMobile={isMobile} activeGroupIdx={activeGroup}
             />
             {thirdsState === 'showing' && (
               <div className="cin-thirds-overlay">
@@ -356,7 +389,7 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
           <BracketScene
             rounds={rounds} layout={layout} activeRound={koRound}
             phase={koPhase} revealed={koRevealed}
-            name={name} flag={flag} isFav={isFav}
+            name={name} flag={flag} isFav={isFav} isMobile={isMobile}
           />
         )}
 
@@ -437,6 +470,7 @@ function Timeline({ stopIndex, onStopClick }: { stopIndex: number; onStopClick: 
 /* ───────────── GIRONI ───────────── */
 function GroupsScene({
   sample, revealedByGroup, activeGroupKey, groupMatches, thirdsQualified, name, flag, isFav, italyActive,
+  isMobile, activeGroupIdx,
 }: {
   sample: SampleRun;
   revealedByGroup: Record<string, number>;
@@ -445,7 +479,15 @@ function GroupsScene({
   thirdsQualified?: Set<string>;
   name: (id: string) => string; flag: (id: string) => string;
   isFav: (id: string) => boolean; italyActive: boolean;
+  isMobile: boolean; activeGroupIdx: number;
 }) {
+  // Su smartphone i 12 gironi non entrano in una schermata: li mostriamo a
+  // blocchi di 6 (A–F, poi G–L). Il blocco visibile è quello del girone attivo;
+  // quando l'animazione supera il 6° girone, scatta automaticamente al blocco 2.
+  const BATCH = 6;
+  const visibleGroups = isMobile
+    ? GROUPS.slice(Math.floor(activeGroupIdx / BATCH) * BATCH, Math.floor(activeGroupIdx / BATCH) * BATCH + BATCH)
+    : GROUPS;
   // Classifica live: punti e GD calcolati sui match già svelati del girone
   const liveStanding = (g: string) => {
     const all   = groupMatches[g] ?? [];
@@ -469,7 +511,7 @@ function GroupsScene({
   return (
     <>
       <div className="cin-groups-grid">
-      {GROUPS.map((g, gi) => {
+      {visibleGroups.map((g, gi) => {
         const standing   = liveStanding(g);
         const shownCount = revealedByGroup[g] ?? 0;
         const total      = groupMatches[g]?.length ?? 0;
@@ -570,13 +612,25 @@ function ThirdsModal({
 
 /* ───────────── BRACKET ───────────── */
 function BracketScene({
-  rounds, layout, activeRound, phase, revealed, name, flag, isFav,
+  rounds, layout, activeRound, phase, revealed, name, flag, isFav, isMobile,
 }: {
   rounds: { name: string; matches: MatchResult[] }[];
   layout: ReturnType<typeof buildBracketLayout>;
   activeRound: number; phase: 'appear' | 'results'; revealed: number;
   name: (id: string) => string; flag: (id: string) => string; isFav: (id: string) => boolean;
+  isMobile: boolean;
 }) {
+  // Su smartphone la camera zoomabile è illeggibile: mostriamo il round attivo
+  // come lista verticale, una partita alla volta, seguendo la stessa regia.
+  if (isMobile) {
+    return (
+      <BracketMobileScene
+        rounds={rounds} activeRound={activeRound} phase={phase} revealed={revealed}
+        name={name} flag={flag} isFav={isFav}
+      />
+    );
+  }
+
   const { placed, worldW, worldH } = layout;
 
   const vpRef = useRef<HTMLDivElement>(null);
@@ -737,6 +791,107 @@ function BracketBox({
       <div className="cin-bx-divider" />
       <Side id={m.awayId} goals={m.awayGoals} won={awayWon} slotKnown={awayKnown} />
       {decided && m.penalties && <div className="cin-bx-pen-bar">rigori</div>}
+    </div>
+  );
+}
+
+/* ───────────── BRACKET MOBILE (lista verticale per round) ───────────── */
+/**
+ * Versione del tabellone pensata per smartphone: niente camera zoomabile (sarebbe
+ * illeggibile), ma il round attivo mostrato come lista verticale di partite che
+ * compaiono una alla volta, seguendo la stessa regia (activeRound/phase/revealed).
+ * La striscia in alto mostra l'avanzamento tra i round.
+ */
+function BracketMobileScene({
+  rounds, activeRound, phase, revealed, name, flag, isFav,
+}: {
+  rounds: { name: string; matches: MatchResult[] }[];
+  activeRound: number; phase: 'appear' | 'results'; revealed: number;
+  name: (id: string) => string; flag: (id: string) => string; isFav: (id: string) => boolean;
+}) {
+  const round   = rounds[activeRound];
+  const matches = round?.matches ?? [];
+  // Una partita è decisa (mostra punteggio) solo in fase results e già rivelata.
+  const isDecided = (i: number) => phase === 'results' && i < revealed;
+  const isFinal   = activeRound === rounds.length - 1;
+
+  // Auto-scroll sull'ultima partita rivelata: su round lunghi (16 partite ai
+  // sedicesimi) la lista eccede lo schermo, seguiamo il reveal.
+  const listRef = useRef<HTMLDivElement>(null);
+  const lastRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (phase === 'results' && revealed > 0) {
+      lastRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [revealed, phase]);
+
+  // Cambio round (es. sedicesimi → ottavi): riporta la lista in cima, altrimenti
+  // il nuovo round partirebbe con lo scroll rimasto in fondo al round precedente.
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: 0 });
+  }, [activeRound]);
+
+  return (
+    <div className="cin-scene cin-bracket-m">
+      {/* Striscia round */}
+      <div className="cin-brm-strip">
+        {rounds.map((r, i) => (
+          <div
+            key={i}
+            className={`cin-brm-pill ${i === activeRound ? 'on' : ''} ${i < activeRound ? 'past' : ''}`}
+          >
+            {ROUND_SHORT[r.name] ?? r.name}
+          </div>
+        ))}
+      </div>
+
+      {/* Lista partite del round attivo */}
+      <div className="cin-brm-list" ref={listRef}>
+        {matches.map((m, i) => {
+          const decided = isDecided(i);
+          const homeWon = m.winnerId === m.homeId;
+          const awayWon = m.winnerId === m.awayId;
+          // L'ultima partita appena rivelata: ancora per l'auto-scroll.
+          const isLast  = phase === 'results' && i === revealed - 1;
+          return (
+            <div
+              key={i}
+              ref={isLast ? lastRef : undefined}
+              className={[
+                'cin-brm-match',
+                isFinal ? 'final' : '',
+                decided ? 'decided' : '',
+              ].filter(Boolean).join(' ')}
+            >
+              <MobileSide
+                id={m.homeId} goals={m.homeGoals} won={homeWon}
+                decided={decided} name={name} flag={flag} isFav={isFav}
+              />
+              <div className="cin-brm-divider" />
+              <MobileSide
+                id={m.awayId} goals={m.awayGoals} won={awayWon}
+                decided={decided} name={name} flag={flag} isFav={isFav}
+              />
+              {decided && m.penalties && <span className="cin-brm-pen">rigori</span>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MobileSide({
+  id, goals, won, decided, name, flag, isFav,
+}: {
+  id: string; goals: number; won: boolean; decided: boolean;
+  name: (id: string) => string; flag: (id: string) => string; isFav: (id: string) => boolean;
+}) {
+  return (
+    <div className={`cin-brm-side ${decided ? (won ? 'won' : 'lost') : ''} ${isFav(id) ? 'fav' : ''}`}>
+      <span className={`fi fi-${flag(id)}`} aria-hidden />
+      <span className="cin-brm-name">{name(id)}</span>
+      <span className="cin-brm-goal" style={{ visibility: decided ? 'visible' : 'hidden' }}>{goals}</span>
     </div>
   );
 }
