@@ -1,7 +1,7 @@
 /**
- * PreSim — schermata pre-simulazione. Riepiloga lo scenario scelto
- * nell'onboarding e offre un grande bottone "Simula". Ogni elemento è pensato
- * per essere immediato: si parte con un clic, oppure si salta alla dashboard.
+ * PreSim — schermata pre-simulazione. Riepiloga in modo minimale lo scenario
+ * scelto e offre un grande bottone "Simula". Tutto è pensato per essere
+ * immediato: si parte con un clic, oppure si torna indietro alla home.
  */
 import type { Team } from '../../engine/types';
 import { whatIfFactors } from '../../config';
@@ -10,18 +10,17 @@ import type { Scenario } from '../scenario';
 interface Props {
   scenario: Scenario;
   teams: Team[];
-  favoriteTeam: string | null;
   running: boolean;
   onSimulate: () => void;
   onEditScenario: () => void;
-  onSkip: () => void;
+  /** Torna alla home/griglia (mostrato solo se c'è già una simulazione). */
+  onBack?: () => void;
 }
 
 export function PreSim({
-  scenario, teams, favoriteTeam, running, onSimulate, onEditScenario, onSkip,
+  scenario, teams, running, onSimulate, onEditScenario, onBack,
 }: Props) {
   const teamsById = new Map(teams.map((t) => [t.id, t]));
-  const fav = favoriteTeam ? teamsById.get(favoriteTeam) : null;
 
   const activeFactors = scenario.factors
     .filter((f) => (f.teamIds?.length ?? 0) > 0)
@@ -36,65 +35,70 @@ export function PreSim({
       <div className="presim-stadium" aria-hidden />
 
       <div className="presim-inner">
-        <p className="presim-kicker">FIFA World Cup 2026 · 48 nazionali</p>
+        <p className="presim-kicker">Mondiali 2026 · 48 nazionali</p>
         <h1 className="presim-title">Tutto pronto.</h1>
         <p className="presim-sub">
-          Il tuo scenario è impostato. Premi simula e guarda come va a finire.
+          Il tuo scenario è impostato.<br />Premi simula e guarda come va a finire.
         </p>
 
-        {/* Riepilogo scenario */}
-        <div className="presim-summary">
-          <div className="presim-chip">
-            <span className="presim-chip-label">Italia</span>
-            <span className={`presim-chip-val ${scenario.italy ? 'on' : 'off'}`}>
-              {scenario.italy ? <><span className="fi fi-it" style={{ width: 16, height: 11, borderRadius: 2, display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }} />Nel Girone B</> : 'Fuori (realistico)'}
-            </span>
+        {/* Card scenario — minimale ma curata: Italia + eventuali what-if */}
+        <div className="presim-card">
+          <div className="presim-card-head">
+            <span className="presim-card-title">Il tuo scenario</span>
+            <button className="presim-edit" onClick={onEditScenario}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+              {activeFactors.length > 0 ? 'Modifica' : 'Aggiungi o modifica'}
+            </button>
           </div>
 
-          <div className="presim-chip">
-            <span className="presim-chip-label">Squadra del cuore</span>
-            <span className="presim-chip-val">
-              {fav
-                ? <><span className={`fi fi-${fav.flag}`} aria-hidden /> {fav.name} ♥</>
-                : '— nessuna'}
-            </span>
-          </div>
-
-          <div className="presim-chip">
-            <span className="presim-chip-label">Caos</span>
-            <span className="presim-chip-val">{scenario.chaos}%</span>
-          </div>
-
-          {activeFactors.length > 0 && (
-            <div className="presim-chip presim-chip--wide">
-              <span className="presim-chip-label">What-if</span>
-              <span className="presim-chip-val">
-                {activeFactors.map((f, i) => (
-                  <span key={f.def!.id} className="presim-wf">
-                    {i > 0 && ' · '}
-                    {f.def!.emoji} {f.def!.label}
-                    {' ('}
-                    {f.teamIds.map((tid) => teamsById.get(tid)?.name ?? tid).join(', ')}
-                    {')'}
-                  </span>
-                ))}
-              </span>
+          <div className="presim-card-body">
+            {/* Stato Italia come riga "etichetta → badge" */}
+            <div className="presim-row">
+              <span className="presim-row-label">Italia</span>
+              {scenario.italy ? (
+                <span className="presim-badge presim-badge--italy">
+                  <span className="fi fi-it" aria-hidden />
+                  Nel Girone B
+                </span>
+              ) : (
+                <span className="presim-badge presim-badge--off">Fuori · realistico</span>
+              )}
             </div>
-          )}
 
-          <button className="presim-edit" onClick={onEditScenario}>
-            ✎ Modifica scenario
-          </button>
+            {activeFactors.length > 0 && (
+              <div className="presim-row presim-row--wf">
+                <span className="presim-row-label">What-if</span>
+                <span className="presim-wf-list">
+                  {activeFactors.map((f) => (
+                    <span key={f.def!.id} className="presim-wf-pill">
+                      <span className="presim-wf-emoji">{f.def!.emoji}</span>
+                      {f.def!.label}
+                      <span className="presim-wf-teams">
+                        {f.teamIds.map((tid) => teamsById.get(tid)?.name ?? tid).join(', ')}
+                      </span>
+                    </span>
+                  ))}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Bottone gigante */}
+        {/* Bottone gigante con profondità + shimmer */}
         <button className="presim-go" onClick={onSimulate} disabled={running}>
-          {running ? '⏳ Avvio…' : '▶ Simula i Mondiali'}
+          <span className="presim-go-shine" aria-hidden />
+          <span className="presim-go-label">
+            {running ? '⏳ Avvio…' : <>▶ Simula i Mondiali</>}
+          </span>
         </button>
 
-        <button className="presim-skip" onClick={onSkip}>
-          Vai direttamente alla dashboard tecnica →
-        </button>
+        {onBack && (
+          <button className="presim-back" onClick={onBack}>
+            ← Torna indietro
+          </button>
+        )}
       </div>
     </div>
   );

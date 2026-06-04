@@ -38,11 +38,11 @@ export function RevealCards({
           </h1>
           <p className="rev-body">
             Il torneo che hai appena visto è <strong>una</strong> delle{' '}
-            {numRuns.toLocaleString('it-IT')} run giocate dal motore. In un'altra
-            run il campione potrebbe essere chiunque.
+            {numRuns.toLocaleString('it-IT')} partite del Mondiale che abbiamo
+            simulato. Ogni volta può vincere una squadra diversa.
             {champ && champAgg && (
-              <> In questa, ha vinto <strong>{champ.name}</strong> — che però
-              vince solo nel <strong>{pctSmart(champAgg.winProb)}</strong> dei casi.</>
+              <> Stavolta ha vinto <strong>{champ.name}</strong>, che però vince
+              solo nel <strong>{pctSmart(champAgg.winProb)}</strong> dei casi.</>
             )}
           </p>
         </>
@@ -55,8 +55,16 @@ export function RevealCards({
         <>
           <p className="rev-kicker">Ecco i numeri veri</p>
           <h1 className="rev-title">Le probabilità reali</h1>
-          <p className="rev-body">Dall'aggregato di tutte le run, ecco chi ha più chance.</p>
+          <p className="rev-body">Mettendo insieme tutte le simulazioni, ecco chi ha più probabilità di vincere.</p>
           <div className="rev-top5">
+            <div className="rev-top5-head" aria-hidden>
+              <span />
+              <span />
+              <span />
+              <span />
+              <span className="rev-top5-odds">Quota</span>
+              <span className="rev-top5-prob">Probab.</span>
+            </div>
             {top5.map((a, i) => {
               const t = teamsById.get(a.teamId);
               return (
@@ -84,9 +92,9 @@ export function RevealCards({
           <p className="rev-kicker">C'è molto di più</p>
           <h1 className="rev-title">Il percorso di ogni squadra</h1>
           <p className="rev-body">
-            Nella dashboard puoi vedere, per ogni nazionale, la probabilità (e la
-            quota) di superare i gironi, arrivare agli ottavi, ai quarti, in
-            semifinale, in finale — e di alzare la coppa. Più il dettaglio della
+            Nella dashboard trovi, per ogni nazionale, la probabilità (e la quota)
+            di superare i gironi, arrivare agli ottavi, ai quarti, in semifinale,
+            in finale e di alzare la coppa. Più il dettaglio della
             <strong> tua </strong> simulazione, partita per partita.
           </p>
         </>
@@ -108,7 +116,6 @@ export function RevealCards({
           ) : (
             <button className="rev-next" onClick={onDone}>Apri la dashboard →</button>
           )}
-          <button className="rev-skip" onClick={onDone}>Salta</button>
         </div>
 
         <div className="rev-dots">

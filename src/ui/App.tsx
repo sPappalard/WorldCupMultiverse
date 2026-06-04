@@ -18,6 +18,7 @@ import { AdminPage } from './components/AdminPage';
 import { Onboarding, type OnboardingResult } from './components/Onboarding';
 import { TournamentCinema } from './components/TournamentCinema';
 import { PreSim } from './components/PreSim';
+import { SimLaunchOverlay } from './components/SimLaunchOverlay';
 import { RevealCards } from './components/RevealCards';
 import { HomeCardGrid, CardOverlay, type CardId, type CardDef, CARD_ICONS } from './components/HomeCards';
 import { ItalyCard } from './components/ItalyCard';
@@ -79,6 +80,8 @@ export function App() {
   const silentRunRef = useRef(false);
   /** Quando true, un effect rilancia la sim dopo un cambio di scenario. */
   const pendingResimRef = useRef(false);
+  /** Quando true, l'onboarding ha appena finito: lancia il cinema appena lo scenario è pronto. */
+  const pendingStartRef = useRef(false);
   const revealTimers = useRef<number[]>([]);
   const workerRef = useRef<Worker | null>(null);
 
@@ -98,6 +101,10 @@ export function App() {
     setSampleRun(null);
     revealTimers.current.forEach(clearTimeout);
     revealTimers.current = [];
+    // Per dare tempo al loading scenico di "respirare" (la sim vera è quasi
+    // istantanea), il passaggio al cinema attende un minimo dall'avvio.
+    const launchAt = performance.now();
+    const MIN_LAUNCH_MS = silent ? 0 : 5000;
 
     const partial = scenarioToSimInput(scenario, data.teams, modulators);
     const base: SimInput = {
@@ -130,11 +137,16 @@ export function App() {
       const msg = e.data;
       if (msg.type === 'sample') {
         // La sample run è pronta: salvala e — se non è un run silenzioso —
-        // fai partire SUBITO il cinema (l'aggregato finisce in background).
+        // fai partire il cinema (l'aggregato finisce in background), ma non prima
+        // che il loading scenico abbia avuto il suo minimo di scena.
         setSampleRun(msg.sample);
         if (!silentRunRef.current) {
-          setCinema(true);
-          setPhase('cinema');
+          const wait = Math.max(0, MIN_LAUNCH_MS - (performance.now() - launchAt));
+          const id = window.setTimeout(() => {
+            setCinema(true);
+            setPhase('cinema');
+          }, wait);
+          revealTimers.current.push(id);
         }
       } else if (msg.type === 'progress') {
         // progresso ignorato: il cinema copre l'attesa
@@ -183,12 +195,26 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenario]);
 
+  // Avvio cinematografico subito dopo l'onboarding: lo scenario è ora committato,
+  // quindi runSimulation legge le scelte giuste e parte il loading + cinema.
+  useEffect(() => {
+    if (pendingStartRef.current && !running) {
+      pendingStartRef.current = false;
+      runSimulation(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scenario]);
+
 
   const handleOnboardingComplete = (result: OnboardingResult) => {
     setScenario(result.scenario);
     setFavoriteTeam(result.favoriteTeam);
     setOnboarded(true);
+    // L'onboarding finisce con "Lancia la simulazione": niente schermata intermedia,
+    // si parte subito. runSimulation legge lo scenario appena impostato al prossimo
+    // render tramite un effect dedicato (lo scenario qui è ancora quello vecchio).
     setPhase('presim');
+    pendingStartRef.current = true;
   };
 
   /** Salta tutto il flusso guidato e va alla dashboard tecnica. */
@@ -221,15 +247,25 @@ export function App() {
 
   // ── PRE-SIM: schermata con bottone Simula + riepilogo scenario ──
   if (phase === 'presim') {
+    // Mentre la sim gira (e il cinema non è ancora partito) mostra il loading
+    // scenico: copre l'attesa con un ingresso "epico", a tema Italia se attiva.
+    if (running) {
+      return (
+        <SimLaunchOverlay
+          italyActive={scenario.italy}
+          favoriteName={favoriteTeam ? teamsById.get(favoriteTeam)?.name : null}
+          numRuns={config.numRuns}
+        />
+      );
+    }
     return (
       <PreSim
         scenario={scenario}
         teams={data.teams}
-        favoriteTeam={favoriteTeam}
         running={running}
         onSimulate={() => runSimulation(false)}
         onEditScenario={() => setOnboarded(false)}
-        onSkip={skipToDashboard}
+        onBack={output ? () => setPhase('dashboard') : undefined}
       />
     );
   }
