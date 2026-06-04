@@ -202,8 +202,14 @@ export function App() {
   /** Attiva l'Italia nello scenario e ri-simula (dalla card Italia). */
   const activateItalyAndSim = () => {
     setScenario((s) => ({ ...s, italy: true }));
-    // resta nella card — la sim riparte in background tramite l'effect
     pendingResimRef.current = true;
+    // Avvia subito in modo che i dati siano pronti prima del loading fittizio
+    setTimeout(() => {
+      if (pendingResimRef.current) {
+        pendingResimRef.current = false;
+        runSimulation(true);
+      }
+    }, 0);
   };
 
   if (error) return <div className="app"><p className="error">Errore dati: {error}</p></div>;
@@ -275,14 +281,43 @@ export function App() {
   const cards: CardDef[] = [
     {
       id: 'results', icon: CARD_ICONS.results, title: 'Risultati Monte Carlo', theme: 'green', size: 'lg',
-      blurb: 'Chi vince il Mondiale e fin dove arriva ogni squadra — probabilità aggregate su 100.000 simulazioni.',
-      bigStat: champ && champProb !== undefined
-        ? <><span className="bento-big-num">{pctSmart(champProb)}</span><span className="bento-big-cap">{champ.name}</span></>
+      blurb: 'Probabilità di vittoria e percorso di ogni squadra su 100.000 simulazioni.',
+      bigStat: output?.aggregates.length
+        ? (
+          <div className="bento-top10">
+            {/* Riga 1: posizioni 1,3,5,7,9 */}
+            <div className="bento-top5">
+              {[0,2,4,6,8].map((idx, col) => {
+                const a = output.aggregates[idx]; if (!a) return null;
+                const t = teamsById.get(a.teamId);
+                return (
+                  <div key={a.teamId} className={`bento-top5-row rank-${col + 1}`}>
+                    <span className="bento-big-num">{pctSmart(a.winProb)}</span>
+                    <span className="bento-big-cap">{t?.name ?? a.teamId}</span>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Riga 2: posizioni 2,4,6,8,10 */}
+            <div className="bento-top5 bento-top5--second">
+              {[1,3,5,7,9].map((idx, col) => {
+                const a = output.aggregates[idx]; if (!a) return null;
+                const t = teamsById.get(a.teamId);
+                return (
+                  <div key={a.teamId} className={`bento-top5-row rank-${col + 1}`}>
+                    <span className="bento-big-num">{pctSmart(a.winProb)}</span>
+                    <span className="bento-big-cap">{t?.name ?? a.teamId}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )
         : null,
     },
     {
       id: 'sim', icon: CARD_ICONS.sim, title: 'La mia simulazione', theme: 'amber', size: 'md',
-      blurb: 'Gironi e tabellone della tua run — una possibilità concreta su 100.000.',
+      blurb: 'Gironi e tabellone della tua run. Una possibilità concreta su 100.000.',
       stat: output ? <><strong>{teamsById.get(output.sample.championId)?.name}</strong> ha vinto</> : null,
     },
     {

@@ -2,6 +2,7 @@
  * ItalyCard — pagina Focus Italia. Niente hero foto.
  * Layout: header identità + griglia dati + percorso torneo (o CTA simula).
  */
+import { useState } from 'react';
 import type { Team, ModelParams, TeamStats, TeamAggregate } from '../../engine/types';
 import { pctSmart, oddsFromProb } from '../odds';
 
@@ -18,28 +19,26 @@ interface Props {
 
 const ITALY_ID = 'ITA';
 
-function getIronicQuote(italyActive: boolean, winProb?: number, semiProb?: number): string {
-  if (!italyActive) {
-    return "Tranquilli, non ci perdiamo nulla. Tre qualificazioni mondiali consecutive mancate — a questo punto è una scelta di vita. Noi però l'abbiamo rimessa dentro lo stesso. Di forza.";
-  }
+const LOADING_MESSAGES = [
+  "Sto chiedendo alla Bosnia se ci fa il favore di farci giocare al posto loro…",
+  "Convinco il sorteggio FIFA che era solo un errore di stampa…",
+  "Spiego alla UEFA che tre play-off persi sono una fase di costruzione…",
+  "Preparo le scuse del ct per quando usciremo ai gironi nella realtà…",
+  "Ok, la Bosnia ha accettato. In bocca al lupo, Italia.",
+];
+const LOADING_DURATION = 12000; // ms totali
+const MSG_INTERVAL = LOADING_DURATION / LOADING_MESSAGES.length;
+
+function getIronicQuote(italyActive: boolean, winProb?: number): string {
+  if (!italyActive) return '';
   if (winProb === undefined) return '';
 
   const winPct = Math.round(winProb * 100);
-  const semiPct = Math.round((semiProb ?? 0) * 100);
 
-  if (winPct >= 20) {
-    return `${winPct}% di vincere il Mondiale. Nella simulazione l'Italia è una delle favorite. Nella realtà non si è qualificata per la terza volta di fila. Fate voi.`;
-  }
   if (winPct >= 10) {
-    return `${winPct}% di vincere. Quattro Coppe del Mondo in bacheca, tre qualificazioni di fila saltate. Il modello dice che ce la faremmo — peccato che nessuno abbia avvisato la Federazione.`;
+    return `${winPct}% di vincere. Quattro stelle sul petto, zero presenze negli ultimi due Mondiali. Il modello ha la memoria corta — fortuna nostra.`;
   }
-  if (winPct >= 5) {
-    return `${winPct}% di vincere, ${semiPct}% di arrivare in semifinale. Non malissimo, per una squadra che di solito guarda i Mondiali in televisione. Almeno qui ci siamo tolti lo sfizio.`;
-  }
-  if (winPct >= 2) {
-    return `${winPct}% di vincere il Mondiale. Il modello non è crudele — è onesto. L'Italia è competitiva, non favorita. Esattamente come si sentivano i tifosi prima delle ultime tre eliminazioni alle qualificazioni.`;
-  }
-  return `${winPct}% di vincere. Sì, è poco. Ma è comunque più delle probabilità che aveva di qualificarsi nella realtà — dove ha fatto ${winPct === 0 ? 'zero' : 'quasi zero'}. Almeno qui siamo in campo.`;
+  return `Avremmo avuto il ${winPct}% di vincere. A quanto pare il problema non era solo qualificarsi.`;
 }
 
 const PHASES = [
@@ -75,15 +74,47 @@ function BarRow({ label, pct, value, color }: { label: string; pct: number; valu
 }
 
 export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, numRuns, onActivate }: Props) {
+  const [loading, setLoading] = useState(false);
+  const [msgIdx, setMsgIdx] = useState(0);
+
+  function handleActivate() {
+    setLoading(true);
+    setMsgIdx(0);
+    onActivate(); // avvia subito la simulazione in parallelo
+    let i = 0;
+    const interval = setInterval(() => {
+      i++;
+      if (i < LOADING_MESSAGES.length) {
+        setMsgIdx(i);
+      } else {
+        clearInterval(interval);
+      }
+    }, MSG_INTERVAL);
+    setTimeout(() => {
+      setLoading(false);
+    }, LOADING_DURATION);
+  }
+
   const italy = teams.find((t) => t.id === ITALY_ID);
   if (!italy) return <p className="muted">Dati Italia non disponibili.</p>;
+
+  if (loading) {
+    return (
+      <div className="itc-loading">
+        <span className="fi fi-it itc-loading-flag" aria-hidden />
+        <div className="itc-loading-spinner" />
+        <p className="itc-loading-msg">{LOADING_MESSAGES[msgIdx]}</p>
+        <div className="itc-loading-dots"><span /><span /><span /></div>
+      </div>
+    );
+  }
 
   const tp = params?.teams[ITALY_ID];
   const ts = teamStats.get(ITALY_ID);
   const agg = italyActive ? aggregates?.find((a) => a.teamId === ITALY_ID) : undefined;
 
   // Storico tornei dall'oggetto knockout
-  const quote = getIronicQuote(italyActive, agg?.winProb, agg?.reachSemiProb);
+  const quote = getIronicQuote(italyActive, agg?.winProb);
 
   const worldCup = ts?.knockout.byTournament.find(t => t.label.includes('Mondiali'));
   const euros    = ts?.knockout.byTournament.find(t => t.label.includes('Euro'));
@@ -109,8 +140,64 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
         </div>
       </div>
 
-      {/* ── Citazione ironica ── */}
-      {quote && (
+      {/* ── Risultati simulazione (solo se attiva) — in evidenza prima della griglia ── */}
+      {italyActive && agg && numRuns && (
+        <div className="itc-sim-hero">
+          <div className="itc-sim-hero-header">
+            <span className="itc-sim-hero-title">🇮🇹 Risultati simulazione</span>
+            <span className="itc-sim-badge">su {numRuns.toLocaleString('it-IT')} simulazioni</span>
+          </div>
+
+          {/* Stat chiave: Campione + Finale in grande */}
+          <div className="itc-sim-hero-stats">
+            <div className="itc-sim-hero-stat">
+              <span className="itc-sim-hero-val" style={{ color: '#fbbf24' }}>{pctSmart(agg.winProb)}</span>
+              <span className="itc-sim-hero-label">🏆 Campione</span>
+              <span className="itc-sim-hero-odds">@{oddsFromProb(agg.winProb)}</span>
+            </div>
+            <div className="itc-sim-hero-divider" />
+            <div className="itc-sim-hero-stat">
+              <span className="itc-sim-hero-val" style={{ color: 'var(--amber)' }}>{pctSmart(agg.reachFinalProb)}</span>
+              <span className="itc-sim-hero-label">⭐ Finale</span>
+              <span className="itc-sim-hero-odds">@{oddsFromProb(agg.reachFinalProb)}</span>
+            </div>
+            <div className="itc-sim-hero-divider" />
+            <div className="itc-sim-hero-stat">
+              <span className="itc-sim-hero-val" style={{ color: 'var(--green-bright)' }}>{pctSmart(agg.reachSemiProb)}</span>
+              <span className="itc-sim-hero-label">🔥 Semifinale</span>
+              <span className="itc-sim-hero-odds">@{oddsFromProb(agg.reachSemiProb)}</span>
+            </div>
+          </div>
+
+          {/* Frase ironica */}
+          {quote && (
+            <div className="itc-sim-hero-quote">
+              <span className="itc-quote-mark">"</span>
+              <p className="itc-quote-text">{quote}</p>
+            </div>
+          )}
+
+          {/* Percorso completo */}
+          <div className="itc-phases">
+            {PHASES.map((p) => {
+              const prob = agg[p.field] as number;
+              return (
+                <div key={p.label} className="itc-phase-row">
+                  <span className="itc-phase-label">{p.label}</span>
+                  <div className="itc-phase-track">
+                    <div className="itc-phase-fill" style={{ width: `${prob * 100}%`, background: p.color }} />
+                  </div>
+                  <span className="itc-phase-pct" style={{ color: p.color }}>{pctSmart(prob)}</span>
+                  <span className="itc-phase-odds">@{oddsFromProb(prob)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Citazione ironica quando l'Italia NON è attiva */}
+      {!italyActive && quote && (
         <div className="itc-quote">
           <span className="itc-quote-mark">"</span>
           <p className="itc-quote-text">{quote}</p>
@@ -184,50 +271,26 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
 
       </div>
 
-      {/* ── Percorso nel torneo ── */}
-      <div className="itc-tournament-block">
-        <div className="itc-block-title">
-          Percorso nel torneo
-          {italyActive && agg && numRuns && (
-            <span className="itc-sim-badge">su {numRuns.toLocaleString('it-IT')} simulazioni</span>
-          )}
-        </div>
-
-        {italyActive && agg && numRuns ? (
-          <div className="itc-phases">
-            {PHASES.map((p) => {
-              const prob = agg[p.field] as number;
-              const pctVal = prob * 100;
-              return (
-                <div key={p.label} className="itc-phase-row">
-                  <span className="itc-phase-label">{p.label}</span>
-                  <div className="itc-phase-track">
-                    <div className="itc-phase-fill" style={{ width: `${pctVal}%`, background: p.color }} />
-                  </div>
-                  <span className="itc-phase-pct" style={{ color: p.color }}>{pctSmart(prob)}</span>
-                  <span className="itc-phase-odds">@{oddsFromProb(prob)}</span>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
+      {/* ── CTA quando Italia non attiva ── */}
+      {!italyActive && (
+        <div className="itc-tournament-block">
           <div className="itc-cta">
             <div className="itc-cta-text">
               <span className="fi fi-it itc-cta-flag" aria-hidden />
               <div>
-                <strong>L'Italia non è in questa simulazione.</strong>
-                <p>Attivala per scoprire fin dove può arrivare nel Girone B — le probabilità vengono calcolate su 100.000 tornei completi.</p>
+                <strong>Tre qualificazioni mondiali mancate di fila.</strong>
+                <p>A questo punto ci siamo presi una piccola libertà: cambiare la storia. Simula il torneo e scopri cosa sarebbe successo con l'Italia in campo.</p>
               </div>
             </div>
-            <button className="itc-cta-btn" onClick={onActivate}>
+            <button className="itc-cta-btn" onClick={handleActivate}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="5 3 19 12 5 21 5 3"/>
               </svg>
-              Attiva l'Italia e simula
+              Inserisci l'Italia e simula
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
     </div>
   );
