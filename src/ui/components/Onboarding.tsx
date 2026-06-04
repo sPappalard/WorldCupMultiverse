@@ -42,9 +42,15 @@ export function Onboarding({ teams, onComplete }: Props) {
   const [leaving, setLeaving] = useState(false);
 
   // Squadre attive (48) + Italia se inserita. Usate sia come bersaglio what-if
-  // sia come "squadra del cuore".
+  // sia come "squadra del cuore". Con l'Italia dentro, la Bosnia esce dal torneo
+  // (sostituita nel Girone B): non deve essere selezionabile.
   const activePool = useMemo(
-    () => teams.filter((t) => t.active || (withItaly && t.id === 'ITA')),
+    () =>
+      teams.filter(
+        (t) =>
+          (t.active && !(withItaly && t.id === 'BIH')) ||
+          (withItaly && t.id === 'ITA'),
+      ),
     [teams, withItaly],
   );
   const teamsById = useMemo(

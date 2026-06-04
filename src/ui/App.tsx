@@ -577,6 +577,14 @@ export function App() {
             h2h={data.h2h}
             teamStats={data.teamStats}
             onChange={(m) => setModulators(m)}
+            onApplyAndSimulate={(m) => {
+              // Applica i pesi e porta alla pagina di scelta scenario (come
+              // "Nuova simulazione"): da lì l'utente lancia la simulazione.
+              setModulators(m);
+              setAdminOpen(false);
+              setOpenCard(null);
+              setPhase('presim');
+            }}
             onGenerateRanking={(m) => {
               setModulators(m);
               setRankByStrength(true);

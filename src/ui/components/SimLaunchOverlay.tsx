@@ -20,7 +20,7 @@ const MESSAGES_ITALY = [
   "Spiego alla FIFA che era solo un errore di stampa…",
   "Rimetto gli Azzurri nel Girone B…",
   "Tre play-off persi? Una fase di costruzione…",
-  "Ok, ci siamo. Forza Italia. 🇮🇹",
+  "Ok, ci siamo. Forza Italia.",
 ];
 const MESSAGES_REAL = [
   "Sorteggio i gironi…",
