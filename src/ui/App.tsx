@@ -50,6 +50,15 @@ const DEFAULT_MODULATORS: ModulatorConfig = {
 /** Fasi del flusso guidato. La dashboard è il punto d'arrivo (e di ritorno). */
 type AppPhase = 'presim' | 'cinema' | 'reveal' | 'dashboard';
 
+/** Lingue UI. `flag` = codice flag-icons (rende bene su Windows, non emoji). */
+type LangCode = 'it' | 'en' | 'es' | 'fr';
+const LANGUAGES: { code: LangCode; flag: string; label: string }[] = [
+  { code: 'it', flag: 'it', label: 'Italiano' },
+  { code: 'en', flag: 'gb', label: 'English' },
+  { code: 'es', flag: 'es', label: 'Español' },
+  { code: 'fr', flag: 'fr', label: 'Français' },
+];
+
 export function App() {
   /** Card aperta a schermo pieno nella home (null = griglia). */
   const [openCard, setOpenCard] = useState<CardId | null>(null);
@@ -58,10 +67,26 @@ export function App() {
   const { data, error } = useData();
   /** Se il link è condiviso (?s=), salta intro+flusso e va dritto alla dashboard. */
   const sharedLink = useMemo(() => new URLSearchParams(window.location.search).has('s'), []);
-  /** Onboarding: mostrato finché l'utente non completa le scelte iniziali. */
-  const [onboarded, setOnboarded] = useState(() => sharedLink);
-  /** Fase del flusso guidato. Link condiviso ⇒ parte dalla dashboard. */
-  const [phase, setPhase] = useState<AppPhase>(() => (sharedLink ? 'dashboard' : 'presim'));
+  /**
+   * Onboarding: mostrato solo alla PRIMA visita della sessione. Usiamo
+   * sessionStorage così l'intro riappare in una nuova sessione (tab/finestra
+   * nuova) ma non a ogni navigazione interna o reload nella stessa sessione.
+   */
+  const seenIntro = useMemo(
+    () => sharedLink || sessionStorage.getItem('mc_seen_intro') === '1',
+    [sharedLink],
+  );
+  const [onboarded, setOnboarded] = useState(() => seenIntro);
+  /** Lingua UI selezionata (le traduzioni vere arriveranno dopo). */
+  const [lang, setLang] = useState<LangCode>('it');
+  /** Dropdown del selettore lingua aperto. */
+  const [langOpen, setLangOpen] = useState(false);
+  /**
+   * Fase del flusso guidato. Chi ha già visto l'intro (o arriva da link
+   * condiviso) atterra sulla home a card; alla primissima visita parte invece
+   * l'onboarding (onboarded=false), e la fase presim serve subito dopo.
+   */
+  const [phase, setPhase] = useState<AppPhase>(() => (seenIntro ? 'dashboard' : 'presim'));
   /** Squadra del cuore: evidenziata in tutta la UI, NON tocca la simulazione. */
   const [favoriteTeam, setFavoriteTeam] = useState<string | null>(null);
   const [modulators, setModulators] = useState<ModulatorConfig | undefined>(undefined);
@@ -214,6 +239,8 @@ export function App() {
     setScenario(result.scenario);
     setFavoriteTeam(result.favoriteTeam);
     setOnboarded(true);
+    // Intro vista per questa sessione: non riapparirà più finché la sessione vive.
+    sessionStorage.setItem('mc_seen_intro', '1');
     // L'onboarding finisce con "Lancia la simulazione": niente schermata intermedia,
     // si parte subito. runSimulation legge lo scenario appena impostato al prossimo
     // render tramite un effect dedicato (lo scenario qui è ancora quello vecchio).
@@ -408,11 +435,46 @@ export function App() {
             </svg>
             Nuova simulazione
           </button>
-          <button className="home-icon-btn" onClick={() => setOnboarded(false)} title="Rivedi l'introduzione">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-            </svg>
-          </button>
+          {/* Selettore lingua: bandiera della lingua attiva → dropdown premium. */}
+          <div className="lang-switch">
+            <button
+              className="home-icon-btn lang-trigger"
+              onClick={() => setLangOpen((o) => !o)}
+              title="Cambia lingua"
+              aria-haspopup="listbox"
+              aria-expanded={langOpen}
+            >
+              <span className={`fi fi-${LANGUAGES.find((l) => l.code === lang)?.flag} lang-flag`} aria-hidden />
+              <svg className="lang-caret" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {langOpen && (
+              <>
+                <div className="lang-backdrop" onClick={() => setLangOpen(false)} />
+                <div className="lang-menu" role="listbox">
+                  <div className="lang-menu-head">Lingua</div>
+                  {LANGUAGES.map((l) => (
+                    <button
+                      key={l.code}
+                      role="option"
+                      aria-selected={lang === l.code}
+                      className={`lang-opt ${lang === l.code ? 'active' : ''}`}
+                      onClick={() => { setLang(l.code); setLangOpen(false); }}
+                    >
+                      <span className={`fi fi-${l.flag} lang-opt-flag`} aria-hidden />
+                      <span className="lang-opt-label">{l.label}</span>
+                      {lang === l.code && (
+                        <svg className="lang-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
           <button className="home-icon-btn" onClick={() => setAdminOpen(true)} title="Impostazioni avanzate">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
