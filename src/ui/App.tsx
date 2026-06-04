@@ -287,7 +287,7 @@ export function App() {
     },
     {
       id: 'teams', icon: CARD_ICONS.teams, title: 'Squadre', theme: 'violet', size: 'md',
-      blurb: '48 nazionali con tutti i parametri: Elo, attacco, difesa, forma, esperienza KO.',
+      blurb: '49 nazionali con tutti i parametri: Elo, attacco, difesa, forma, esperienza KO.',
     },
     {
       id: 'italy', icon: CARD_ICONS.italy, title: 'Focus Italia', theme: 'italy', size: 'lg',
@@ -460,7 +460,7 @@ export function App() {
       {openCard === 'teams' && (
         <CardOverlay title="Squadre partecipanti" icon={CARD_ICONS.teams} onClose={() => setOpenCard(null)}>
           <TabIntro
-            icon="🌍" title="Le 48 nazionali"
+            icon="🌍" title={`Le ${scenario.italy ? '49' : '48'} nazionali`}
             subtitle="Tutti i parametri usati dal motore: Elo, valore rosa, forma, esperienza, storia."
             hints={['Ordina coi pulsanti in alto', 'Clicca una squadra per il profilo e gli scontri diretti']}
           />

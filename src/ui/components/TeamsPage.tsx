@@ -92,7 +92,7 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
   const listRef = useRef<HTMLDivElement>(null);
 
   const visibleTeams = useMemo(() => teams.filter((t) => {
-    if (!t.active) return italyActive && t.id === 'ITA';
+    if (!t.active) return t.id === 'ITA'; // Italia sempre visibile (con badge what-if)
     if (italyActive && t.substituteFor) return false;
     return true;
   }), [teams, italyActive]);
@@ -352,7 +352,7 @@ function TeamCard({ team, sortKey, rank, params, teamStats, strengthScores, onSe
       <span className={`fi fi-${team.flag} tp2-card-flag`} aria-hidden />
       <div className="tp2-card-info">
         <span className="tp2-card-name">{team.name}</span>
-        {isItaly && <span className="tp2-card-whatif">what-if</span>}
+        {isItaly && <span className="tp2-card-whatif">🔀 what-if</span>}
       </div>
       {sortVal && sortKey !== 'group' && (
         <div className="tp2-card-stat">
@@ -377,8 +377,10 @@ function TeamRow({ team, sortKey, rank, isSelected, params, teamStats, strengthS
       )}
       <span className={`fi fi-${team.flag} tp2-row-flag`} aria-hidden />
       <div className="tp2-row-info">
-        <span className="tp2-row-name">{team.name}</span>
-        {isItaly && <span className="tp2-row-whatif">what-if</span>}
+        <div className="tp2-row-nameline">
+          <span className="tp2-row-name">{team.name}</span>
+          {isItaly && <span className="tp2-row-whatif">🔀 what-if</span>}
+        </div>
       </div>
       {sortVal && sortKey !== 'group' && <span className="tp2-row-val">{sortVal.value}</span>}
       <svg className={`tp2-row-chevron ${isSelected ? 'open' : ''}`} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

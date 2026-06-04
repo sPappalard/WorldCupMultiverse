@@ -89,7 +89,9 @@ export function PhaseTable({ aggregates, teamsById, italyActive, favoriteTeam }:
         <div className="pt-thead">
           <span className="pt-col-rank">#</span>
           <span className="pt-col-team">Squadra</span>
-          <span className="pt-col-phase">{phase.label}</span>
+          <span className="pt-col-bar" />
+          <span className="pt-col-odds-h">Quota</span>
+          <span className="pt-col-prob-h">Prob</span>
         </div>
 
         {rows.map((a) => {
@@ -119,15 +121,19 @@ export function PhaseTable({ aggregates, teamsById, italyActive, favoriteTeam }:
                   {isFav && <span className="pt-fav"> ♥</span>}
                 </span>
               </span>
-              <span className="pt-col-phase">
+              <span className="pt-col-bar">
                 <span className="pt-bar-track">
                   <span
                     className="pt-bar-fill"
                     style={{ width: `${barW}%`, background: phase.color }}
                   />
                 </span>
-                <span className="pt-prob">{pctSmart(prob)}</span>
+              </span>
+              <span className="pt-col-odds">
                 <span className="pt-odds">@{oddsFromProb(prob)}</span>
+              </span>
+              <span className="pt-col-prob">
+                <strong className="pt-prob">{pctSmart(prob)}</strong>
               </span>
             </div>
           );

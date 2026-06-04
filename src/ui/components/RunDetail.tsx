@@ -435,8 +435,8 @@ function GroupsDetail({ sample, teamsById, favoriteTeam }: {
             <span className="gd-flag-h" />
             <span className="gd-name gd-head-name">Squadra</span>
             <span className="gd-num gd-head">Pt</span>
-            <span className="gd-num gd-head">GF</span>
-            <span className="gd-num gd-head">GS</span>
+            <span className="gd-num gd-head gd-gf">GF</span>
+            <span className="gd-num gd-head gd-gs">GS</span>
             <span className="gd-num gd-head">DR</span>
           </div>
           {standings.map((s, idx) => {
@@ -450,8 +450,8 @@ function GroupsDetail({ sample, teamsById, favoriteTeam }: {
                 <span className={`fi fi-${t?.flag ?? flag(s.teamId)} gd-flag`} aria-hidden />
                 <span className="gd-name">{t?.name ?? s.teamId}</span>
                 <span className="gd-num gd-pts">{s.points}</span>
-                <span className="gd-num">{s.goalsFor}</span>
-                <span className="gd-num">{s.goalsAgainst}</span>
+                <span className="gd-num gd-gf">{s.goalsFor}</span>
+                <span className="gd-num gd-gs">{s.goalsAgainst}</span>
                 <span className={`gd-num gd-dr ${s.goalDifference > 0 ? 'pos' : s.goalDifference < 0 ? 'neg' : ''}`}>
                   {s.goalDifference > 0 ? '+' : ''}{s.goalDifference}
                 </span>
