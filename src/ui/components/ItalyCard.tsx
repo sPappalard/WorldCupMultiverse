@@ -130,7 +130,14 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
           </div>
         </div>
         <p className="itc-tagline">
-          {italyActive ? t('italy.tagline.active') : t('italy.tagline.inactive')}
+          {italyActive
+            ? t('italy.tagline.active')
+            : t('italy.tagline.inactive').split('·').map((part, i, arr) =>
+                i < arr.length - 1
+                  ? <span key={i}>{part.trim()}<br />· </span>
+                  : <span key={i}>{part.trim()}</span>
+              )
+          }
         </p>
       </div>
 
