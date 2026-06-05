@@ -198,21 +198,22 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
           setStage('ko'); setKoRound(0); setKoPhase('appear'); setKoRevealed(0);
         });
       } else {
-        // Overlay completato: chiudi, mostra gironi con terze in verde per 3s, poi KO.
-        // Il secondo timer è un window.setTimeout diretto (non passa per after/clearTimers)
-        // così non viene annullato quando thirdsState cambia a 'done'.
+        // Overlay completato: passa allo stato 'done' (gironi con terze in verde).
+        // La transizione finale al KO è gestita nel ramo 'done' sotto: un solo
+        // percorso, interamente paused-aware (niente window.setTimeout orfani che
+        // potevano lasciare la macchina ferma se l'utente metteva in pausa).
         after(BASE.thirdsTail, () => {
           cinemaAudio.advance();
           setThirdsState('done');
-          window.setTimeout(() => {
-            setStage('ko'); setKoRound(0); setKoPhase('appear'); setKoRevealed(0);
-          }, 3000 / speedRef.current);
         });
       }
 
     } else if (stage === 'groups' && thirdsState === 'done') {
-      // Il timer diretto (window.setTimeout) nel ramo 'showing' gestisce il passaggio al KO.
-      // Non fare nulla qui — evita di avviare un secondo timer.
+      // Recap di 3s con le terze qualificate evidenziate, poi via ai sedicesimi.
+      // Passa per `after` → annullabile su pausa/timeline e ripristinabile al Play.
+      after(3000, () => {
+        setStage('ko'); setKoRound(0); setKoPhase('appear'); setKoRevealed(0);
+      });
 
     } else if (stage === 'ko') {
       cinemaAudio.setTension(tensionForRound(koRound));

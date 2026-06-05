@@ -63,9 +63,10 @@ export function ItalySlideshow({ overlay = true }: SlideshowProps) {
   // Avanza slide in modo randomico
   useEffect(() => {
     if (photos.length < 2) return;
+    let fadeTimer = 0; // setTimeout interno: va annullato anch'esso allo smontaggio
     timerRef.current = window.setInterval(() => {
       setFading(true);
-      setTimeout(() => {
+      fadeTimer = window.setTimeout(() => {
         setCurrent(c => {
           const next = nextRandom(c, photos.length);
           setKbClass(KB_VARIANTS[Math.floor(Math.random() * KB_VARIANTS.length)]);
@@ -74,7 +75,10 @@ export function ItalySlideshow({ overlay = true }: SlideshowProps) {
         setFading(false);
       }, FADE_DURATION);
     }, SLIDE_DURATION);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (fadeTimer) clearTimeout(fadeTimer);
+    };
   }, [photos]);
 
   if (photos.length === 0) return null;

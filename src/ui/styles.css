@@ -3088,6 +3088,16 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
   .bento-card:nth-child(6) {
     grid-column: auto; grid-row: auto; min-height: 150px;
   }
+  /* Mobile: Focus Italia subito sotto Risultati Monte Carlo.
+     L'ordine nell'array è results(1), sim(2), teams(3), italy(4), matchup(5),
+     howto(6); con `order` lo riarrangiamo SOLO su mobile, senza toccare il
+     desktop. Ordine visivo: results → italy → sim → teams → matchup → howto. */
+  .bento-card:nth-child(1) { order: 1; } /* results */
+  .bento-card:nth-child(4) { order: 2; } /* italy */
+  .bento-card:nth-child(2) { order: 3; } /* sim */
+  .bento-card:nth-child(3) { order: 4; } /* teams */
+  .bento-card:nth-child(5) { order: 5; } /* matchup */
+  .bento-card:nth-child(6) { order: 6; } /* howto */
   /* Le card "grandi" (results, italy) occupano la riga intera e sono più alte */
   .bento--lg { grid-column: 1 / -1; min-height: 200px; }
   .bento--lg .bento-title { font-size: 1.5rem; }

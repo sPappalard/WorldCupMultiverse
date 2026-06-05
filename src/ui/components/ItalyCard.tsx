@@ -2,7 +2,7 @@
  * ItalyCard — pagina Focus Italia. Niente hero foto.
  * Layout: header identità + griglia dati + percorso torneo (o CTA simula).
  */
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { Team, ModelParams, TeamStats, TeamAggregate } from '../../engine/types';
 import { pctSmart, oddsFromProb } from '../odds';
 import { useT } from '../../i18n';
@@ -59,21 +59,28 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
   const MSG_INTERVAL = LOADING_DURATION / Math.max(1, loadingMessages.length);
   const [loading, setLoading] = useState(false);
   const [msgIdx, setMsgIdx] = useState(0);
+  // Timer del loading: tenuti in ref per poterli annullare allo smontaggio
+  // (evita setState su componente smontato se l'utente chiude la card durante il loading).
+  const loadTimers = useRef<{ interval: number; timeout: number }>({ interval: 0, timeout: 0 });
+  useEffect(() => () => {
+    if (loadTimers.current.interval) clearInterval(loadTimers.current.interval);
+    if (loadTimers.current.timeout) clearTimeout(loadTimers.current.timeout);
+  }, []);
 
   function handleActivate() {
     setLoading(true);
     setMsgIdx(0);
     onActivate();
     let i = 0;
-    const interval = setInterval(() => {
+    loadTimers.current.interval = window.setInterval(() => {
       i++;
       if (i < loadingMessages.length) {
         setMsgIdx(i);
       } else {
-        clearInterval(interval);
+        clearInterval(loadTimers.current.interval);
       }
     }, MSG_INTERVAL);
-    setTimeout(() => {
+    loadTimers.current.timeout = window.setTimeout(() => {
       setLoading(false);
     }, LOADING_DURATION);
   }
@@ -181,6 +188,27 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
         </div>
       )}
 
+      {/* ── CTA quando Italia non attiva — in cima, subito dopo l'header ── */}
+      {!italyActive && (
+        <div className="itc-tournament-block">
+          <div className="itc-cta">
+            <div className="itc-cta-text">
+              <span className="fi fi-it itc-cta-flag" aria-hidden />
+              <div>
+                <strong>{t('italy.cta.title')}</strong>
+                <p>{t('italy.cta.body')}</p>
+              </div>
+            </div>
+            <button className="itc-cta-btn" onClick={handleActivate}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              {t('italy.cta.btn')}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Citazione ironica quando l'Italia NON è attiva */}
       {!italyActive && quote && (
         <div className="itc-quote">
@@ -255,27 +283,6 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
         </div>
 
       </div>
-
-      {/* ── CTA quando Italia non attiva ── */}
-      {!italyActive && (
-        <div className="itc-tournament-block">
-          <div className="itc-cta">
-            <div className="itc-cta-text">
-              <span className="fi fi-it itc-cta-flag" aria-hidden />
-              <div>
-                <strong>{t('italy.cta.title')}</strong>
-                <p>{t('italy.cta.body')}</p>
-              </div>
-            </div>
-            <button className="itc-cta-btn" onClick={handleActivate}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="5 3 19 12 5 21 5 3"/>
-              </svg>
-              {t('italy.cta.btn')}
-            </button>
-          </div>
-        </div>
-      )}
 
     </div>
   );

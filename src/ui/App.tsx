@@ -148,7 +148,19 @@ export function App() {
 
     // Crea un worker fresco per ogni run (semplice e robusto).
     workerRef.current?.terminate();
-    const worker = new Worker(new URL('../ui/simWorker.ts', import.meta.url), { type: 'module' });
+    let worker: Worker;
+    try {
+      worker = new Worker(new URL('../ui/simWorker.ts', import.meta.url), { type: 'module' });
+    } catch (err) {
+      // Se la creazione del worker fallisce (memoria, restrizioni del browser),
+      // non lasciare la UI appesa sull'overlay di lancio: ripristina lo stato.
+      console.error('Creazione worker fallita:', err);
+      setRunning(false);
+      setLaunching(false);
+      revealTimers.current.forEach(clearTimeout);
+      revealTimers.current = [];
+      return;
+    }
     workerRef.current = worker;
 
     worker.onmessage = (e: MessageEvent<SimWorkerMessage>) => {
@@ -184,6 +196,16 @@ export function App() {
         worker.terminate();
         workerRef.current = null;
       }
+    };
+
+    // Errore non gestito dentro il worker (es. eccezione fuori dal try/catch del
+    // messaggio): senza questo handler l'overlay di lancio resterebbe appeso.
+    worker.onerror = (e) => {
+      console.error('Errore worker:', e.message);
+      setRunning(false);
+      setLaunching(false);
+      worker.terminate();
+      if (workerRef.current === worker) workerRef.current = null;
     };
 
     worker.postMessage(req);
