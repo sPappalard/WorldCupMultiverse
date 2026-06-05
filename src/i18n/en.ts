@@ -253,7 +253,7 @@ export const en: Record<string, string | string[]> = {
   'reveal.path.title': "Each team's path",
   'reveal.path.body': "In the dashboard you'll find, for every team, the probability (and the odds) of getting out of the group, reaching the Round of 16, the quarters, the semis, the final, and lifting the trophy. Plus the breakdown of your simulation, match by match.",
   'reveal.openDashboard': 'Open the dashboard →',
-  'reveal.focusItaly': 'Italy Focus 🇮🇹',
+  'reveal.focusItaly': 'Italy Focus',
 
   // ── Standings ───────────────────────────────────────────────────────────
   'standings.title': 'Who wins the World Cup?',

@@ -139,6 +139,7 @@ export function RevealCards({
               <button className="rev-next" onClick={onDone}>{t('reveal.openDashboard')}</button>
               {italyActive && onOpenItaly && (
                 <button className="rev-next rev-next--italy" onClick={() => { onDone(); setTimeout(onOpenItaly!, 50); }}>
+                  <span className="fi fi-it" style={{ width: 22, height: 16, borderRadius: 2, display: 'inline-block', verticalAlign: 'middle', marginRight: 8 }} aria-hidden />
                   {t('reveal.focusItaly')}
                 </button>
               )}

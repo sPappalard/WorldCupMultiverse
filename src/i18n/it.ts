@@ -262,7 +262,7 @@ export const it: Record<string, string | string[]> = {
   'reveal.path.title': 'Il percorso di ogni squadra',
   'reveal.path.body': 'Nella dashboard trovi, per ogni nazionale, la probabilità (e la quota) di superare i gironi, arrivare agli ottavi, ai quarti, in semifinale, in finale e di alzare la coppa. Più il dettaglio della tua simulazione, partita per partita.',
   'reveal.openDashboard': 'Apri la dashboard →',
-  'reveal.focusItaly': 'Focus Italia 🇮🇹',
+  'reveal.focusItaly': 'Focus Italia',
 
   // ── Standings ───────────────────────────────────────────────────────────
   'standings.title': 'Chi vince il Mondiale?',

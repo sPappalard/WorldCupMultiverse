@@ -253,7 +253,7 @@ export const es: Record<string, string | string[]> = {
   'reveal.path.title': 'El camino de cada selección',
   'reveal.path.body': 'En el panel encontrarás, para cada selección, la probabilidad (y la cuota) de superar los grupos, llegar a octavos, cuartos, semifinales, la final y levantar la copa. Además del detalle de tu simulación, partido a partido.',
   'reveal.openDashboard': 'Abrir el panel →',
-  'reveal.focusItaly': 'Foco Italia 🇮🇹',
+  'reveal.focusItaly': 'Foco Italia',
 
   // ── Standings ───────────────────────────────────────────────────────────
   'standings.title': '¿Quién gana el Mundial?',

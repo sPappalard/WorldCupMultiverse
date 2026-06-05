@@ -253,7 +253,7 @@ export const fr: Record<string, string | string[]> = {
   'reveal.path.title': 'Le parcours de chaque équipe',
   'reveal.path.body': "Dans le tableau de bord, vous trouverez pour chaque sélection la probabilité (et la cote) de sortir des groupes, d'atteindre les 8es, les quarts, les demies, la finale et de soulever le trophée. Plus le détail de votre simulation, match par match.",
   'reveal.openDashboard': 'Ouvrir le tableau de bord →',
-  'reveal.focusItaly': 'Focus Italie 🇮🇹',
+  'reveal.focusItaly': 'Focus Italie',
 
   // ── Standings ───────────────────────────────────────────────────────────
   'standings.title': 'Qui gagne la Coupe du monde ?',
