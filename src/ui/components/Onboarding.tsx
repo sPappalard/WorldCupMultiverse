@@ -128,7 +128,7 @@ export function Onboarding({ teams, onComplete }: Props) {
         <header className="ob-top">
           <div className="ob-brand">
             <span className="ob-logo">⚽</span>
-            <span className="ob-brand-name">MonteCalcio</span>
+            <span className="ob-brand-name">World Cup Multiverse</span>
           </div>
           <div className="ob-progress">
             {Array.from({ length: TOTAL_STEPS }, (_, i) => (

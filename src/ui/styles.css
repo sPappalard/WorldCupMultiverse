@@ -3503,6 +3503,7 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
 
 /* Hero */
 .hiw-hero { padding: 8px 0 32px; }
+.hiw-hero--nodeck { padding-bottom: 16px; }
 .hiw-eyebrow {
   font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--green); margin: 0 0 14px;
@@ -3638,6 +3639,85 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
   text-decoration: underline; text-underline-offset: 2px;
 }
 .hiw-link-btn:hover { color: var(--text); }
+
+/* Stack layout — creator sopra, project sotto */
+.hiw-stack {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.hiw-stack-pane {
+  width: 100%;
+}
+/* Usa hiw-article senza il proprio max-width quando è dentro lo stack */
+.hiw-stack-pane .hiw-article {
+  max-width: 100%;
+}
+.hiw-stack-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
+}
+
+/* Pulsanti social del creatore */
+.hiw-creator-buttons {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  margin-top: 24px;
+}
+.hiw-creator-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--r-sm);
+  font-size: 0.88rem; font-weight: 700;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-soft);
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+  cursor: pointer;
+}
+.hiw-creator-btn:hover {
+  background: var(--surface-3, rgba(255,255,255,0.08));
+  color: var(--text);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+.hiw-creator-icon {
+  width: 16px; height: 16px; flex: none;
+}
+.hiw-creator-btn--linkedin {
+  background: #0a66c2;
+  color: #fff;
+  border-color: #0a66c2;
+}
+.hiw-creator-btn--linkedin:hover {
+  background: #0959aa;
+  border-color: #0959aa;
+  color: #fff;
+}
+.hiw-creator-btn--github {
+  background: #24292e;
+  color: #fff;
+  border-color: #444d56;
+}
+.hiw-creator-btn--github:hover {
+  background: #1b1f23;
+  border-color: #6a737d;
+  color: #fff;
+}
+.hiw-creator-btn--email {
+  background: var(--surface-2);
+  color: var(--text-soft);
+  border-color: var(--border);
+}
+.hiw-creator-btn--email:hover {
+  background: var(--surface-3, rgba(255,255,255,0.08));
+  color: var(--text);
+  border-color: var(--border-strong);
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    OVERLAY TRANSITIONS — apertura/chiusura card premium

@@ -40,7 +40,7 @@ export const it: Record<string, string | string[]> = {
   'app.computingProbs': 'Calcolo delle probabilità…',
 
   // ── Header home ─────────────────────────────────────────────────────────
-  'header.tagline': 'Mondiali 2026 · simulatore Monte Carlo',
+  'header.tagline': 'Simula Mondiali alternativi',
   'header.newSim': 'Nuova simulazione',
   'header.newSim.title': 'Cambia scenario e simula di nuovo',
   'header.settings': 'Impostazioni avanzate',
@@ -57,15 +57,15 @@ export const it: Record<string, string | string[]> = {
   'card.italy.blurb.active': 'Il cammino degli Azzurri in questo scenario.',
   'card.italy.blurb.inactive': "Cosa succederebbe se l'Italia fosse nel Girone B — il what-if fondamentale.",
   'card.matchup.title': 'Confronto',
-  'card.matchup.blurb': "Due nazionali una contro l\'altra: probabilità, risultati più probabili, parametri a confronto.",
-  'card.howto.title': 'Come funziona',
-  'card.howto.blurb': 'Metodologia, fonti dati, limiti del modello.',
+  'card.matchup.blurb': 'Probabilità, risultati probabili e parametri a confronto.',
+  'card.howto.title': 'Chi siamo & Come funziona',
+  'card.howto.blurb': 'Storia del progetto, metodologia della simulazione e limiti del modello.',
 
   // ── Overlay generici ────────────────────────────────────────────────────
   'overlay.results.title': 'Risultati Monte Carlo',
   'overlay.sim.title': 'La mia simulazione',
   'overlay.matchup.title': 'Confronto tra squadre',
-  'overlay.howto.title': 'Come funziona',
+  'overlay.howto.title': 'Chi siamo & Come funziona',
   'overlay.teams.title': 'Squadre partecipanti',
   'overlay.italy.title': 'Focus Italia',
   'overlay.admin.title': 'Impostazioni avanzate',
@@ -98,10 +98,10 @@ export const it: Record<string, string | string[]> = {
   'tabintro.info.title': 'Come usare questa sezione',
 
   // ── Onboarding ──────────────────────────────────────────────────────────
-  'ob.step0.kicker': 'Mondiali 2026',
-  'ob.step0.title.line1': "L'Italia non si è qualificata.",
-  'ob.step0.title.accent': 'Di nuovo.',
-  'ob.step0.lead': 'Però decidi tu: la rimettiamo in campo o guardiamo la cruda realtà?',
+  'ob.step0.kicker': 'Simula Mondiali alternativi',
+  'ob.step0.title.line1': "L'Italia ha mancato tre Mondiali.",
+  'ob.step0.title.accent': 'Noi la rimettiamo dentro.',
+  'ob.step0.lead': '100.000 simulazioni dei Mondiali 2026, con o senza l\'Italia. Scegli la tua realtà.',
   'ob.step0.withItaly.title': "Con l'Italia",
   'ob.step0.withItaly.desc': 'Azzurri nel Girone B, al posto della Bosnia. Di parte? Sì. Divertente? Tantissimo.',
   'ob.step0.withItaly.tag': 'What-if · consigliata',
@@ -463,9 +463,47 @@ export const it: Record<string, string | string[]> = {
 
   // ── HowItWorks ──────────────────────────────────────────────────────────
   'hiw.source': 'Fonte',
+
+  // ── Sezione Creator ─────────────────────────────────────────────────────
+  'hiw.creator.eyebrow': 'Il creatore',
+  'hiw.creator.h1': 'Chi c\'è dietro questo sito',
+  'hiw.creator.intro': "Ciao, sono Salvatore.",
+  'hiw.creator.p1': 'Sono un ingegnere e product manager appassionato di tecnologia, dati e calcio.',
+  'hiw.creator.p2': 'World Cup Multiverse è nato da una domanda semplice: cosa stiamo davvero perdendo senza l\'Italia ai Mondiali? Invece di discuterne all\'infinito con gli amici, ho deciso di costruire un motore di simulazione e lasciare che i dati rispondessero.',
+  'hiw.creator.p3': 'Questo progetto unisce analisi calcistica, modellazione probabilistica, ingegneria del software e product design.',
+  'hiw.creator.p4': 'Se vuoi condividere feedback, idee, o semplicemente parlare di calcio, contattami.',
+  'hiw.creator.linkedin': 'LinkedIn',
+  'hiw.creator.github': 'GitHub',
+  'hiw.creator.contact': 'Contatto',
+
+  // ── Sezione Project (About) ──────────────────────────────────────────────
   'hiw.eyebrow': 'Il progetto',
   'hiw.h1': "Un italiano stufo. Un Mondiale senza l'Italia. Una simulazione Monte Carlo.",
-  'hiw.deck': `Tre qualificazioni mondiali consecutive mancate. Tre. A un certo punto l\'unico modo per vedere gli Azzurri giocare un Mondiale era costruirselo in casa. La risposta è stata costruire la simulazione. E ficcarci l\'Italia dentro con la forza. La domanda di partenza era semplice: "ma se l\'Italia ci fosse... fino a dove arriverebbe?"`,
+  'hiw.deck': 'Tre qualificazioni mondiali consecutive mancate. Tre. A un certo punto l\'unico modo per vedere gli Azzurri giocare un Mondiale era costruirselo in casa.',
+
+  // Story
+  'hiw.story.label': '01',
+  'hiw.story.h2': 'La storia (perché l\'ho costruito)',
+  'hiw.story.q': 'Perché esiste questo sito?',
+  'hiw.story.p1': 'L\'Italia non disputa un Mondiale dal 2014. Come molti appassionati, continuavo a chiedermi: cosa stiamo davvero perdendo?',
+  'hiw.story.p2': 'Invece di discuterne all\'infinito, ho costruito un motore di simulazione per scoprirlo.',
+  'hiw.story.p3': 'World Cup Multiverse ti permette di esplorare migliaia di realtà calcistiche alternative e misurare cosa sarebbe potuto succedere in circostanze diverse.',
+  'hiw.story.callout': 'A volte i risultati sorprendono. A volte fanno male.',
+
+  // What can you do
+  'hiw.what.label': '02',
+  'hiw.what.h2': 'Cosa puoi fare?',
+  'hiw.what.intro': 'Crea la tua realtà calcistica',
+  'hiw.what.realistic.title': 'Modalità realistica',
+  'hiw.what.realistic.body': 'Simula il torneo usando le forze attuali delle squadre, la forma, le valutazioni offensive e difensive.',
+  'hiw.what.italy.title': 'Modalità Italia',
+  'hiw.what.italy.body': 'Reinserisci l\'Italia ai Mondiali e scopri quante volte gli Azzurri raggiungono la fase a eliminazione diretta, la finale, o alzano il trofeo.',
+  'hiw.what.whatif.title': 'Scenari What-If',
+  'hiw.what.whatif.body': 'Crea realtà alternative con infortuni, espulsioni, o giocatori al massimo della forma.',
+  'hiw.what.compare.title': 'Confronto tra squadre',
+  'hiw.what.compare.body': 'Confronta le nazionali e analizza le probabilità testa a testa, i punti di forza, le debolezze e i risultati previsti.',
+
+  // How it works (tecnico)
   'hiw.s1.h2': 'Come funziona la simulazione',
   'hiw.s1.p1': 'Ogni click su "Simula" genera 100.000 Mondiali completi — gironi, migliori terze, sedicesimi, ottavi, quarti, semifinali, finale — tutti calcolati in circa mezzo secondo nel tuo browser, senza nessun server coinvolto.',
   'hiw.s1.p2': 'Per ogni singola partita il motore calcola la distribuzione di probabilità su tutti i possibili risultati (0-0, 1-0, 1-1, 2-1… fino a 7 gol per parte) usando un modello Poisson bivariato con correzione Dixon-Coles — lo stesso approccio teorico di base usato da molti bookmaker professionisti. Il vincitore viene poi estratto a caso secondo quelle probabilità: non avanza automaticamente il favorito.',
@@ -502,13 +540,33 @@ export const it: Record<string, string | string[]> = {
   'hiw.s3.p2': "Puoi inserire l'Italia nel Girone B al posto della Bosnia — l'unico motivo per cui questo sito esiste. Puoi applicare boost di forma o penalità di infortuni a squadre specifiche, alzare il \"Fattore Caos\" per rendere il torneo più imprevedibile. Ogni what-if è chiaramente etichettato nell'interfaccia così non si confonde mai con la simulazione base.",
   'hiw.s3.callout': "L'Italia nel Girone B è ovviamente il what-if principale. L'unico motivo per cui questo sito esiste.",
   'hiw.s4.h2': 'Cosa questo sito non è',
-  'hiw.s4.p1': "MonteCalcio non è un sito di pronostici in tempo reale. I dati sono snapshot a date precise — l\'Elo di giugno 2026, i valori di mercato di giugno 2026, il sorteggio ufficiale del 5 dicembre 2025. Non si aggiornano in automatico. Non consideriamo infortuni dell\'ultimo minuto, scelte tattiche dell\'allenatore, o il fatto che l\'Argentina abbia dormito male.",
+  'hiw.s4.p1': "World Cup Multiverse non è un sito di pronostici in tempo reale. I dati sono snapshot a date precise — l'Elo di giugno 2026, i valori di mercato di giugno 2026, il sorteggio ufficiale del 5 dicembre 2025. Non si aggiornano in automatico. Non consideriamo infortuni dell'ultimo minuto, scelte tattiche dell'allenatore, o il fatto che l'Argentina abbia dormito male.",
   'hiw.s4.p2': "L'allocazione delle migliori terze nel tabellone segue un algoritmo deterministico che rispetta i vincoli FIFA ma non implementa l'esatta Annex C (495 combinazioni) — l'effetto sulle probabilità aggregate è trascurabile. Il modello bayesiano usa rho (correzione Dixon-Coles) stimato semi-empiricamente, non dentro il processo MCMC.",
   'hiw.s4.p3.pre': 'I dati usati sono tutto ciò che ho trovato di utile e accessibile online — Elo, valori di mercato, risultati storici, scontri diretti — pesati come meglio ho ritenuto sulla base della letteratura e della calibrazione empirica. I pesi sono modificabili e il modello è espandibile. Se ne sai più di me di simulazioni calcistiche e vuoi contribuire a renderlo più preciso, scrivimi — ',
   'hiw.s4.p3.link': 'contattami qui',
   'hiw.s4.p3.post': '. Sarei felicissimo di confrontarmi e migliorare il modello insieme.',
   'hiw.s4.p4': "È un progetto personale nato dalla frustrazione dell'ennesimo Mondiale mancato dell'Italia. Se lo usate per scommesse, i vostri problemi sono ben altri.",
   'hiw.s4.callout': "L'Italia non era qualificata. Questa è l'unica cosa su cui il modello non può fare niente.",
+
+  // About the project
+  'hiw.about.label': '05',
+  'hiw.about.h2': 'Informazioni sul progetto',
+  'hiw.about.p1': 'World Cup Multiverse è un progetto indipendente di analisi calcistica creato da ',
+  'hiw.about.author': 'Salvatore Pappalardo',
+  'hiw.about.p2': 'Unisce ingegneria del software, product design, analisi dei dati e modellazione probabilistica per esplorare realtà calcistiche alternative.',
+  'hiw.about.p3': 'Creato per gli appassionati di calcio, le menti curiose e chiunque si sia mai chiesto: "E se le cose fossero andate diversamente?"',
+
+  // Disclaimer
+  'hiw.disclaimer.label': '06',
+  'hiw.disclaimer.h2': 'Disclaimer',
+  'hiw.disclaimer.p1': 'World Cup Multiverse è un progetto indipendente creato da un appassionato.',
+  'hiw.disclaimer.p2': 'Questo sito non è affiliato, supportato, sponsorizzato né ufficialmente connesso alla FIFA o a qualsiasi federazione calcistica nazionale.',
+  'hiw.disclaimer.p3': 'Tutti i marchi registrati, i nomi delle squadre e i riferimenti ai tornei rimangono di proprietà dei rispettivi titolari.',
+
+  // Privacy
+  'hiw.privacy.label': '07',
+  'hiw.privacy.h2': 'Privacy',
+  'hiw.privacy.p1': 'Questo sito non richiede la registrazione degli utenti e non raccoglie informazioni personali al di là dei dati analytics standard usati per migliorare la piattaforma.',
 
   // ── AdminPage ───────────────────────────────────────────────────────────
   'admin.reset': '↺ reset',

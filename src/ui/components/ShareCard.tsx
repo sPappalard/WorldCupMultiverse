@@ -34,7 +34,7 @@ function drawCard(
   // Titolo
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 46px system-ui, sans-serif';
-  ctx.fillText('MonteCalcio — Mondiali 2026', 60, 90);
+  ctx.fillText('World Cup Multiverse', 60, 90);
 
   ctx.font = '24px system-ui, sans-serif';
   ctx.fillStyle = '#9fb3c8';

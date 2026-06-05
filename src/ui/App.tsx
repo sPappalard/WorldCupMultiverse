@@ -419,7 +419,7 @@ export function App() {
         <div className="home-brand">
           <span className="home-brand-ball">⚽</span>
           <div>
-            <h1 className="home-brand-name">MonteCalcio</h1>
+            <h1 className="home-brand-name">World Cup Multiverse</h1>
             <span className="home-tagline">{t('header.tagline')}</span>
           </div>
         </div>
