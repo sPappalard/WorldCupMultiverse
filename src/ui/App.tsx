@@ -28,6 +28,7 @@ import { HowItWorks } from './components/HowItWorks';
 import { pctSmart } from './odds';
 import { cinemaAudio } from './cinemaAudio';
 import { config } from '../config';
+import { Analytics } from '../analytics';
 import { useT, useTeamName, LANGUAGES } from '../i18n';
 
 /** Ferma il battito/tensione audio quando si salta il cinema. */
@@ -113,6 +114,7 @@ export function App() {
    */
   const runSimulation = (silent = false) => {
     if (!data || running) return;
+    Analytics.simulationRun(scenario.italy);
     silentRunRef.current = silent;
     setRunning(true);
     if (!silent) setLaunching(true);
@@ -270,6 +272,7 @@ export function App() {
 
   /** Attiva l'Italia nello scenario e ri-simula (dalla card Italia). */
   const activateItalyAndSim = () => {
+    Analytics.italyToggleOn();
     setScenario((s) => ({ ...s, italy: true }));
     pendingResimRef.current = true;
     // Avvia subito in modo che i dati siano pronti prima del loading fittizio
@@ -503,7 +506,10 @@ export function App() {
       </header>
 
       {/* Griglia card */}
-      <HomeCardGrid cards={cards} onOpen={setOpenCard} />
+      <HomeCardGrid cards={cards} onOpen={(id) => {
+        if (id === 'sim') Analytics.bracketViewed();
+        setOpenCard(id);
+      }} />
 
       {/* ── OVERLAY: La mia simulazione ── */}
       {openCard === 'sim' && (

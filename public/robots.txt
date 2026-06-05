@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://word-cup-multiverse.vercel.app/sitemap.xml
