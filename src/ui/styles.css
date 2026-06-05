@@ -3251,8 +3251,9 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
 .stn-row--medal-2 .stn-prob { font-size: 1.15rem; }
 
 @media (max-width: 600px) {
-  .stn-row { grid-template-columns: 32px 1fr 40px 54px; }
+  .stn-row { grid-template-columns: 32px 1fr 54px; }
   .stn-bar-col { display: none; }
+  .stn-odds-col { display: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
