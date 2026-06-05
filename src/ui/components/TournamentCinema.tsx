@@ -174,6 +174,9 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
     } else if (stage === 'groups' && thirdsState === 'hidden') {
       cinemaAudio.setTension(0);
       const total = currentGroupMatches.length;
+      // Guard: se il girone non ha ancora match (stato transitorio), aspetta il
+      // prossimo render invece di avanzare subito — evita il blocco al cambio blocco mobile.
+      if (total === 0) return;
       if (groupRevealed < total) {
         after(BASE.groupStagger, () => setGroupRevealed((n) => n + 1));
       } else if (activeGroup < GROUPS.length - 1) {

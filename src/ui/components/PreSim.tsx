@@ -8,6 +8,7 @@ import type { Team } from '../../engine/types';
 import { whatIfFactors } from '../../config';
 import { type Scenario, type AppliedFactor } from '../scenario';
 import { useT, useTeamName } from '../../i18n';
+import { cinemaAudio } from '../cinemaAudio';
 
 interface Props {
   scenario: Scenario;
@@ -92,7 +93,7 @@ export function PreSim({
         </div>
 
         {/* CTA */}
-        <button className="presim-go" onClick={onSimulate} disabled={running}>
+        <button className="presim-go" onClick={() => { cinemaAudio.warm(); onSimulate(); }} disabled={running}>
           <span className="presim-go-shine" aria-hidden />
           <span className="presim-go-label">
             {running ? tr('presim.go.starting') : <>{tr('presim.go')}</>}

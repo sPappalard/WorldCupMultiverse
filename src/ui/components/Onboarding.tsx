@@ -15,6 +15,7 @@ import type { Team } from '../../engine/types';
 import { whatIfFactors } from '../../config';
 import { emptyScenario, type Scenario, type AppliedFactor } from '../scenario';
 import { useT, useTeamName } from '../../i18n';
+import { cinemaAudio } from '../cinemaAudio';
 
 export interface OnboardingResult {
   scenario: Scenario;
@@ -104,6 +105,7 @@ export function Onboarding({ teams, onComplete }: Props) {
   };
 
   const finish = (favOverride?: string | null) => {
+    cinemaAudio.warm();
     // Teniamo solo i fattori che hanno davvero un bersaglio (gli altri sarebbero
     // no-op nel motore). Italia + caos + squadra del cuore completano lo scenario.
     const validFactors = wantWhatIf ? factors.filter((f) => (f.teamIds?.length ?? 0) > 0) : [];

@@ -35,6 +35,23 @@ class CinemaAudio {
     return true;
   }
 
+  /**
+   * Chiama dentro un gestore di click/touch per sbloccare l'AudioContext su iOS/Android.
+   * Il browser richiede che il contesto venga creato (o resumed) dentro un user gesture.
+   */
+  warm() {
+    if (this.muted) return;
+    if (!this.ctx) {
+      const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AC) return;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.6;
+      this.master.connect(this.ctx.destination);
+    }
+    if (this.ctx.state === 'suspended') void this.ctx.resume();
+  }
+
   setMuted(m: boolean) {
     this.muted = m;
     if (m) {
