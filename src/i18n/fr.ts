@@ -309,7 +309,7 @@ export const fr: Record<string, string | string[]> = {
   ],
   'italy.name': 'Italie',
   'italy.tagline.active': 'Groupe B — scénario what-if actif',
-  'italy.tagline.inactive': 'Non qualifiée pour la Coupe du monde 2026 — scénario what-if',
+  'italy.tagline.inactive': 'Non qualifiée pour la Coupe du monde 2026 · scénario what-if',
   'italy.sim.title': 'Résultats de la simulation',
   'italy.sim.badge': 'sur {n} simulations',
   'italy.phase.groups': 'Phase de groupes',

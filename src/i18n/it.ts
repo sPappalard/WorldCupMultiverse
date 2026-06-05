@@ -318,7 +318,7 @@ export const it: Record<string, string | string[]> = {
   ],
   'italy.name': 'Italia',
   'italy.tagline.active': 'Girone B — scenario what-if attivo',
-  'italy.tagline.inactive': 'Non qualificata ai Mondiali 2026 — scenario what-if',
+  'italy.tagline.inactive': 'Non qualificata ai Mondiali 2026 · scenario what-if',
   'italy.sim.title': 'Risultati simulazione',
   'italy.sim.badge': 'su {n} simulazioni',
   'italy.phase.groups': 'Fase a gironi',

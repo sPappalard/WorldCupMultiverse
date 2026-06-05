@@ -192,13 +192,7 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
       {!italyActive && (
         <div className="itc-tournament-block">
           <div className="itc-cta">
-            <div className="itc-cta-text">
-              <span className="fi fi-it itc-cta-flag" aria-hidden />
-              <div>
-                <strong>{t('italy.cta.title')}</strong>
-                <p>{t('italy.cta.body')}</p>
-              </div>
-            </div>
+            <p className="itc-cta-body">{t('italy.cta.body')}</p>
             <button className="itc-cta-btn" onClick={handleActivate}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polygon points="5 3 19 12 5 21 5 3"/>
