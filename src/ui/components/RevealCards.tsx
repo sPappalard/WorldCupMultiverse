@@ -63,7 +63,7 @@ export function RevealCards({
               <span />
               <span />
               <span />
-              <span />
+              <span className="rev-top5-bar" />
               <span className="rev-top5-odds">{t('common.odds')}</span>
               <span className="rev-top5-prob">{t('common.probShort')}</span>
             </div>
