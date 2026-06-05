@@ -49,18 +49,18 @@ export const es: Record<string, string | string[]> = {
   'card.teams.title': 'Selecciones',
   'card.teams.blurb': '49 selecciones con todos los parámetros: Elo, ataque, defensa, forma, experiencia en eliminatorias.',
   'card.italy.title': 'Foco Italia',
-  'card.italy.blurb.active': 'Misión cumplida: Italia en el Mundial 2026. Ahora descubre si realmente puede.',
+  'card.italy.blurb.active': 'Italia está dentro. Descubre las probabilidades y el camino de los Azzurri.',
   'card.italy.blurb.inactive': '¿Y si Italia estuviera ahí? Mira las probabilidades — y prepárate para sufrir.',
   'card.matchup.title': 'Cara a cara',
   'card.matchup.blurb': 'Probabilidades, resultados probables y parámetros comparados.',
-  'card.howto.title': 'Sobre el proyecto & Cómo funciona',
+  'card.howto.title': 'Sobre el proyecto · Cómo funciona',
   'card.howto.blurb': 'Historia del proyecto, metodología de simulación y límites del modelo.',
 
   // ── Overlays genéricos ──────────────────────────────────────────────────
   'overlay.results.title': 'Resultados Monte Carlo',
   'overlay.sim.title': 'Mi simulación',
   'overlay.matchup.title': 'Cara a cara entre selecciones',
-  'overlay.howto.title': 'Sobre el proyecto & Cómo funciona',
+  'overlay.howto.title': 'Sobre el proyecto · Cómo funciona',
   'overlay.teams.title': 'Selecciones participantes',
   'overlay.italy.title': 'Foco Italia',
   'overlay.admin.title': 'Ajustes avanzados',
@@ -253,6 +253,7 @@ export const es: Record<string, string | string[]> = {
   'reveal.path.title': 'El camino de cada selección',
   'reveal.path.body': 'En el panel encontrarás, para cada selección, la probabilidad (y la cuota) de superar los grupos, llegar a octavos, cuartos, semifinales, la final y levantar la copa. Además del detalle de tu simulación, partido a partido.',
   'reveal.openDashboard': 'Abrir el panel →',
+  'reveal.focusItaly': 'Foco Italia 🇮🇹',
 
   // ── Standings ───────────────────────────────────────────────────────────
   'standings.title': '¿Quién gana el Mundial?',

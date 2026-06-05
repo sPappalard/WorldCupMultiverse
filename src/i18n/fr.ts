@@ -49,18 +49,18 @@ export const fr: Record<string, string | string[]> = {
   'card.teams.title': 'Équipes',
   'card.teams.blurb': '49 sélections avec tous les paramètres : Elo, attaque, défense, forme, expérience en phase finale.',
   'card.italy.title': 'Focus Italie',
-  'card.italy.blurb.active': "Mission accomplie : l'Italie au Mondial 2026. Maintenant, voyons si elle s'en sort.",
+  'card.italy.blurb.active': "L'Italie est là. Découvrez les probabilités et le parcours des Azzurri.",
   'card.italy.blurb.inactive': "Et si l'Italie était là ? Découvrez les probabilités — et préparez-vous à souffrir.",
   'card.matchup.title': 'Face-à-face',
   'card.matchup.blurb': 'Probabilités, scores probables et paramètres comparés.',
-  'card.howto.title': 'À propos & Comment ça marche',
+  'card.howto.title': 'À propos · Comment ça marche',
   'card.howto.blurb': "Histoire du projet, méthodologie de simulation et limites du modèle.",
 
   // ── Overlays génériques ─────────────────────────────────────────────────
   'overlay.results.title': 'Résultats Monte-Carlo',
   'overlay.sim.title': 'Ma simulation',
   'overlay.matchup.title': 'Face-à-face entre équipes',
-  'overlay.howto.title': 'À propos & Comment ça marche',
+  'overlay.howto.title': 'À propos · Comment ça marche',
   'overlay.teams.title': 'Équipes participantes',
   'overlay.italy.title': 'Focus Italie',
   'overlay.admin.title': 'Réglages avancés',
@@ -253,6 +253,7 @@ export const fr: Record<string, string | string[]> = {
   'reveal.path.title': 'Le parcours de chaque équipe',
   'reveal.path.body': "Dans le tableau de bord, vous trouverez pour chaque sélection la probabilité (et la cote) de sortir des groupes, d'atteindre les 8es, les quarts, les demies, la finale et de soulever le trophée. Plus le détail de votre simulation, match par match.",
   'reveal.openDashboard': 'Ouvrir le tableau de bord →',
+  'reveal.focusItaly': 'Focus Italie 🇮🇹',
 
   // ── Standings ───────────────────────────────────────────────────────────
   'standings.title': 'Qui gagne la Coupe du monde ?',

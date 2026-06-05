@@ -54,18 +54,18 @@ export const it: Record<string, string | string[]> = {
   'card.teams.title': 'Squadre',
   'card.teams.blurb': '49 nazionali con tutti i parametri: Elo, attacco, difesa, forma, esperienza KO.',
   'card.italy.title': 'Focus Italia',
-  'card.italy.blurb.active': 'Missione completata: l\'Italia è al Mondiale 2026. Ora scopri se se la cava.',
+  'card.italy.blurb.active': 'L\'Italia è dentro. Scopri le probabilità e il cammino degli Azzurri.',
   'card.italy.blurb.inactive': 'E se l\'Italia ci fosse? Scopri le probabilità e preparati a soffrire.',
   'card.matchup.title': 'Confronto',
   'card.matchup.blurb': 'Probabilità, risultati probabili e parametri a confronto.',
-  'card.howto.title': 'Chi siamo & Come funziona',
+  'card.howto.title': 'Chi siamo · Come funziona',
   'card.howto.blurb': 'Storia del progetto, metodologia della simulazione e limiti del modello.',
 
   // ── Overlay generici ────────────────────────────────────────────────────
   'overlay.results.title': 'Risultati Monte Carlo',
   'overlay.sim.title': 'La mia simulazione',
   'overlay.matchup.title': 'Confronto tra squadre',
-  'overlay.howto.title': 'Chi siamo & Come funziona',
+  'overlay.howto.title': 'Chi siamo · Come funziona',
   'overlay.teams.title': 'Squadre partecipanti',
   'overlay.italy.title': 'Focus Italia',
   'overlay.admin.title': 'Impostazioni avanzate',
@@ -262,6 +262,7 @@ export const it: Record<string, string | string[]> = {
   'reveal.path.title': 'Il percorso di ogni squadra',
   'reveal.path.body': 'Nella dashboard trovi, per ogni nazionale, la probabilità (e la quota) di superare i gironi, arrivare agli ottavi, ai quarti, in semifinale, in finale e di alzare la coppa. Più il dettaglio della tua simulazione, partita per partita.',
   'reveal.openDashboard': 'Apri la dashboard →',
+  'reveal.focusItaly': 'Focus Italia 🇮🇹',
 
   // ── Standings ───────────────────────────────────────────────────────────
   'standings.title': 'Chi vince il Mondiale?',

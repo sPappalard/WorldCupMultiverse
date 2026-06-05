@@ -339,6 +339,7 @@ export function App() {
         championId={(output.sample ?? sampleRun)?.championId ?? ''}
         italyActive={scenario.italy}
         onDone={() => setPhase('dashboard')}
+        onOpenItaly={scenario.italy ? () => { setPhase('dashboard'); setOpenCard('italy'); } : undefined}
       />
     );
   }

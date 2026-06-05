@@ -49,18 +49,18 @@ export const en: Record<string, string | string[]> = {
   'card.teams.title': 'Teams',
   'card.teams.blurb': '49 national teams with every parameter: Elo, attack, defense, form, knockout experience.',
   'card.italy.title': 'Italy Focus',
-  'card.italy.blurb.active': 'Mission accomplished: Italy at the 2026 World Cup. Now see if they can actually do it.',
-  'card.italy.blurb.inactive': 'What if Italy were there? Check the odds — and brace yourself.',
+  'card.italy.blurb.active': 'Italy is in. Discover the odds and the Azzurri\'s path through the tournament.',
+  'card.italy.blurb.inactive': 'What if Italy were there? Check the odds and brace yourself.',
   'card.matchup.title': 'Head-to-head',
   'card.matchup.blurb': 'Win odds, likely scorelines, and parameters for any two teams.',
-  'card.howto.title': 'About & How It Works',
+  'card.howto.title': 'About · How It Works',
   'card.howto.blurb': 'The project story, simulation methodology, and model limits.',
 
   // ── Generic overlays ────────────────────────────────────────────────────
   'overlay.results.title': 'Monte Carlo Results',
   'overlay.sim.title': 'My simulation',
   'overlay.matchup.title': 'Head-to-head',
-  'overlay.howto.title': 'About & How It Works',
+  'overlay.howto.title': 'About · How It Works',
   'overlay.teams.title': 'Participating teams',
   'overlay.italy.title': 'Italy Focus',
   'overlay.admin.title': 'Advanced settings',
@@ -253,6 +253,7 @@ export const en: Record<string, string | string[]> = {
   'reveal.path.title': "Each team's path",
   'reveal.path.body': "In the dashboard you'll find, for every team, the probability (and the odds) of getting out of the group, reaching the Round of 16, the quarters, the semis, the final, and lifting the trophy. Plus the breakdown of your simulation, match by match.",
   'reveal.openDashboard': 'Open the dashboard →',
+  'reveal.focusItaly': 'Italy Focus 🇮🇹',
 
   // ── Standings ───────────────────────────────────────────────────────────
   'standings.title': 'Who wins the World Cup?',

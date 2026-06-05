@@ -17,10 +17,12 @@ interface Props {
   championId: string;
   italyActive: boolean;
   onDone: () => void;
+  /** Solo se italyActive: apre la card Focus Italia nella dashboard. */
+  onOpenItaly?: () => void;
 }
 
 export function RevealCards({
-  aggregates, teamsById, numRuns, favoriteTeam, championId, onDone,
+  aggregates, teamsById, numRuns, favoriteTeam, championId, italyActive, onDone, onOpenItaly,
 }: Props) {
   const { t, nf } = useT();
   const teamName = useTeamName();
@@ -28,6 +30,12 @@ export function RevealCards({
   const top5 = aggregates.filter((a) => a.winProb > 0).slice(0, 5);
   const champ = teamsById.get(championId);
   const champAgg = aggregates.find((a) => a.teamId === championId);
+
+  // Posizione e dati dell'Italia nell'aggregato (solo se attiva e fuori dalla top5).
+  const italyRank = italyActive ? aggregates.findIndex((a) => a.teamId === 'ITA') : -1;
+  const italyAgg  = italyRank >= 0 ? aggregates[italyRank] : undefined;
+  const italyTeam = teamsById.get('ITA');
+  const showItalyRow = italyActive && italyAgg && italyTeam && italyRank >= 5;
 
   const cards = [
     // 1. Frame onesto
@@ -68,12 +76,12 @@ export function RevealCards({
               <span className="rev-top5-prob">{t('common.probShort')}</span>
             </div>
             {top5.map((a, i) => {
-              const t = teamsById.get(a.teamId);
+              const tm = teamsById.get(a.teamId);
               return (
-                <div key={a.teamId} className={`rev-top5-row ${a.teamId === favoriteTeam ? 'fav' : ''}`}>
+                <div key={a.teamId} className={`rev-top5-row ${a.teamId === favoriteTeam ? 'fav' : ''} ${italyActive && a.teamId === 'ITA' ? 'rev-italy' : ''}`}>
                   <span className="rev-top5-rank">{i + 1}</span>
-                  <span className={`fi fi-${t?.flag}`} aria-hidden />
-                  <span className="rev-top5-name">{t ? teamName(t) : a.teamId}</span>
+                  <span className={`fi fi-${tm?.flag}`} aria-hidden />
+                  <span className="rev-top5-name">{tm ? teamName(tm) : a.teamId}</span>
                   <span className="rev-top5-bar">
                     <span className="rev-top5-fill" style={{ width: `${(a.winProb / top5[0].winProb) * 100}%` }} />
                   </span>
@@ -82,6 +90,22 @@ export function RevealCards({
                 </div>
               );
             })}
+            {/* Riga Italia se è fuori dalla top 5 */}
+            {showItalyRow && (
+              <>
+                <div className="rev-top5-separator" aria-hidden>···</div>
+                <div className="rev-top5-row rev-italy">
+                  <span className="rev-top5-rank">{italyRank + 1}</span>
+                  <span className={`fi fi-${italyTeam!.flag}`} aria-hidden />
+                  <span className="rev-top5-name">{teamName(italyTeam!)}</span>
+                  <span className="rev-top5-bar">
+                    <span className="rev-top5-fill" style={{ width: `${(italyAgg!.winProb / top5[0].winProb) * 100}%` }} />
+                  </span>
+                  <span className="rev-top5-odds">@{oddsFromProb(italyAgg!.winProb)}</span>
+                  <span className="rev-top5-prob">{pctSmart(italyAgg!.winProb)}</span>
+                </div>
+              </>
+            )}
           </div>
         </>
       ),
@@ -111,7 +135,14 @@ export function RevealCards({
           {!isLast ? (
             <button className="rev-next" onClick={() => setStep((s) => s + 1)}>{t('common.next')}</button>
           ) : (
-            <button className="rev-next" onClick={onDone}>{t('reveal.openDashboard')}</button>
+            <div className="rev-actions-last">
+              <button className="rev-next" onClick={onDone}>{t('reveal.openDashboard')}</button>
+              {italyActive && onOpenItaly && (
+                <button className="rev-next rev-next--italy" onClick={() => { onDone(); setTimeout(onOpenItaly!, 50); }}>
+                  {t('reveal.focusItaly')}
+                </button>
+              )}
+            </div>
           )}
         </div>
 
