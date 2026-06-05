@@ -119,17 +119,19 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
 
       {/* ── Header identità ── */}
       <div className="itc-header">
-        <span className="fi fi-it itc-flag" aria-hidden />
-        <div className="itc-header-text">
-          <h2 className="itc-name">{t('italy.name')}</h2>
-          <p className="itc-tagline">
-            {italyActive ? t('italy.tagline.active') : t('italy.tagline.inactive')}
-          </p>
+        <div className="itc-header-top">
+          <span className="fi fi-it itc-flag" aria-hidden />
+          <div className="itc-header-text">
+            <h2 className="itc-name">{t('italy.name')}</h2>
+          </div>
+          <div className="itc-header-elo">
+            <span className="itc-elo-num">{italy.elo}</span>
+            <span className="itc-elo-label">Elo</span>
+          </div>
         </div>
-        <div className="itc-header-elo">
-          <span className="itc-elo-num">{italy.elo}</span>
-          <span className="itc-elo-label">Elo</span>
-        </div>
+        <p className="itc-tagline">
+          {italyActive ? t('italy.tagline.active') : t('italy.tagline.inactive')}
+        </p>
       </div>
 
       {/* ── Risultati simulazione (solo se attiva) — in evidenza prima della griglia ── */}
