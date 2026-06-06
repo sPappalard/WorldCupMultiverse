@@ -171,7 +171,7 @@ function AboutProject({ modulators, onOpenAdmin, teams = [], params = null, h2h 
 
       <div className="hiw-divider" />
 
-      {/* ── Sezione 1: La simulazione ── */}
+      {/* ── Section 1: The simulation ── */}
       <section className="hiw-section">
         <div className="hiw-section-label">03</div>
         <h2 className="hiw-h2">{t('hiw.s1.h2')}</h2>
@@ -183,7 +183,7 @@ function AboutProject({ modulators, onOpenAdmin, teams = [], params = null, h2h 
 
       <div className="hiw-divider" />
 
-      {/* ── Sezione 2: Punteggio Forza ── */}
+      {/* ── Section 2: Strength Score ── */}
       <section className="hiw-section">
         <div className="hiw-section-label">04</div>
         <h2 className="hiw-h2">{t('hiw.s2.h2')}</h2>
@@ -241,7 +241,7 @@ function AboutProject({ modulators, onOpenAdmin, teams = [], params = null, h2h 
           </div>
         </div>
 
-        {/* Torta */}
+        {/* Pie */}
         <div className="hiw-pie-block">
           <h3 className="hiw-h3">{t('hiw.pie.title')}</h3>
           <p className="hiw-p hiw-p--sm">
@@ -268,7 +268,7 @@ function AboutProject({ modulators, onOpenAdmin, teams = [], params = null, h2h 
 
       <div className="hiw-divider" />
 
-      {/* ── Limiti ── */}
+      {/* ── Limitations ── */}
       <section className="hiw-section">
         <div className="hiw-section-label">06</div>
         <h2 className="hiw-h2">{t('hiw.s4.h2')}</h2>
@@ -307,7 +307,7 @@ function AboutProject({ modulators, onOpenAdmin, teams = [], params = null, h2h 
   );
 }
 
-/* ── Wrapper principale — layout verticale (creator sopra, project sotto) ── */
+/* ── Main wrapper — vertical layout (creator on top, project below) ── */
 
 export function HowItWorks(props: Props) {
   return (

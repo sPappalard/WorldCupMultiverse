@@ -1,9 +1,9 @@
 /**
- * PhaseTable — "Il percorso delle squadre".
- * Una tab per ogni fase (Gironi → Ottavi → Quarti → Semifinale → Finale).
- * Ogni tab mostra le squadre ordinate per probabilità di raggiungere quella fase.
- * Top 10 di default, espandibile a tutte.
- * La vittoria è mostrata già in Standings — qui la escludiamo.
+ * PhaseTable — "The teams' run".
+ * One tab per phase (Groups → R16 → Quarters → Semifinal → Final).
+ * Each tab lists teams by probability of reaching that phase.
+ * Top 10 by default, expandable to all.
+ * The title win is already shown in Standings — excluded here.
  */
 import { useState } from 'react';
 import type { TeamAggregate, Team } from '../../engine/types';
@@ -37,7 +37,7 @@ export function PhaseTable({ aggregates, teamsById, italyActive, favoriteTeam }:
 
   const phase = PHASES.find(p => p.key === activePhase)!;
 
-  // Quando si cambia tab, riporta a "mostra 10"
+  // On tab change, reset to "show 10".
   function handlePhaseChange(key: PhaseKey) {
     setActivePhase(key);
     setShowAll(false);
@@ -50,7 +50,7 @@ export function PhaseTable({ aggregates, teamsById, italyActive, favoriteTeam }:
 
   const maxProb = (all[0]?.[phase.field] as number) ?? 1;
 
-  // Extra rows: favorito e Italia se fuori dalla top 10
+  // Extra rows: favorite and Italy if outside the top 10.
   const extraIds = new Set<string>();
   if (!showAll) {
     const top = all.slice(0, DEFAULT_SHOWN);
@@ -70,7 +70,7 @@ export function PhaseTable({ aggregates, teamsById, italyActive, favoriteTeam }:
         <span className="dash-section-sub">{t('phase.sub')}</span>
       </div>
 
-      {/* Tab fasi */}
+      {/* Phase tabs */}
       <div className="pt-phase-tabs">
         {PHASES.map(p => (
           <button
@@ -84,10 +84,10 @@ export function PhaseTable({ aggregates, teamsById, italyActive, favoriteTeam }:
         ))}
       </div>
 
-      {/* Descrizione fase attiva */}
+      {/* Active phase description */}
       <p className="pt-phase-desc">{t('phase.topN', { desc: t(phase.descKey), n: String(showAll ? all.length : Math.min(DEFAULT_SHOWN, all.length)) })}</p>
 
-      {/* Tabella */}
+      {/* Table */}
       <div className="pt-table">
         <div className="pt-thead">
           <span className="pt-col-rank">#</span>

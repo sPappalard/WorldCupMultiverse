@@ -31,10 +31,10 @@ import { config } from '../config';
 import { Analytics } from '../analytics';
 import { useT, useTeamName, LANGUAGES } from '../i18n';
 
-/** Ferma il battito/tensione audio quando si salta il cinema. */
+/** Stop the tension/heartbeat audio when the cinema is skipped. */
 const cinemaAudioStop = () => cinemaAudio.setTension(0);
 
-/** Default dei modulatori, da config (evita duplicazione dei valori). */
+/** Default modulators, from config (avoids duplicating the values). */
 const DEFAULT_MODULATORS: ModulatorConfig = {
   formCoeff: config.modulators.formCoeff,
   squadValueCoeff: config.modulators.squadValueCoeff,
@@ -54,17 +54,17 @@ type AppPhase = 'presim' | 'cinema' | 'reveal' | 'dashboard';
 export function App() {
   const { t, tList, nf, lang, setLang } = useT();
   const teamName = useTeamName();
-  /** Card aperta a schermo pieno nella home (null = griglia). */
+  /** Full-screen card open on the home (null = grid). */
   const [openCard, setOpenCard] = useState<CardId | null>(null);
-  /** Pannello Admin (ingranaggio) a schermo pieno. */
+  /** Full-screen Admin (gear) panel. */
   const [adminOpen, setAdminOpen] = useState(false);
   const { data, error } = useData();
-  /** Se il link è condiviso (?s=), salta intro+flusso e va dritto alla dashboard. */
+  /** Shared link (?s=): skip intro + flow and go straight to the dashboard. */
   const sharedLink = useMemo(() => new URLSearchParams(window.location.search).has('s'), []);
   /**
-   * Onboarding: mostrato solo alla PRIMA visita della sessione. Usiamo
-   * sessionStorage così l'intro riappare in una nuova sessione (tab/finestra
-   * nuova) ma non a ogni navigazione interna o reload nella stessa sessione.
+   * Onboarding: shown only on the FIRST visit of the session. We use
+   * sessionStorage so the intro reappears in a new session (new tab/window) but
+   * not on every internal navigation or reload within the same session.
    */
   const seenIntro = useMemo(
     () => sharedLink || sessionStorage.getItem('mc_seen_intro') === '1',
@@ -73,32 +73,32 @@ export function App() {
   const [onboarded, setOnboarded] = useState(() => seenIntro);
   const [langOpen, setLangOpen] = useState(false);
   /**
-   * Fase del flusso guidato. Chi ha già visto l'intro (o arriva da link
-   * condiviso) atterra sulla home a card; alla primissima visita parte invece
-   * l'onboarding (onboarded=false), e la fase presim serve subito dopo.
+   * Guided-flow phase. Returning visitors (or shared-link arrivals) land on the
+   * card home; on the very first visit the onboarding runs (onboarded=false),
+   * with the presim phase right after.
    */
   const [phase, setPhase] = useState<AppPhase>(() => (seenIntro ? 'dashboard' : 'presim'));
-  /** Squadra del cuore: evidenziata in tutta la UI, NON tocca la simulazione. */
+  /** Favorite team: highlighted across the UI, does NOT affect the simulation. */
   const [favoriteTeam, setFavoriteTeam] = useState<string | null>(null);
   const [modulators, setModulators] = useState<ModulatorConfig | undefined>(undefined);
-  /** Quando true, la pagina Squadre apre ordinata per Punteggio Forza. */
+  /** When true, the Teams page opens sorted by Strength Score. */
   const [rankByStrength, setRankByStrength] = useState(false);
   const [scenario, setScenario] = useState<Scenario>(() =>
     scenarioFromUrl(new URLSearchParams(window.location.search).get('s')),
   );
   const [output, setOutput] = useState<SimulationOutput | null>(null);
-  /** Sample run (per il cinema): arriva PRIMA dell'aggregato completo. */
+  /** Sample run (for the cinema): arrives BEFORE the full aggregate. */
   const [sampleRun, setSampleRun] = useState<SampleRun | null>(null);
   const [running, setRunning] = useState(false);
-  /** Rimane true dal click "Simula" finché il cinema parte (evita il flash di PreSim). */
+  /** Stays true from the "Simulate" click until the cinema starts (avoids a PreSim flash). */
   const [launching, setLaunching] = useState(false);
-  /** Quando true, la messa in scena cinematografica copre lo schermo. */
+  /** When true, the cinematic staging covers the screen. */
   const [cinema, setCinema] = useState(false);
-  /** True solo per l'autorun silenzioso da link condiviso (niente cinema). */
+  /** True only for the silent autorun from a shared link (no cinema). */
   const silentRunRef = useRef(false);
-  /** Quando true, un effect rilancia la sim dopo un cambio di scenario. */
+  /** When true, an effect re-runs the sim after a scenario change. */
   const pendingResimRef = useRef(false);
-  /** Quando true, l'onboarding ha appena finito: lancia il cinema appena lo scenario è pronto. */
+  /** When true, onboarding just finished: start the cinema once the scenario is ready. */
   const pendingStartRef = useRef(false);
   const revealTimers = useRef<number[]>([]);
   const workerRef = useRef<Worker | null>(null);
@@ -109,8 +109,8 @@ export function App() {
   );
 
   /**
-   * Avvia la simulazione. `silent=true` (autorun da link condiviso) salta il
-   * cinema e va dritto alla dashboard: serve solo a popolare l'output.
+   * Start the simulation. `silent=true` (shared-link autorun) skips the cinema
+   * and goes straight to the dashboard: it only populates the output.
    */
   const runSimulation = (silent = false) => {
     if (!data || running) return;
@@ -121,8 +121,8 @@ export function App() {
     setSampleRun(null);
     revealTimers.current.forEach(clearTimeout);
     revealTimers.current = [];
-    // Per dare tempo al loading scenico di "respirare" (la sim vera è quasi
-    // istantanea), il passaggio al cinema attende un minimo dall'avvio.
+    // Give the staged loading time to "breathe" (the real sim is near-instant):
+    // the switch to the cinema waits a minimum time from launch.
     const launchAt = performance.now();
     const MIN_LAUNCH_MS = silent ? 0 : 10000;
 
@@ -134,7 +134,7 @@ export function App() {
       ...partial,
     };
 
-    // Serializza le Map in entries per il worker (structured clone).
+    // Serialize the Maps to entries for the worker (structured clone).
     const req: SimWorkerRequest = {
       teams: base.teams,
       params: base.params,
@@ -148,15 +148,15 @@ export function App() {
       modulators: base.modulators,
     };
 
-    // Crea un worker fresco per ogni run (semplice e robusto).
+    // Create a fresh worker per run (simple and robust).
     workerRef.current?.terminate();
     let worker: Worker;
     try {
       worker = new Worker(new URL('../ui/simWorker.ts', import.meta.url), { type: 'module' });
     } catch (err) {
-      // Se la creazione del worker fallisce (memoria, restrizioni del browser),
-      // non lasciare la UI appesa sull'overlay di lancio: ripristina lo stato.
-      console.error('Creazione worker fallita:', err);
+      // If worker creation fails (memory, browser restrictions), don't leave the
+      // UI stuck on the launch overlay: reset the state.
+      console.error('Worker creation failed:', err);
       setRunning(false);
       setLaunching(false);
       revealTimers.current.forEach(clearTimeout);
@@ -168,9 +168,9 @@ export function App() {
     worker.onmessage = (e: MessageEvent<SimWorkerMessage>) => {
       const msg = e.data;
       if (msg.type === 'sample') {
-        // La sample run è pronta: salvala e — se non è un run silenzioso —
-        // fai partire il cinema (l'aggregato finisce in background), ma non prima
-        // che il loading scenico abbia avuto il suo minimo di scena.
+        // The sample run is ready: store it and — unless this is a silent run —
+        // start the cinema (the aggregate finishes in the background), but not
+        // before the staged loading has had its minimum on-screen time.
         setSampleRun(msg.sample);
         if (!silentRunRef.current) {
           const wait = Math.max(0, MIN_LAUNCH_MS - (performance.now() - launchAt));
@@ -182,7 +182,7 @@ export function App() {
           revealTimers.current.push(id);
         }
       } else if (msg.type === 'progress') {
-        // progresso ignorato: il cinema copre l'attesa
+        // progress ignored: the cinema covers the wait
       } else if (msg.type === 'done') {
         setOutput(msg.result);
         setRunning(false);
@@ -193,17 +193,17 @@ export function App() {
         url.searchParams.set('s', scenarioToUrl(scenario));
         window.history.replaceState({}, '', url);
       } else if (msg.type === 'error') {
-        console.error('Errore simulazione:', msg.message);
+        console.error('Simulation error:', msg.message);
         setRunning(false);
         worker.terminate();
         workerRef.current = null;
       }
     };
 
-    // Errore non gestito dentro il worker (es. eccezione fuori dal try/catch del
-    // messaggio): senza questo handler l'overlay di lancio resterebbe appeso.
+    // Unhandled error inside the worker (e.g. exception outside the message
+    // try/catch): without this handler the launch overlay would hang.
     worker.onerror = (e) => {
-      console.error('Errore worker:', e.message);
+      console.error('Worker error:', e.message);
       setRunning(false);
       setLaunching(false);
       worker.terminate();
@@ -213,13 +213,13 @@ export function App() {
     worker.postMessage(req);
   };
 
-  // Pulizia timer e worker allo smontaggio.
+  // Clean up timers and worker on unmount.
   useEffect(() => () => {
     revealTimers.current.forEach(clearTimeout);
     workerRef.current?.terminate();
   }, []);
 
-  // Autorun silenzioso da link condiviso: popola la dashboard senza cinema.
+  // Silent autorun from a shared link: populate the dashboard without cinema.
   const didAutorun = useRef(false);
   useEffect(() => {
     if (sharedLink && data && !didAutorun.current && !output && !running) {
@@ -229,7 +229,7 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
-  // Ri-simulazione richiesta dopo un cambio di scenario (es. "Attiva Italia").
+  // Re-simulation requested after a scenario change (e.g. "Activate Italy").
   useEffect(() => {
     if (pendingResimRef.current && !running) {
       pendingResimRef.current = false;
@@ -238,8 +238,8 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenario]);
 
-  // Avvio cinematografico subito dopo l'onboarding: lo scenario è ora committato,
-  // quindi runSimulation legge le scelte giuste e parte il loading + cinema.
+  // Cinematic start right after onboarding: the scenario is now committed, so
+  // runSimulation reads the right choices and the loading + cinema begin.
   useEffect(() => {
     if (pendingStartRef.current && !running) {
       pendingStartRef.current = false;
@@ -253,29 +253,29 @@ export function App() {
     setScenario(result.scenario);
     setFavoriteTeam(result.favoriteTeam);
     setOnboarded(true);
-    // Intro vista per questa sessione: non riapparirà più finché la sessione vive.
+    // Intro seen for this session: won't reappear while the session lives.
     sessionStorage.setItem('mc_seen_intro', '1');
-    // L'onboarding finisce con "Lancia la simulazione": niente schermata intermedia,
-    // si parte subito. runSimulation legge lo scenario appena impostato al prossimo
-    // render tramite un effect dedicato (lo scenario qui è ancora quello vecchio).
+    // Onboarding ends with "Launch the simulation": no intermediate screen, start
+    // immediately. runSimulation reads the just-set scenario on the next render
+    // via a dedicated effect (the scenario here is still the old one).
     setPhase('presim');
     pendingStartRef.current = true;
   };
 
-  /** Salta tutto il flusso guidato e va alla dashboard tecnica. */
+  /** Skip the entire guided flow and go to the technical dashboard. */
   const skipToDashboard = () => {
     setCinema(false);
     cinemaAudioStop();
-    if (!output && !running) runSimulation(true); // serve l'output per la dashboard
+    if (!output && !running) runSimulation(true); // the dashboard needs output
     setPhase('dashboard');
   };
 
-  /** Attiva l'Italia nello scenario e ri-simula (dalla card Italia). */
+  /** Activate Italy in the scenario and re-simulate (from the Italy card). */
   const activateItalyAndSim = () => {
     Analytics.italyToggleOn();
     setScenario((s) => ({ ...s, italy: true }));
     pendingResimRef.current = true;
-    // Avvia subito in modo che i dati siano pronti prima del loading fittizio
+    // Start immediately so the data is ready before the staged loading.
     setTimeout(() => {
       if (pendingResimRef.current) {
         pendingResimRef.current = false;
@@ -291,11 +291,11 @@ export function App() {
     return <Onboarding teams={data.teams} onComplete={handleOnboardingComplete} />;
   }
 
-  // ── PRE-SIM: schermata con bottone Simula + riepilogo scenario ──
+  // ── PRE-SIM: screen with the Simulate button + scenario summary ──
   if (phase === 'presim') {
-    // Mentre la sim gira (e il cinema non è ancora partito) mostra il loading
-    // scenico: copre l'attesa con un ingresso "epico", a tema Italia se attiva.
-    // `launching` rimane true fino al setTimeout del cinema, evitando il flash di PreSim.
+    // While the sim runs (and the cinema hasn't started) show the staged
+    // loading: it covers the wait with an "epic" intro, Italy-themed if active.
+    // `launching` stays true until the cinema's setTimeout, avoiding a PreSim flash.
     if (running || launching) {
       return (
         <SimLaunchOverlay
@@ -317,7 +317,7 @@ export function App() {
     );
   }
 
-  // ── CINEMA: parte con la sample run (l'aggregato gira in background) ──
+  // ── CINEMA: starts with the sample run (the aggregate runs in background) ──
   if (phase === 'cinema' && (sampleRun || output)) {
     return (
       <TournamentCinema
@@ -331,7 +331,7 @@ export function App() {
     );
   }
 
-  // ── REVEAL: schede che traghettano dal cinema alla dashboard ──
+  // ── REVEAL: cards bridging the cinema to the dashboard ──
   if (phase === 'reveal' && output) {
     return (
       <RevealCards
@@ -346,7 +346,7 @@ export function App() {
       />
     );
   }
-  // Se il cinema è finito ma l'aggregato non è ancora pronto, mostra reveal appena arriva.
+  // If the cinema finished but the aggregate isn't ready, show reveal once it arrives.
   if (phase === 'reveal' && !output) {
     return (
       <div className="reveal-wait">
@@ -356,7 +356,7 @@ export function App() {
     );
   }
 
-  // ── HOME A CARD ──
+  // ── CARD HOME ──
   const favTeam = output && favoriteTeam ? teamsById.get(favoriteTeam) : null;
   const favName = favTeam ? teamName(favTeam) : null;
 
@@ -367,7 +367,7 @@ export function App() {
       bigStat: output?.aggregates.length
         ? (
           <div className="bento-top10">
-            {/* Riga 1: posizioni 1,3,5,7,9 */}
+            {/* Row 1: ranks 1,3,5,7,9 */}
             <div className="bento-top5">
               {[0,2,4,6,8].map((idx, col) => {
                 const a = output.aggregates[idx]; if (!a) return null;
@@ -380,7 +380,7 @@ export function App() {
                 );
               })}
             </div>
-            {/* Riga 2: posizioni 2,4,6,8,10 */}
+            {/* Row 2: ranks 2,4,6,8,10 */}
             <div className="bento-top5 bento-top5--second">
               {[1,3,5,7,9].map((idx, col) => {
                 const a = output.aggregates[idx]; if (!a) return null;
@@ -457,7 +457,7 @@ export function App() {
             </svg>
             {t('header.newSim')}
           </button>
-          {/* Selettore lingua: bandiera della lingua attiva → dropdown premium. */}
+          {/* Language switch: active language's flag → dropdown. */}
           <div className="lang-switch">
             <button
               className="home-icon-btn lang-trigger"
@@ -505,13 +505,13 @@ export function App() {
         </div>
       </header>
 
-      {/* Griglia card */}
+      {/* Card grid */}
       <HomeCardGrid cards={cards} onOpen={(id) => {
         if (id === 'sim') Analytics.bracketViewed();
         setOpenCard(id);
       }} />
 
-      {/* ── OVERLAY: La mia simulazione ── */}
+      {/* ── OVERLAY: My simulation ── */}
       {openCard === 'sim' && (
         <CardOverlay title={t('overlay.sim.title')} icon={CARD_ICONS.sim} onClose={() => setOpenCard(null)}>
           {output ? (
@@ -540,7 +540,7 @@ export function App() {
         </CardOverlay>
       )}
 
-      {/* ── OVERLAY: Risultati Monte Carlo ── */}
+      {/* ── OVERLAY: Monte Carlo results ── */}
       {openCard === 'results' && (
         <CardOverlay title={t('overlay.results.title')} icon={CARD_ICONS.results} onClose={() => setOpenCard(null)}>
           {!output && (
@@ -579,7 +579,7 @@ export function App() {
         </CardOverlay>
       )}
 
-      {/* ── OVERLAY: Confronto ── */}
+      {/* ── OVERLAY: Matchup ── */}
       {openCard === 'matchup' && (
         <CardOverlay title={t('overlay.matchup.title')} icon={CARD_ICONS.matchup} onClose={() => setOpenCard(null)}>
           <TabIntro
@@ -597,7 +597,7 @@ export function App() {
         </CardOverlay>
       )}
 
-      {/* ── OVERLAY: Come funziona ── */}
+      {/* ── OVERLAY: How it works ── */}
       {openCard === 'howto' && (
         <CardOverlay title={t('overlay.howto.title')} icon={CARD_ICONS.howto} onClose={() => setOpenCard(null)}>
           <HowItWorks
@@ -611,7 +611,7 @@ export function App() {
         </CardOverlay>
       )}
 
-      {/* ── OVERLAY: Squadre ── */}
+      {/* ── OVERLAY: Teams ── */}
       {openCard === 'teams' && (
         <CardOverlay title={t('overlay.teams.title')} icon={CARD_ICONS.teams} onClose={() => setOpenCard(null)}>
           <TabIntro
@@ -633,7 +633,7 @@ export function App() {
         </CardOverlay>
       )}
 
-      {/* ── OVERLAY: Focus Italia ── */}
+      {/* ── OVERLAY: Italy focus ── */}
       {openCard === 'italy' && (
         <CardOverlay title={t('overlay.italy.title')} icon={CARD_ICONS.italy} onClose={() => setOpenCard(null)}>
           <ItalyCard
@@ -649,7 +649,7 @@ export function App() {
         </CardOverlay>
       )}
 
-      {/* ── OVERLAY: Admin (ingranaggio) ── */}
+      {/* ── OVERLAY: Admin (gear) ── */}
       {adminOpen && (
         <CardOverlay title={t('overlay.admin.title')} icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>} onClose={() => setAdminOpen(false)}>
           <AdminPage
@@ -660,8 +660,8 @@ export function App() {
             teamStats={data.teamStats}
             onChange={(m) => setModulators(m)}
             onApplyAndSimulate={(m) => {
-              // Applica i pesi e porta alla pagina di scelta scenario (come
-              // "Nuova simulazione"): da lì l'utente lancia la simulazione.
+              // Apply the weights and go to the scenario-selection page (like
+              // "New simulation"): from there the user launches the simulation.
               setModulators(m);
               setAdminOpen(false);
               setOpenCard(null);

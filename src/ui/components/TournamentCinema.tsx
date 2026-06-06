@@ -1,12 +1,12 @@
 /**
- * TournamentCinema — regia cinematografica di UNA simulazione.
+ * TournamentCinema — cinematic staging of ONE simulation.
  *
- * Flusso: kickoff → groups (per girone, completo) → overlay terze (sopra i gironi)
- *         → ko R32 → ko R16 → ko QF → ko SF → ko Final → champion
+ * Flow: kickoff → groups (per group, full) → thirds overlay (over the groups)
+ *       → ko R32 → ko R16 → ko QF → ko SF → ko Final → champion
  *
- * Bracket: R32 mostra bandiera+nome, ottavi solo bandiera grande, quarti+
- * bandiera grande + nome piccolo. I vincitori appaiono nel round successivo
- * SOLO dopo il reveal del risultato.
+ * Bracket: R32 shows flag+name, R16 shows a large flag only, quarters+ show a
+ * large flag + small name. Winners appear in the next round ONLY after their
+ * result is revealed.
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -21,7 +21,7 @@ interface Props {
   favoriteTeam?: string | null;
   italyActive: boolean;
   onDone: () => void;
-  /** Salta tutto il flusso guidato e va alla dashboard (opzionale). */
+  /** Skip the whole guided flow and go to the dashboard (optional). */
   onSkip?: () => void;
 }
 
@@ -29,9 +29,9 @@ const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
 interface Stop { key: string; label: string; date: string; }
 
-/** Vero su viewport stretti (smartphone). Solo per scegliere il rendering del
- *  bracket nel cinema: su mobile la "camera" zoomabile è illeggibile, quindi
- *  passiamo a una lista verticale per round. Allineato al breakpoint CSS. */
+/** True on narrow viewports (phones). Only used to choose the cinema bracket
+ *  rendering: on mobile the zoomable "camera" is unreadable, so we switch to a
+ *  vertical per-round list. Aligned with the CSS breakpoint. */
 function useIsMobile(maxWidth = 720): boolean {
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.matchMedia(`(max-width: ${maxWidth}px)`).matches
@@ -45,14 +45,14 @@ function useIsMobile(maxWidth = 720): boolean {
   return isMobile;
 }
 
-// Geometria bracket condivisa con la dashboard (src/ui/bracketLayout.ts).
+// Bracket geometry shared with the dashboard (src/ui/bracketLayout.ts).
 
-// ── Durate base (ms) ─────────────────────────────────────────────────────────
+// ── Base durations (ms) ──────────────────────────────────────────────────────
 const BASE = {
   kickoff:      2800,
-  groupStagger: 480,    // tra un risultato e il successivo (stesso girone)
-  groupBetween: 900,    // pausa tra un girone finito e il successivo
-  groupTail:    800,    // pausa dopo l'ultimo girone prima dell'overlay terze
+  groupStagger: 480,    // between one result and the next (same group)
+  groupBetween: 900,    // pause between a finished group and the next
+  groupTail:    800,    // pause after the last group before the thirds overlay
   thirdsReveal: 550,
   thirdsTail:   2400,
   koAppear:     1200,
@@ -90,12 +90,12 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [t]);
 
-  // Stato regia
+  // Staging state
   const [stage, setStage] = useState<'kickoff' | 'groups' | 'ko' | 'champion'>('kickoff');
-  // groups: indice girone attivo (0-11), risultati svelati in quel girone
+  // groups: active group index (0-11), results revealed in that group
   const [activeGroup,    setActiveGroup]    = useState(0);
-  const [groupRevealed,  setGroupRevealed]  = useState(0); // partite svelate nel girone attivo
-  // overlay terze: 'hidden'=non ancora mostrato, 'showing'=in corso, 'done'=completato
+  const [groupRevealed,  setGroupRevealed]  = useState(0); // matches revealed in the active group
+  // thirds overlay: 'hidden'=not yet shown, 'showing'=in progress, 'done'=complete
   const [thirdsState,    setThirdsState]    = useState<'hidden' | 'showing' | 'done'>('hidden');
   const [thirdsRevealed, setThirdsRevealed] = useState(0);
   // KO
@@ -123,14 +123,14 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
   const flag  = (id: string) => teamsById.get(id)?.flag ?? '';
   const isFav = (id: string) => id === favoriteTeam;
 
-  // ── Struttura per girone: lista match ordinata per girone
+  // ── Per-group structure: match list ordered by group
   const groupMatches = useMemo(() => {
     const result: Record<string, MatchResult[]> = {};
     for (const g of GROUPS) result[g] = sample.groupResults[g] ?? [];
     return result;
   }, [sample]);
 
-  // ── Terze ─────────────────────────────────────────────────────────────────
+  // ── Third-placed teams ──────────────────────────────────────────────────────
   const thirds = useMemo(() => {
     const r32Teams = new Set<string>();
     for (const m of rounds[0]?.matches ?? []) { r32Teams.add(m.homeId); r32Teams.add(m.awayId); }
@@ -138,7 +138,7 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
       const s = sample.groupStandings[g]?.[2];
       return s ? { group: g, ...s } : null;
     }).filter(Boolean) as { group: string; teamId: string; points: number; goalDifference: number; goalsFor: number; goalsAgainst: number }[];
-    // Ordine identico al motore: punti → diff reti → gol fatti → gol subiti (meno=meglio)
+    // Same order as the engine: points → goal difference → goals for → goals against (fewer=better)
     list.sort((a, b) =>
       b.points - a.points ||
       b.goalDifference - a.goalDifference ||
@@ -148,7 +148,7 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
     return list.map((t) => ({ ...t, qualified: r32Teams.has(t.teamId) }));
   }, [sample, rounds]);
 
-  // ── Layout bracket ────────────────────────────────────────────────────────
+  // ── Bracket layout ──────────────────────────────────────────────────────────
   const layout = useMemo(() => buildBracketLayout(rounds), [rounds]);
 
   const tensionForRound = (r: number): 0 | 1 | 2 | 3 | 4 => {
@@ -163,7 +163,7 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
   const currentGroupKey = GROUPS[activeGroup] ?? 'A';
   const currentGroupMatches = groupMatches[currentGroupKey] ?? [];
 
-  // ── Macchina a stati ──────────────────────────────────────────────────────
+  // ── State machine ───────────────────────────────────────────────────────────
   useEffect(() => {
     clearTimers();
     if (paused) return;
@@ -174,15 +174,15 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
     } else if (stage === 'groups' && thirdsState === 'hidden') {
       cinemaAudio.setTension(0);
       const total = currentGroupMatches.length;
-      // Guard: se il girone non ha ancora match (stato transitorio), aspetta il
-      // prossimo render invece di avanzare subito — evita il blocco al cambio blocco mobile.
+      // Guard: if the group has no matches yet (transient state), wait for the
+      // next render instead of advancing — avoids a stall on the mobile batch switch.
       if (total === 0) return;
       if (groupRevealed < total) {
         after(BASE.groupStagger, () => setGroupRevealed((n) => n + 1));
       } else if (activeGroup < GROUPS.length - 1) {
         after(BASE.groupBetween, () => { setActiveGroup((g) => g + 1); setGroupRevealed(0); });
       } else {
-        // Tutti i gironi finiti → apri overlay terze
+        // All groups done → open the thirds overlay
         after(BASE.groupTail, () => { setThirdsState('showing'); setThirdsRevealed(0); });
       }
 
@@ -190,18 +190,18 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
       if (thirdsRevealed < thirds.length) {
         after(BASE.thirdsReveal, () => setThirdsRevealed((n) => n + 1));
       } else if (isMobile) {
-        // Mobile: niente recap dei gironi con le terze in verde — lo schermo non
-        // li mostra tutti insieme. Dopo il calcolo terze si va dritti ai sedicesimi.
+        // Mobile: no group recap with the thirds in green — the screen can't show
+        // them all at once. After computing the thirds, go straight to the R32.
         after(BASE.thirdsTail, () => {
           cinemaAudio.advance();
           setThirdsState('done');
           setStage('ko'); setKoRound(0); setKoPhase('appear'); setKoRevealed(0);
         });
       } else {
-        // Overlay completato: passa allo stato 'done' (gironi con terze in verde).
-        // La transizione finale al KO è gestita nel ramo 'done' sotto: un solo
-        // percorso, interamente paused-aware (niente window.setTimeout orfani che
-        // potevano lasciare la macchina ferma se l'utente metteva in pausa).
+        // Overlay complete: move to 'done' (groups with thirds in green). The
+        // final transition to KO is handled in the 'done' branch below: a single
+        // path, fully paused-aware (no orphan window.setTimeout that could leave
+        // the machine stuck if the user pauses).
         after(BASE.thirdsTail, () => {
           cinemaAudio.advance();
           setThirdsState('done');
@@ -209,8 +209,8 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
       }
 
     } else if (stage === 'groups' && thirdsState === 'done') {
-      // Recap di 3s con le terze qualificate evidenziate, poi via ai sedicesimi.
-      // Passa per `after` → annullabile su pausa/timeline e ripristinabile al Play.
+      // 3s recap with the qualified thirds highlighted, then on to the R32.
+      // Goes through `after` → cancellable on pause/timeline, resumable on Play.
       after(3000, () => {
         setStage('ko'); setKoRound(0); setKoPhase('appear'); setKoRevealed(0);
       });
@@ -232,7 +232,7 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, activeGroup, groupRevealed, thirdsState, thirdsRevealed, koRound, koPhase, koRevealed, koTotal, speed, paused]);
 
-  // ── Suoni ──────────────────────────────────────────────────────────────────
+  // ── Sounds ───────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (stage === 'kickoff') cinemaAudio.kickoff();
     if (stage === 'champion') cinemaAudio.champion();
@@ -264,7 +264,7 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
   const finish = () => { cinemaAudio.setTension(0); setLeaving(true); window.setTimeout(onDone, 450); };
   const skip   = () => { clearTimers(); setStage('champion'); };
 
-  // Indice stop nella timeline (7 stop: 0=kickoff,1=gironi,2+=KO per round)
+  // Stop index in the timeline (7 stops: 0=kickoff, 1=groups, 2+=KO per round)
   const stopIndex = useMemo(() => {
     if (stage === 'kickoff')  return 0;
     if (stage === 'groups')   return 1;
@@ -276,12 +276,12 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
     clearTimers();
     const c = Math.max(0, Math.min(TIMELINE.length - 1, idx));
     if (c === 0) {
-      // Kickoff: tutto azzerato
+      // Kickoff: everything reset
       setStage('kickoff'); setThirdsState('hidden'); setThirdsRevealed(0);
       setActiveGroup(0); setGroupRevealed(0);
     } else if (c === 1) {
-      // Gironi: tutti i risultati visibili, terze NON evidenziate.
-      // Play → parte il calcolo migliori terze (overlay 'showing').
+      // Groups: all results visible, thirds NOT highlighted.
+      // Play → starts the best-thirds computation (overlay 'showing').
       setStage('groups');
       setActiveGroup(GROUPS.length - 1);
       setGroupRevealed(groupMatches[GROUPS[GROUPS.length - 1]]?.length ?? 0);
@@ -289,8 +289,8 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
     } else if (c === TIMELINE.length - 1) {
       setStage('champion');
     } else {
-      // Round KO: mostra le squadre già posizionate (round attuale in 'appear', 0 rivelati).
-      // Play → parte la rivelazione partita per partita.
+      // KO round: show the already-placed teams (current round in 'appear', 0 revealed).
+      // Play → starts the match-by-match reveal.
       const r = c - 2;
       setStage('ko'); setThirdsState('done');
       setActiveGroup(GROUPS.length - 1);
@@ -324,13 +324,13 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
     title = t('cinema.champion');
   }
 
-  // I gironi svelati per la visualizzazione (quante partite di ogni girone sono note)
+  // Groups revealed for display (how many matches of each group are known)
   const revealedByGroup = useMemo(() => {
     const m: Record<string, number> = {};
     for (const g of GROUPS) {
       const gIdx = GROUPS.indexOf(g);
       if (gIdx < activeGroup) {
-        m[g] = groupMatches[g]?.length ?? 0; // girone completato
+        m[g] = groupMatches[g]?.length ?? 0; // completed group
       } else if (gIdx === activeGroup) {
         m[g] = groupRevealed;
       } else {
@@ -347,7 +347,7 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
       {/* ── TIMELINE ── */}
       <Timeline stopIndex={stopIndex} onStopClick={goToStop} timeline={TIMELINE} t={t} />
 
-      {/* ── TITLEBAR ── (nascosta durante overlay terze) */}
+      {/* ── TITLEBAR ── (hidden during the thirds overlay) */}
       {stage !== 'kickoff' && thirdsState !== 'showing' && (
         <div className="cin-titlebar">
           <h2 className="cin-title" key={title}>{title}</h2>
@@ -406,7 +406,7 @@ export function TournamentCinema({ sample, teamsById, favoriteTeam, italyActive,
         )}
       </div>
 
-      {/* ── CONTROLLI ── */}
+      {/* ── CONTROLS ── */}
       <footer className="cin-controls">
         <div className="cin-ctrl-group">
           <button className="cin-ctrl-btn" onClick={prevStop} disabled={stopIndex === 0} title={t('cinema.ctrl.prev')}>‹</button>
@@ -472,7 +472,7 @@ function Timeline({ stopIndex, onStopClick, timeline, t }: { stopIndex: number; 
   );
 }
 
-/* ───────────── GIRONI ───────────── */
+/* ───────────── GROUPS ───────────── */
 function GroupsScene({
   sample, revealedByGroup, activeGroupKey, groupMatches, thirdsQualified, name, flag, isFav, italyActive,
   isMobile, activeGroupIdx,
@@ -487,14 +487,14 @@ function GroupsScene({
   isMobile: boolean; activeGroupIdx: number;
 }) {
   const { t } = useT();
-  // Su smartphone i 12 gironi non entrano in una schermata: li mostriamo a
-  // blocchi di 6 (A–F, poi G–L). Il blocco visibile è quello del girone attivo;
-  // quando l'animazione supera il 6° girone, scatta automaticamente al blocco 2.
+  // On phones the 12 groups don't fit one screen: show them in batches of 6
+  // (A–F, then G–L). The visible batch is the one with the active group; when the
+  // animation passes the 6th group, it auto-switches to batch 2.
   const BATCH = 6;
   const visibleGroups = isMobile
     ? GROUPS.slice(Math.floor(activeGroupIdx / BATCH) * BATCH, Math.floor(activeGroupIdx / BATCH) * BATCH + BATCH)
     : GROUPS;
-  // Classifica live: punti e GD calcolati sui match già svelati del girone
+  // Live standings: points and GD computed over the group's revealed matches
   const liveStanding = (g: string) => {
     const all   = groupMatches[g] ?? [];
     const shown = all.slice(0, revealedByGroup[g] ?? 0);
@@ -561,7 +561,7 @@ function GroupsScene({
   );
 }
 
-/* ───────────── OVERLAY MIGLIORI TERZE ───────────── */
+/* ───────────── BEST-THIRDS OVERLAY ───────────── */
 interface ThirdRow {
   group: string; teamId: string; points: number;
   goalDifference: number; goalsFor: number; goalsAgainst: number; qualified: boolean;
@@ -627,8 +627,8 @@ function BracketScene({
   name: (id: string) => string; flag: (id: string) => string; isFav: (id: string) => boolean;
   isMobile: boolean;
 }) {
-  // Su smartphone la camera zoomabile è illeggibile: mostriamo il round attivo
-  // come lista verticale, una partita alla volta, seguendo la stessa regia.
+  // On phones the zoomable camera is unreadable: show the active round as a
+  // vertical list, one match at a time, following the same staging.
   if (isMobile) {
     return (
       <BracketMobileScene
@@ -650,21 +650,21 @@ function BracketScene({
     return () => ro.disconnect();
   }, []);
 
-  // Un risultato è "svelato" solo se il round è già passato (completato al 100%),
-  // oppure è il round corrente in fase 'results' con quell'indice già rivelato.
+  // A result is "revealed" only if its round already passed (100% complete), or
+  // it's the current round in 'results' phase with that index already revealed.
   const isDecided = (r: number, i: number) =>
     r < activeRound || (r === activeRound && phase === 'results' && i < revealed);
 
-  // Una singola squadra (home o away) è visibile solo se il suo match-figlio
-  // specifico è stato deciso. Funziona anche per il round activeRound+1:
-  // i vincitori compaiono in tempo reale mentre i risultati vengono rivelati.
+  // A single team (home or away) is visible only if its specific child match is
+  // decided. Works for round activeRound+1 too: winners appear in real time as
+  // results are revealed.
   const teamSlotKnown = (r: number, i: number, slot: 'home' | 'away'): boolean => {
-    // Round 0 (R32): squadre sempre note appena entriamo nel round
+    // Round 0 (R32): teams always known as soon as we enter the round
     if (r === 0) return r <= activeRound;
-    // Round oltre activeRound+1: mai visibili
+    // Beyond activeRound+1: never visible
     if (r > activeRound + 1) return false;
-    // Round activeRound+1 (il "prossimo"): mostra solo i vincitori già decisi
-    // Round <= activeRound (già completati): tutti i vincitori noti
+    // Round activeRound+1 (the "next"): show only winners already decided
+    // Round <= activeRound (already complete): all winners known
     const total    = rounds[r]?.matches.length ?? 0;
     const perSide  = total / 2;
     const side: 'L' | 'R' = i < perSide ? 'L' : 'R';
@@ -678,9 +678,9 @@ function BracketScene({
   };
 
   // ── Camera ──
-  // Approccio: transform-origin top-left, translate assoluto in px viewport.
-  // tx = vpW/2 - focusX * scale  → il punto focusX del world finisce al centro orizzontale
-  // ty = vpH/2 - focusY * scale  → il punto focusY del world finisce al centro verticale
+  // Approach: transform-origin top-left, absolute translate in viewport px.
+  // tx = vpW/2 - focusX * scale  → world point focusX lands at the horizontal center
+  // ty = vpH/2 - focusY * scale  → world point focusY lands at the vertical center
   const fit = vp.w && vp.h
     ? Math.min((vp.w * 0.96) / worldW, (vp.h * 0.94) / worldH)
     : 0.5;
@@ -712,7 +712,7 @@ function BracketScene({
     <div className="cin-scene cin-bracket">
       <div className="cin-bracket-viewport" ref={vpRef}>
         <div className="cin-bracket-world" style={camStyle}>
-          {/* Connettori SVG */}
+          {/* SVG connectors */}
           <svg className="cin-bracket-links" width={worldW} height={worldH}>
             {placed.filter((p) => p.parentRoundIdx >= 0).map((p) => {
               const parent = placed.find((q) => q.roundIdx === p.parentRoundIdx && q.matchIdx === p.parentMatchIdx);
@@ -732,7 +732,7 @@ function BracketScene({
             })}
           </svg>
 
-          {/* Box partite */}
+          {/* Match boxes */}
           {placed.map((p) => {
             const m       = rounds[p.roundIdx]?.matches[p.matchIdx];
             if (!m) return null;
@@ -769,8 +769,8 @@ function BracketBox({
   const awayWon = m.winnerId === m.awayId;
   const anyKnown = homeKnown || awayKnown;
 
-  // Tutti i round dal R16 in poi: flag-lg (bandiera media + nome)
-  // Solo R32 usa il layout compatto base
+  // All rounds from R16 on: flag-lg (medium flag + name).
+  // Only R32 uses the compact base layout.
   const sideLayout = roundIdx === 0 ? '' : 'flag-lg';
   const showName   = true;
 
@@ -807,12 +807,12 @@ function PenBar() {
   return <div className="cin-bx-pen-bar">{t('common.penShort')}</div>;
 }
 
-/* ───────────── BRACKET MOBILE (lista verticale per round) ───────────── */
+/* ───────────── MOBILE BRACKET (vertical per-round list) ───────────── */
 /**
- * Versione del tabellone pensata per smartphone: niente camera zoomabile (sarebbe
- * illeggibile), ma il round attivo mostrato come lista verticale di partite che
- * compaiono una alla volta, seguendo la stessa regia (activeRound/phase/revealed).
- * La striscia in alto mostra l'avanzamento tra i round.
+ * Phone-oriented bracket version: no zoomable camera (it would be unreadable),
+ * but the active round shown as a vertical list of matches appearing one at a
+ * time, following the same staging (activeRound/phase/revealed). The top strip
+ * shows progress between rounds.
  */
 function BracketMobileScene({
   rounds, activeRound, phase, revealed, name, flag, isFav,
@@ -833,12 +833,12 @@ function BracketMobileScene({
   };
   const round   = rounds[activeRound];
   const matches = round?.matches ?? [];
-  // Una partita è decisa (mostra punteggio) solo in fase results e già rivelata.
+  // A match is decided (shows the score) only in 'results' phase and once revealed.
   const isDecided = (i: number) => phase === 'results' && i < revealed;
   const isFinal   = activeRound === rounds.length - 1;
 
-  // Auto-scroll sull'ultima partita rivelata: su round lunghi (16 partite ai
-  // sedicesimi) la lista eccede lo schermo, seguiamo il reveal.
+  // Auto-scroll to the last revealed match: on long rounds (16 matches in the
+  // R32) the list overflows the screen, so we follow the reveal.
   const listRef = useRef<HTMLDivElement>(null);
   const lastRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -847,15 +847,15 @@ function BracketMobileScene({
     }
   }, [revealed, phase]);
 
-  // Cambio round (es. sedicesimi → ottavi): riporta la lista in cima, altrimenti
-  // il nuovo round partirebbe con lo scroll rimasto in fondo al round precedente.
+  // Round change (e.g. R32 → R16): reset the list to the top, otherwise the new
+  // round would start with the scroll left at the bottom of the previous one.
   useEffect(() => {
     listRef.current?.scrollTo({ top: 0 });
   }, [activeRound]);
 
   return (
     <div className="cin-scene cin-bracket-m">
-      {/* Striscia round */}
+      {/* Round strip */}
       <div className="cin-brm-strip">
         {rounds.map((r, i) => (
           <div
@@ -867,13 +867,13 @@ function BracketMobileScene({
         ))}
       </div>
 
-      {/* Lista partite del round attivo */}
+      {/* Active round's match list */}
       <div className="cin-brm-list" ref={listRef}>
         {matches.map((m, i) => {
           const decided = isDecided(i);
           const homeWon = m.winnerId === m.homeId;
           const awayWon = m.winnerId === m.awayId;
-          // L'ultima partita appena rivelata: ancora per l'auto-scroll.
+          // The last just-revealed match: anchor for auto-scroll.
           const isLast  = phase === 'results' && i === revealed - 1;
           return (
             <div
@@ -918,7 +918,7 @@ function MobileSide({
   );
 }
 
-/* ───────────── CAMPIONE ───────────── */
+/* ───────────── CHAMPION ───────────── */
 function ChampionScene({
   championId, name, flag, isFav, italyActive, onClose,
 }: {

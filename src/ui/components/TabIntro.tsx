@@ -9,8 +9,8 @@ interface Props {
 }
 
 /**
- * TabIntro — intestazione minimale di sezione. Titolo + sottotitolo inline.
- * I hints opzionali sono nascosti dietro un'icona (i) per non occupare spazio.
+ * TabIntro — minimal section header. Inline title + subtitle.
+ * Optional hints are hidden behind an (i) icon to save space.
  */
 export function TabIntro({ title, subtitle, hints }: Props) {
   const { t } = useT();

@@ -39,9 +39,9 @@ describe('simulate (Elo fallback)', () => {
   it('favors stronger teams but no team wins 100%', () => {
     const out = simulate({ teams, params: null, numRuns: 5000, seed: 7 });
     const top = out.aggregates[0];
-    expect(top.winProb).toBeLessThan(0.5); // nessun dominio assoluto
+    expect(top.winProb).toBeLessThan(0.5); // no outright dominance
     expect(top.winProb).toBeGreaterThan(0.02);
-    // Spagna (Elo top) dovrebbe essere tra i favoriti
+    // Spain (top Elo) should be among the favorites
     const esp = out.aggregates.find((a) => a.teamId === 'ESP')!;
     expect(esp.winProb).toBeGreaterThan(0.05);
   });
@@ -60,7 +60,7 @@ describe('simulate (Elo fallback)', () => {
     const ita = withItaly.aggregates.find((a) => a.teamId === 'ITA');
     expect(ita).toBeDefined();
     expect(ita!.reachRo32Prob).toBeGreaterThan(0);
-    // Bosnia esclusa quando c'è l'Italia
+    // Bosnia excluded when Italy is in
     expect(withItaly.aggregates.find((a) => a.teamId === 'BIH')?.winProb ?? 0).toBe(0);
   });
 

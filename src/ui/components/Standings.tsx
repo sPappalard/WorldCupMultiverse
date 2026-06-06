@@ -36,7 +36,7 @@ export function Standings({ aggregates, teamsById, italyActive, favoriteTeam }: 
   const maxProb = all[0]?.winProb ?? 1;
   const displayed = showAll ? all : all.slice(0, DEFAULT_SHOWN);
 
-  // Se il favorito o l'Italia sono fuori dalla top 10, li aggiungiamo comunque quando collapsed
+  // If the favorite or Italy are outside the top 10, add them anyway when collapsed.
   const extraIds = new Set<string>();
   if (!showAll) {
     if (italyActive && !displayed.find(a => a.teamId === 'ITA'))

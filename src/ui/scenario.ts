@@ -1,38 +1,38 @@
 /**
- * Gestione dello "scenario" what-if: stato selezionato dall'utente,
- * traduzione in input per il motore, ed encoding/decoding in URL (§9).
+ * What-if "scenario" handling: the user-selected state, its translation into
+ * engine input, and URL encoding/decoding.
  */
 
 import type { SimInput } from '../engine/simulator';
 import type { Team, ModulatorConfig, WhatIfWeights } from '../engine/types';
 import { config, whatIfFactors, type WhatIfFactorId } from '../config';
 
-/** Una singola istanza di fattore applicata (impilabile). */
+/** A single applied factor instance (stackable). */
 export interface AppliedFactor {
   id: WhatIfFactorId;
-  /** Squadre target (per i fattori needsTeam). Più squadre = effetto su tutte. */
+  /** Target teams (for needsTeam factors). Multiple teams = effect on all. */
   teamIds?: string[];
-  /** Override di magnitudine (Elo-equivalente); usa il peso da Admin se assente. */
+  /** Magnitude override (Elo-equivalent); uses the Admin weight if absent. */
   eloDelta?: number;
 }
 
 export interface Scenario {
   italy: boolean;
   factors: AppliedFactor[];
-  /** Slider caos 0–100. */
+  /** Chaos slider 0–100. */
   chaos: number;
 }
 
 export const emptyScenario: Scenario = { italy: false, factors: [], chaos: 0 };
 
-/** Converte un delta Elo-equivalente in delta di forza (attacco+difesa). */
+/** Convert an Elo-equivalent delta into a strength delta (attack+defense). */
 function eloDeltaToStrength(eloDelta: number): { attack: number; defense: number } {
   const { scalePer100Elo, attackShare } = config.eloToStrength;
   const edge = (eloDelta / 100) * scalePer100Elo;
   return { attack: edge * attackShare, defense: edge * (1 - attackShare) };
 }
 
-/** Magnitudine (Elo-equivalente) di default di un fattore, dai pesi Admin. */
+/** A factor's default (Elo-equivalent) magnitude, from the Admin weights. */
 function factorDefaultDelta(id: WhatIfFactorId, weights: WhatIfWeights): number {
   switch (id) {
     case 'missingStar': return weights.missingStar;
@@ -44,8 +44,8 @@ function factorDefaultDelta(id: WhatIfFactorId, weights: WhatIfWeights): number 
 }
 
 /**
- * Traduce lo scenario UI in input pronti per simulate().
- * @param modulators i modulatori effettivi (per leggere i pesi what-if da Admin).
+ * Translate the UI scenario into input ready for simulate().
+ * @param modulators the effective modulators (to read what-if weights from Admin).
  */
 export function scenarioToSimInput(
   scenario: Scenario,
@@ -64,8 +64,8 @@ export function scenarioToSimInput(
     if (teamIds.length === 0) continue;
     const eloDelta = f.eloDelta ?? factorDefaultDelta(f.id, weights);
     const d = eloDeltaToStrength(eloDelta);
-    // Lo stesso fattore si applica a ogni squadra selezionata; più fattori
-    // sulla stessa squadra si sommano (impilabili).
+    // The same factor applies to each selected team; multiple factors on the
+    // same team sum up (stackable).
     for (const teamId of teamIds) {
       const prev = overrides[teamId] ?? { attack: 0, defense: 0 };
       overrides[teamId] = {
@@ -82,8 +82,8 @@ export function scenarioToSimInput(
   };
 }
 
-// --- URL encoding (compatto, leggibile-ish) ---
-// formato: ?s=<italy:0|1>.<chaos>.<factor1>~<factor2>...
+// --- URL encoding (compact, semi-readable) ---
+// format: ?s=<italy:0|1>.<chaos>.<factor1>~<factor2>...
 // factor: id:teamId1-teamId2-...:eloDelta
 
 export function scenarioToUrl(scenario: Scenario): string {
@@ -106,7 +106,7 @@ export function scenarioFromUrl(s: string | null): Scenario {
       .filter(Boolean)
       .map((f) => {
         const [id, teamsPart, eloDelta] = f.split(':');
-        // Retrocompatibilità: i vecchi link avevano una sola squadra senza "-".
+        // Back-compat: old links had a single team without "-".
         const teamIds = (teamsPart || '')
           .split('-')
           .filter(Boolean);

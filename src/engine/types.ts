@@ -1,4 +1,4 @@
-/** Tipi condivisi del dominio MonteCalcio. */
+/** Shared MonteCalcio domain types. */
 
 export interface Team {
   id: string;
@@ -12,15 +12,15 @@ export interface Team {
   squadValue: number | null;
   isHost: boolean;
   active: boolean;
-  /** Per l'entry speciale Italia: id della squadra che sostituisce (BIH). */
+  /** For the special Italy entry: id of the team it replaces (BIH). */
   substituteFor?: string;
 }
 
-/** Parametri forza-squadra usati dal motore-partita (in scala log-lambda). */
+/** Per-team strength parameters used by the match engine (log-lambda scale). */
 export interface TeamStrength {
   attack: number;
   defense: number;
-  /** Incertezza posteriore (opzionale, per propagazione §5.6). */
+  /** Posterior uncertainty (optional). */
   attackSd?: number;
   defenseSd?: number;
 }
@@ -31,7 +31,7 @@ export interface GlobalParams {
   rho: number;
 }
 
-/** Record H2H per una coppia (chiave "A|B" con A≤B alfabeticamente). */
+/** H2H record for a pair (key "A|B" with A≤B alphabetically). */
 export interface H2HRecord {
   w_a: number;
   d: number;
@@ -39,27 +39,27 @@ export interface H2HRecord {
   n: number;
 }
 
-/** Forma di model-params.json prodotta dalla pipeline Python (§6.2). */
+/** Shape of model-params.json produced by the Python pipeline. */
 export interface ModelParams {
   global: GlobalParams;
   teams: Record<string, TeamStrength>;
 }
 
-/** Esito di una singola partita simulata. */
+/** Outcome of a single simulated match. */
 export interface MatchResult {
   homeId: string;
   awayId: string;
   homeGoals: number;
   awayGoals: number;
-  /** Vincitore dopo eventuali supplementari/rigori (per le eliminazioni). */
+  /** Winner after extra time/penalties if any (knockout matches). */
   winnerId?: string;
-  /** Probabilità che la squadra home vinca (0–1), calcolata dal modello. */
+  /** Model probability that the home team wins (0–1). */
   winProbHome?: number;
-  /** True se la partita è stata decisa ai rigori (pareggio nei 90' in KO). */
+  /** True if decided on penalties (draw after 90' in a knockout). */
   penalties?: boolean;
 }
 
-/** Riga di classifica di un girone. */
+/** A group standings row. */
 export interface GroupStanding {
   teamId: string;
   played: number;
@@ -69,7 +69,7 @@ export interface GroupStanding {
   goalDifference: number;
 }
 
-/** Risultato aggregato di una squadra dopo N run. */
+/** A team's aggregated result after N runs. */
 export interface TeamAggregate {
   teamId: string;
   winProb: number;
@@ -80,7 +80,7 @@ export interface TeamAggregate {
   reachRo32Prob: number;
 }
 
-/** Snapshot di una singola simulazione d'esempio (per l'animazione). */
+/** Snapshot of one example simulation (drives the animation). */
 export interface SampleRun {
   groupResults: Record<string, MatchResult[]>;
   groupStandings: Record<string, GroupStanding[]>;
@@ -100,18 +100,18 @@ export interface TeamFormRecord {
 }
 
 export interface KnockoutTournamentBreakdown {
-  label: string;   // es. "🌍 Mondiali FIFA"
-  weight: number;  // peso nella gerarchia (10 = Mondiali, 5 = Euro, ecc.)
+  label: string;   // e.g. "🌍 FIFA World Cup"
+  weight: number;  // weight in the hierarchy (10 = World Cup, 5 = Euro, etc.)
   w: number; d: number; l: number; n: number;
-  score: number;   // 0–100 per quel torneo specifico
-  editions: number;   // edizioni in cui hanno raggiunto le fasi finali (top 4)
-  semiFinals: number; // edizioni in cui sono stati eliminati in SF (3°/4° posto)
-  finals: number;     // edizioni in cui hanno raggiunto la finale (vincitore + finalista)
-  titles: number;     // titoli vinti
+  score: number;   // 0–100 for that specific tournament
+  editions: number;   // editions reaching the final four (top 4)
+  semiFinals: number; // editions eliminated in the SF (3rd/4th place)
+  finals: number;     // editions reaching the final (winner + runner-up)
+  titles: number;     // titles won
 }
 
 export interface TeamKnockoutRecord {
-  score: number;   // 0–100 complessivo pesato
+  score: number;   // 0–100 overall, weighted
   w: number; d: number; l: number; n: number;
   byTournament: KnockoutTournamentBreakdown[];
 }
@@ -125,7 +125,7 @@ export interface HistoryTournamentBreakdown {
 }
 
 export interface TeamHistoryRecord {
-  score: number;  // 0–100 punteggio storia pesato
+  score: number;  // 0–100 weighted history score
   byTournament: HistoryTournamentBreakdown[];
 }
 
@@ -136,33 +136,33 @@ export interface TeamStats {
 }
 
 /**
- * Configurazione runtime dei modulatori — specchio di config.modulators,
- * ma passabile esplicitamente al motore (es. dalla pagina Admin).
+ * Runtime modulator config — mirrors config.modulators, but passable explicitly
+ * to the engine (e.g. from the Admin page).
  */
 export interface ModulatorConfig {
   formCoeff: number;
   squadValueCoeff: number;
   eloCoeff: number;
   koExperienceCoeff: number;
-  /** Bonus esperienza KO sull'intera partita a eliminazione diretta. */
+  /** KO-experience bonus applied to the whole knockout match. */
   koMatchCoeff: number;
   koKnockoutWeight: number;
   koHistoryWeight: number;
-  /** Vantaggio campo in scala log-lambda (sovrascrive globalParams.homeAdv). */
+  /** Home advantage in log-lambda scale (overrides globalParams.homeAdv). */
   homeAdvBoost: number;
-  /** Boost massimo H2H sui lambda (0 = disattivato, 0.25 = default). */
+  /** Max H2H boost on the lambdas (0 = off, 0.25 = default). */
   h2hMaxBoost: number;
   /**
-   * Shrinkage dei lambda verso la media della coppia (0 = nessuno).
-   * Riduce lo scarto favorita/sfavorita per partita → più sorprese, evita
-   * che le big dominino troppo la distribuzione di vittoria del torneo.
+   * Lambda shrinkage toward the pair's mean (0 = none).
+   * Narrows the favorite/underdog gap per match → more upsets, keeps the big
+   * teams from over-dominating the tournament win distribution.
    */
   lambdaShrink: number;
-  /** Magnitudini (Elo-equivalenti) dei fattori what-if, gestibili da Admin. */
+  /** What-if factor magnitudes (Elo-equivalent), tunable from Admin. */
   whatIf: WhatIfWeights;
 }
 
-/** Pesi dei fattori what-if applicabili a una o più squadre. */
+/** What-if factor weights applicable to one or more teams. */
 export interface WhatIfWeights {
   missingStar: number;
   injuries: number;

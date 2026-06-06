@@ -1,14 +1,14 @@
 /**
- * Helper condivisi per quote e percentuali, usati in tutta la dashboard.
- * Tenere un'unica fonte di verità per il "look" delle quote (stile bookmaker).
+ * Shared odds/percentage formatters used across the dashboard.
+ * Single source of truth for the bookmaker-style odds look.
  */
 
 /**
- * Quota decimale stile bookmaker da una probabilità.
- * Applica un margine (overround): riducendo la prob effettiva, la quota risulta
- * un po' più bassa di quella "equa" 1/p — come da banco reale.
- * @param p probabilità 0–1
- * @param margin fattore < 1 (default 0.85 ≈ overround 18%)
+ * Bookmaker-style decimal odds from a probability.
+ * Applies a margin (overround): shrinking the effective prob makes the odds a
+ * bit shorter than the "fair" 1/p — like a real betting book.
+ * @param p probability 0–1
+ * @param margin factor < 1 (default 0.85 ≈ 18% overround)
  */
 export const oddsFromProb = (p: number, margin = 0.85): string => {
   if (p <= 0) return '—';
@@ -19,8 +19,8 @@ export const oddsFromProb = (p: number, margin = 0.85): string => {
 };
 
 /**
- * Percentuale leggibile: per le big arrotonda all'intero, per le code (sotto
- * l'1%) mostra un decimale così non collassano a "0%". Sotto 0.05% → "<0.1%".
+ * Readable percentage: rounds favorites to an integer, but shows one decimal
+ * for tails (below 1%) so they don't collapse to "0%". Below 0.05% → "<0.1%".
  */
 export const pctSmart = (x: number): string => {
   const p = x * 100;
@@ -30,9 +30,5 @@ export const pctSmart = (x: number): string => {
   return '0%';
 };
 
-/** Percentuale intera semplice (per le partite). */
+/** Plain integer percentage (used for per-match odds). */
 export const pctInt = (x: number): string => `${Math.round(x * 100)}%`;
-
-/** Conteggio assoluto su N run, formattato all'italiana. */
-export const countOf = (prob: number, numRuns: number): string =>
-  Math.round(prob * numRuns).toLocaleString('it-IT');

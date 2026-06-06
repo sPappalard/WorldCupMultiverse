@@ -1,26 +1,26 @@
 /**
- * Struttura ufficiale del Round of 32 dei Mondiali 2026 e allocazione delle
- * 8 migliori terze.
+ * Official Round of 32 structure for the 2026 World Cup, plus allocation of the
+ * 8 best third-placed teams.
  *
- * Fonte struttura: Wikipedia "2026 FIFA World Cup knockout stage" (sorteggio
- * 5 dic 2025). I pairing dei vincitori/secondi sono ESATTI. La tabella FIFA
- * delle 495 combinazioni per lo slot esatto di ogni terza (Annex C del
- * regolamento) non è pubblicata in forma machine-readable affidabile; qui
- * usiamo un ALLOCATORE DETERMINISTICO che rispetta i vincoli reali:
- *   - 8 terze qualificate su 12 (le migliori per punti/DR/GF);
- *   - una terza non affronta mai la vincente del proprio girone;
- *   - ogni match "terza" pesca da un insieme di gironi-candidati definito FIFA.
- * Produce un bracket valido a ogni run. Differenze dallo slotting esatto FIFA
- * in combinazioni rare hanno effetto trascurabile sulle probabilità aggregate.
- * [DA VALIDARE — vedi README §Limiti.]
+ * Structure source: Wikipedia "2026 FIFA World Cup knockout stage" (5 Dec 2025
+ * draw). The winner/runner-up pairings are EXACT. FIFA's 495-combination table
+ * for the exact slot of each third-placed team (regulation Annex C) isn't
+ * published in a reliable machine-readable form; we use a DETERMINISTIC
+ * ALLOCATOR that respects the real constraints:
+ *   - 8 of 12 third-placed teams qualify (best by points/GD/GF);
+ *   - a third-placed team never faces its own group's winner;
+ *   - each "third" match draws from a FIFA-defined set of candidate groups.
+ * Produces a valid bracket every run. Differences from FIFA's exact slotting in
+ * rare combinations have negligible effect on the aggregate probabilities.
+ * [TO VALIDATE — see README, Known limitations.]
  */
 
-/** Slot del Round of 32. winner/runnerUp puntano a un girone; third è speciale. */
+/** Round of 32 slot. winner/runnerUp point to a group; third is special. */
 export interface Ro32Slot {
   matchId: number;
-  /** Posizione di sinistra del match. */
+  /** Left side of the match. */
   home: SlotRef;
-  /** Posizione di destra del match. */
+  /** Right side of the match. */
   away: SlotRef;
 }
 
@@ -29,7 +29,7 @@ export type SlotRef =
   | { kind: 'runnerUp'; group: string }
   | { kind: 'third'; candidates: string[] };
 
-/** I 16 match del Round of 32 (match 73–88). Struttura esatta. */
+/** The 16 Round of 32 matches (matches 73–88). Exact structure. */
 export const RO32: Ro32Slot[] = [
   { matchId: 73, home: { kind: 'runnerUp', group: 'A' }, away: { kind: 'runnerUp', group: 'B' } },
   { matchId: 74, home: { kind: 'winner', group: 'E' }, away: { kind: 'third', candidates: ['A', 'B', 'C', 'D', 'F'] } },
@@ -50,9 +50,10 @@ export const RO32: Ro32Slot[] = [
 ];
 
 /**
- * Albero delle eliminazioni dal Round of 16 in poi: ogni round prende coppie
- * adiacenti di vincitori dal round precedente. L'ordine dei match nel R32
- * sopra definisce l'accoppiamento R16 (match 73-vs-74, 75-vs-76, ...).
+ * Knockout names from the Round of 32 onward; each round pairs adjacent winners
+ * from the previous one. The R32 match order above defines the R16 pairing
+ * (match 73-vs-74, 75-vs-76, ...). NOTE: these strings are also used as lookup
+ * keys by the UI's round-label maps — keep them in sync if changed.
  */
 export const KNOCKOUT_ROUND_NAMES = [
   'Round of 32',
@@ -63,22 +64,22 @@ export const KNOCKOUT_ROUND_NAMES = [
 ];
 
 /**
- * Allocatore deterministico delle terze ai 5 match "third" del R32.
- * @param qualifiedThirdGroups i gironi (max 8) le cui terze si qualificano,
- *   in ordine di ranking (migliore prima).
- * @returns mappa matchId -> girone della terza assegnata.
+ * Deterministic allocator of third-placed teams to the R32 "third" matches.
+ * @param qualifiedThirdGroups the groups (max 8) whose third-placed teams
+ *   qualify, in ranking order (best first).
+ * @returns map of matchId -> group of the assigned third-placed team.
  */
 export function allocateThirds(qualifiedThirdGroups: string[]): Map<number, string> {
   const thirdSlots = RO32.filter(
     (m) => m.away.kind === 'third',
   ) as (Ro32Slot & { away: { kind: 'third'; candidates: string[] } })[];
 
-  // Backtracking: garantisce una soluzione valida per qualsiasi combinazione
-  // di 8 terze qualificate, rispettando i vincoli dei candidati FIFA.
+  // Backtracking: guarantees a valid solution for any combination of 8
+  // qualified third-placed teams, respecting the FIFA candidate constraints.
   const assignment = new Map<number, string>();
   const available = new Set(qualifiedThirdGroups);
 
-  // Ordina gli slot per numero di candidati disponibili crescente (most-constrained first).
+  // Sort slots by ascending available-candidate count (most-constrained first).
   const slots = [...thirdSlots].sort((a, b) => {
     const ca = a.away.candidates.filter((g) => available.has(g)).length;
     const cb = b.away.candidates.filter((g) => available.has(g)).length;
@@ -99,12 +100,11 @@ export function allocateThirds(qualifiedThirdGroups: string[]): Map<number, stri
       assignment.delete(slot.matchId);
       available.add(pick);
     }
-    return false; // nessuna assegnazione valida per questo slot → backtrack
+    return false; // no valid assignment for this slot → backtrack
   }
 
-  // Il backtracking con ordinamento most-constrained-first trova sempre
-  // una soluzione valida per le 8 terze nei loro 8 slot.
-  // Se per qualsiasi motivo fallisce, riprova senza ordinamento come fallback.
+  // Most-constrained-first backtracking always finds a valid solution for the 8
+  // third-placed teams in their 8 slots. If it somehow fails, retry unordered.
   if (!backtrack(0)) {
     assignment.clear();
     available.clear();

@@ -37,7 +37,7 @@ export function RunDetail({ sample, teamsById, favoriteTeam, onReplay, numRuns }
   return (
     <div className="rd2-root">
 
-      {/* ── Hero banner compatto ── */}
+      {/* ── Compact hero banner ── */}
       <div className="rd2-hero">
         <div className="rd2-hero-left">
           <span className="rd2-hero-kicker">{t('rd.hero.kicker', { n: nf(numRuns) })}</span>
@@ -49,7 +49,7 @@ export function RunDetail({ sample, teamsById, favoriteTeam, onReplay, numRuns }
           <span className="rd2-hero-note">{t('rd.hero.note')}</span>
         </div>
 
-        {/* Bottone rivedi cinema — con dialogo di conferma */}
+        {/* Replay-cinema button — with confirm dialog */}
         <div className="rd2-hero-right">
           {!replayConfirm ? (
             <button className="rd2-replay-btn" onClick={() => setReplayConfirm(true)}>
@@ -74,7 +74,7 @@ export function RunDetail({ sample, teamsById, favoriteTeam, onReplay, numRuns }
         </div>
       </div>
 
-      {/* ── Tab Tabellone / Gironi ── */}
+      {/* ── Bracket / Groups tabs ── */}
       <div className="rd2-tabs">
         <button className={`rd2-tab ${view === 'bracket' ? 'on' : ''}`} onClick={() => setView('bracket')}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -91,15 +91,15 @@ export function RunDetail({ sample, teamsById, favoriteTeam, onReplay, numRuns }
         </button>
       </div>
 
-      {/* ── Contenuto ── */}
+      {/* ── Content ── */}
       <div className="rd2-content">
         {view === 'bracket' ? (
           <>
-            {/* Desktop: bracket grafico */}
+            {/* Desktop: graphical bracket */}
             <div className="rd-bracket-desktop">
               <CompactBracket sample={sample} name={name} flag={flag} favoriteTeam={favoriteTeam} />
             </div>
-            {/* Mobile: lista round */}
+            {/* Mobile: round list */}
             <div className="rd-bracket-mobile">
               <BracketRoundList sample={sample} name={name} flag={flag} favoriteTeam={favoriteTeam} roundLabel={roundLabel} />
             </div>
@@ -118,7 +118,7 @@ const ZOOM_STEP = 1.25;
 
 // Round labels localized via useT inside each component
 
-/* Vista lista per mobile: un round alla volta */
+/* Mobile list view: one round at a time */
 function BracketRoundList({ sample, name, flag, favoriteTeam, roundLabel }: {
   sample: SampleRun; name: (id: string) => string; flag: (id: string) => string; favoriteTeam?: string | null;
   roundLabel: (n: string) => string;
@@ -132,7 +132,7 @@ function BracketRoundList({ sample, name, flag, favoriteTeam, roundLabel }: {
 
   return (
     <div className="brl-root">
-      {/* Selettore round */}
+      {/* Round selector */}
       <div className="brl-tabs">
         {rounds.map((r, i) => (
           <button
@@ -145,7 +145,7 @@ function BracketRoundList({ sample, name, flag, favoriteTeam, roundLabel }: {
         ))}
       </div>
 
-      {/* Lista partite del round */}
+      {/* Round match list */}
       <div className="brl-matches">
         {round?.matches.map((m, i) => {
           const homeWon = m.winnerId === m.homeId;
@@ -174,7 +174,7 @@ function BracketRoundList({ sample, name, flag, favoriteTeam, roundLabel }: {
         })}
       </div>
 
-      {/* Dettaglio partita selezionata */}
+      {/* Selected match detail */}
       {selMatch && <MatchDetail match={selMatch} name={name} flag={flag} onClose={() => setSel(null)} />}
     </div>
   );
@@ -186,10 +186,10 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
   const { t } = useT();
   const rounds = sample.knockoutRounds;
   const [sel, setSel]           = useState<{ r: number; m: number } | null>(null);
-  const [userZoom, setUserZoom] = useState<number | null>(null); // null = auto-fit (vista completa)
+  const [userZoom, setUserZoom] = useState<number | null>(null); // null = auto-fit (full view)
   const [pan, setPan]           = useState({ x: 0, y: 0 });
   const dragging                = useRef(false);
-  const moved                   = useRef(false); // distingue click da trascinamento
+  const moved                   = useRef(false); // distinguishes a click from a drag
   const dragStart               = useRef({ mx: 0, my: 0, px: 0, py: 0 });
 
   const selMatch = sel ? rounds[sel.r]?.matches[sel.m] : null;
@@ -198,8 +198,8 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
   const vpRef  = useRef<HTMLDivElement>(null);
   const [autoScale, setAutoScale] = useState(1);
   const [vpW, setVpW] = useState(0);
-  // Scala minima leggibile: su schermi stretti il fit-to-width renderebbe il
-  // bracket illeggibile, quindi imponiamo un minimo e si naviga col drag.
+  // Minimum readable scale: on narrow screens fit-to-width would make the
+  // bracket unreadable, so we enforce a minimum and navigate by dragging.
   const MIN_READABLE = 0.62;
 
   useEffect(() => {
@@ -214,15 +214,15 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
     return () => ro.disconnect();
   }, [worldW]);
 
-  // Su mobile il fit puro è troppo piccolo: parti da una scala leggibile.
+  // On mobile a pure fit is too small: start from a readable scale.
   const baseScale = Math.max(autoScale, MIN_READABLE);
   const scale = userZoom ?? baseScale;
-  // "Navigabile" (drag attivo) se il contenuto eccede il viewport in larghezza.
+  // "Navigable" (drag active) if the content exceeds the viewport width.
   const overflowsX = worldW * scale > vpW + 1;
   const isZoomed = (userZoom !== null && userZoom > baseScale + 0.01) || (userZoom === null && overflowsX);
 
-  // Limita il pan: il contenuto non può uscire oltre i bordi del viewport.
-  // Il viewport ha larghezza = vpW e altezza = worldH * baseScale (fissa, vista completa).
+  // Clamp the pan: content can't move past the viewport edges.
+  // Viewport is width = vpW, height = worldH * baseScale (fixed, full view).
   function clampPan(p: { x: number; y: number }, s: number) {
     const scaledW = worldW * s;
     const scaledH = worldH * s;
@@ -235,13 +235,13 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
     };
   }
 
-  // Zoom verso il centro del viewport
+  // Zoom toward the viewport center.
   function zoomBy(factor: number) {
     setUserZoom(z => {
       const cur = z ?? baseScale;
       const next = Math.max(baseScale, Math.min(MAX_ZOOM, cur * factor));
       if (Math.abs(next - baseScale) < 0.01) { setPan(p => clampPan(p, baseScale)); return null; }
-      // Mantieni il centro del viewport fisso durante lo zoom
+      // Keep the viewport center fixed during zoom.
       const cx = vpW / 2;
       const cy = (worldH * baseScale) / 2;
       setPan(p => {
@@ -255,7 +255,7 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
   const zoomIn  = () => zoomBy(ZOOM_STEP);
   const zoomOut = () => zoomBy(1 / ZOOM_STEP);
 
-  // Click e trascina per spostarsi (solo quando zoomato)
+  // Click and drag to pan (only when zoomed).
   function handleMouseDown(e: React.MouseEvent) {
     if (!isZoomed) return;
     dragging.current = true;
@@ -275,7 +275,7 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
 
   return (
     <div className="rd-bracket-wrap">
-      {/* Controlli zoom manuali */}
+      {/* Manual zoom controls */}
       <div className="rd-bracket-controls">
         <span className="rd-bracket-hint">
           {isZoomed ? t('rd.bracket.hintZoomed') : t('rd.bracket.hintZoom')}
@@ -295,8 +295,8 @@ function CompactBracket({ sample, name, flag, favoriteTeam }: {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         style={{
-          // Altezza fissa alla vista completa: lo zoom espande il contenuto
-          // dentro un viewport stabile, così il pan ha senso su entrambi gli assi.
+          // Height fixed to the full view: zoom expands the content inside a
+          // stable viewport, so panning makes sense on both axes.
           height: worldH * baseScale + 16,
           overflow: 'hidden',
           userSelect: 'none',
@@ -396,7 +396,7 @@ function MatchDetail({ match, name, flag, onClose }: {
   );
 }
 
-/* ────────────────── GIRONI ────────────────── */
+/* ────────────────── GROUPS ────────────────── */
 function GroupsDetail({ sample, teamsById, favoriteTeam }: {
   sample: SampleRun; teamsById: Map<string, Team>; favoriteTeam?: string | null;
 }) {
@@ -418,7 +418,7 @@ function GroupsDetail({ sample, teamsById, favoriteTeam }: {
 
   return (
     <div className="gd-root">
-      {/* Selettore gironi */}
+      {/* Group selector */}
       <div className="gd-selector">
         {GROUPS.map(g => {
           const hasItaly = (sample.groupStandings[g] ?? []).some(s => s.teamId === 'ITA');
@@ -434,10 +434,10 @@ function GroupsDetail({ sample, teamsById, favoriteTeam }: {
         })}
       </div>
 
-      {/* Contenuto girone selezionato */}
+      {/* Selected group content */}
       <div className="gd-body" key={activeGroup}>
 
-        {/* Classifica */}
+        {/* Standings */}
         <div className="gd-standings">
           <div className="gd-standings-title">{t('rd.groups.standingsTitle', { g: activeGroup })}</div>
           <div className="gd-row gd-row--head">
@@ -474,7 +474,7 @@ function GroupsDetail({ sample, teamsById, favoriteTeam }: {
           </div>
         </div>
 
-        {/* Partite */}
+        {/* Matches */}
         <div className="gd-matches">
           <div className="gd-matches-title">{t('rd.groups.matchesTitle', { g: activeGroup })}</div>
           {matches.map((m, i) => {

@@ -1,7 +1,7 @@
 /**
- * PreSim — schermata pre-simulazione con modal inline per modificare lo scenario.
- * Niente onboarding completo: un overlay premium che permette di cambiare Italia
- * e what-if, poi riporta al bottone Simula.
+ * PreSim — pre-simulation screen with an inline modal to edit the scenario.
+ * No full onboarding: an overlay to toggle Italy and what-ifs, then back to the
+ * Simulate button.
  */
 import { useState } from 'react';
 import type { Team } from '../../engine/types';
@@ -15,9 +15,9 @@ interface Props {
   teams: Team[];
   running: boolean;
   onSimulate: () => void;
-  /** Salva lo scenario modificato e rimane in PreSim. */
+  /** Save the edited scenario and stay in PreSim. */
   onSaveScenario: (s: Scenario) => void;
-  /** Torna alla home/griglia (solo se c'è già una simulazione). */
+  /** Back to the home/grid (only if a simulation already exists). */
   onBack?: () => void;
 }
 
@@ -48,7 +48,7 @@ export function PreSim({
           {tr('presim.sub.line1')}<br />{tr('presim.sub.line2')}
         </p>
 
-        {/* Card scenario */}
+        {/* Scenario card */}
         <div className="presim-card">
           <div className="presim-card-head">
             <span className="presim-card-title">{tr('presim.cardTitle')}</span>
@@ -107,7 +107,7 @@ export function PreSim({
         )}
       </div>
 
-      {/* Modal inline per modificare lo scenario */}
+      {/* Inline modal to edit the scenario */}
       {editOpen && (
         <ScenarioEditModal
           scenario={scenario}
@@ -120,7 +120,7 @@ export function PreSim({
   );
 }
 
-/* ─── Modal modifica scenario ─── */
+/* ─── Scenario-edit modal ─── */
 function ScenarioEditModal({
   scenario, teams, onSave, onClose,
 }: {
@@ -170,7 +170,7 @@ function ScenarioEditModal({
         </div>
 
         <div className="sedit-body">
-          {/* Italia toggle */}
+          {/* Italy toggle */}
           <div className="sedit-section">
             <p className="sedit-label">{tr('sedit.italyQ')}</p>
             <div className="sedit-toggle-row">
@@ -243,7 +243,7 @@ function ScenarioEditModal({
                 );
               })}
 
-              {/* Caos */}
+              {/* Chaos */}
               <div className={`ob-factor-block ${chaos > 0 ? 'on' : ''}`}>
                 <div className="ob-factor ob-factor--static">
                   <span className="ob-factor-emoji">🎲</span>

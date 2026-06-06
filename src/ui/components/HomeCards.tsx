@@ -1,7 +1,7 @@
 /**
- * HomeCards — Bento grid della home. Ogni card apre una vista a schermo pieno.
- * Layout: risultati (lg) + simulazione (md) in alto, poi italy (lg) + teams (md) in basso.
- * Card "Come funziona" piccola in fondo.
+ * HomeCards — the home Bento grid. Each card opens a full-screen view.
+ * Layout: results (lg) + simulation (md) on top, then italy (lg) + teams (md)
+ * below. A small "How it works" card at the bottom.
  */
 import { useState, useCallback } from 'react';
 import type { ReactNode, CSSProperties } from 'react';
@@ -19,7 +19,7 @@ interface CardDef {
   stat?: ReactNode;
   bigStat?: ReactNode;
   bgImage?: string;
-  /** Componente slideshow da mostrare come sfondo animato (sostituisce bgImage). */
+  /** Slideshow component to show as an animated background (replaces bgImage). */
   slideshow?: ReactNode;
 }
 
@@ -77,10 +77,10 @@ export function HomeCardGrid({ cards, onOpen }: GridProps) {
             onClick={() => onOpen(c.id)}
             style={c.bgImage && !c.slideshow ? { '--bento-bg': `url(${c.bgImage})` } as CSSProperties : undefined}
           >
-            {/* Slideshow React (priorità su bgImage) */}
+            {/* React slideshow (takes priority over bgImage) */}
             {c.slideshow && c.slideshow}
 
-            {/* Contenuto testuale — z-index sopra slideshow */}
+            {/* Text content — z-index above the slideshow */}
             <span className={`bento-icon${hasMedia ? ' bento-icon--light' : ''}`}>{c.icon}</span>
             <span className={`bento-title${hasMedia ? ' bento-title--light' : ''}`}>{c.title}</span>
             <span className={`bento-blurb${hasMedia ? ' bento-blurb--light' : ''}`}>{c.blurb}</span>
@@ -113,7 +113,7 @@ export function CardOverlay({ title, icon, onClose, children }: OverlayProps) {
 
   const handleClose = useCallback(() => {
     setLeaving(true);
-    // Attendi la fine dell'animazione di uscita prima di smontare
+    // Wait for the exit animation to finish before unmounting.
     setTimeout(() => onClose(), 340);
   }, [onClose]);
 

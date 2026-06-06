@@ -48,7 +48,7 @@ function penaltyWinProb(
   return { pA, pB: 1 - pA };
 }
 
-/** Barra comparativa centrata: A a sinistra, B a destra */
+/** Centered comparison bar: A on the left, B on the right. */
 function CmpBar({ valA, valB, formatFn = (v: number) => String(v) }: {
   valA: number; valB: number; formatFn?: (v: number) => string;
 }) {
@@ -73,7 +73,7 @@ function CmpBar({ valA, valB, formatFn = (v: number) => String(v) }: {
   );
 }
 
-/** Vista panoramica vs tutte le squadre */
+/** Overview vs all teams. */
 function AllOpponentsPanel({ focus, opponents, params, h2h, teamStats, effectiveMods, onSelect }: {
   focus: Team; opponents: Team[]; params: ModelParams | null;
   h2h: Map<string, H2HRecord>; teamStats: Map<string, TeamStats>;
@@ -205,9 +205,9 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
   return (
     <div className="mu2-root">
 
-      {/* Selettori squadre */}
+      {/* Team selectors */}
       <div className="mu2-selectors">
-        {/* Squadra A */}
+        {/* Team A */}
         <div className="mu2-side mu2-side--left">
           <div className="mu2-side-top">
             {teamA && <span className={`fi fi-${teamA.flag} mu2-flag`} aria-hidden />}
@@ -235,7 +235,7 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
           )}
         </div>
 
-        {/* Centro */}
+        {/* Center */}
         <div className="mu2-center">
           <span className="mu2-vs">VS</span>
           <div className="mu2-ctx-btns">
@@ -250,7 +250,7 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
           </div>
         </div>
 
-        {/* Squadra B */}
+        {/* Team B */}
         <div className="mu2-side mu2-side--right">
           <div className="mu2-side-top">
             <div className="mu2-side-arrows">
@@ -279,7 +279,7 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
         </div>
       </div>
 
-      {/* Panoramica vs tutte */}
+      {/* Overview vs all */}
       {showAll && (showAll === 'A' ? teamA : teamB) && (
         <AllOpponentsPanel
           focus={showAll === 'A' ? teamA : teamB} opponents={activeTeams} params={params} h2h={h2h}
@@ -295,11 +295,11 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
         />
       )}
 
-      {/* Confronto dettagliato */}
+      {/* Detailed comparison */}
       {!showAll && result && idA !== idB && (
         <div className="mu2-detail">
 
-          {/* Barra W/D/L in evidenza */}
+          {/* Highlighted W/D/L bar */}
           <div className="mu2-wdl-bar">
             <div className="mu2-wdl-seg mu2-wdl-win"  style={{ width: `${result.pWin  * 100}%` }} />
             <div className="mu2-wdl-seg mu2-wdl-draw" style={{ width: `${result.pDraw * 100}%` }} />
@@ -356,7 +356,7 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
             )}
           </div>
 
-          {/* Risultati più probabili */}
+          {/* Most likely scorelines */}
           {tab === 'probs' && (
             <div className="mu2-scores-grid">
               {result.top6.map(({ hg, ag, p }) => (
@@ -369,7 +369,7 @@ export function MatchupPage({ teams, params, h2h, teamStats, modulators }: Props
             </div>
           )}
 
-          {/* Parametri comparativi */}
+          {/* Comparative parameters */}
           {tab === 'params' && (
             <div className="mu2-params">
               <div className="mu2-params-header">

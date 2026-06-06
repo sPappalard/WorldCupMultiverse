@@ -1,7 +1,7 @@
 /**
- * Motore Monte Carlo (spec §5.4) — IL PUNTO CRITICO.
- * In OGNI run si estrae uno scoreline dal modello e si avanza il vincitore
- * ESTRATTO (non il favorito). Dopo N run, winProb = vittorie / N.
+ * Monte Carlo engine — THE CRITICAL INVARIANT.
+ * Every run SAMPLES a scoreline from the model and advances the SAMPLED winner
+ * (not the favorite). After N runs, winProb = wins / N.
  */
 
 import type {
@@ -25,12 +25,12 @@ import { mulberry32 } from './rng';
 
 const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 
-/** P(home vince) sommando le celle della matrice scoreline dove hg > ag. */
+/** P(home wins): sum the scoreline-matrix cells where hg > ag. */
 function computeWinProb(dist: ScorelineDist): number {
   const cols = dist.cols;
   const n = dist.flat.length;
   let pWin = 0;
-  // flat è cumulata: ricaviamo le singole probabilità come diff
+  // flat is cumulative: recover per-cell probabilities as consecutive diffs.
   for (let idx = 0; idx < n; idx++) {
     const p = idx === 0 ? dist.flat[0] : dist.flat[idx] - dist.flat[idx - 1];
     const hg = Math.floor(idx / cols);
@@ -43,28 +43,28 @@ function computeWinProb(dist: ScorelineDist): number {
 export interface SimInput {
   teams: Team[];
   params: ModelParams | null;
-  /** Scontri diretti storici per aggiustare i lambda (da h2h.json). */
+  /** Historical head-to-head records to adjust lambdas (from h2h.json). */
   h2h?: Map<string, H2HRecord>;
-  /** Statistiche per squadra: forma, knockout, storia (da team-stats.json). */
+  /** Per-team stats: form, knockout, history (from team-stats.json). */
   teamStats?: Map<string, TeamStats>;
-  /** Override forza per squadra (what-if), in delta log-lambda su att+dif. */
+  /** Per-team what-if strength overrides, as log-lambda deltas on attack+defense. */
   strengthOverrides?: Record<string, { attack: number; defense: number }>;
-  /** Sostituzioni di squadra (es. Italia al posto della Bosnia). */
+  /** Team substitutions (e.g. Italy in place of Bosnia). */
   substitutions?: Record<string, string>; // outId -> inId
   numRuns?: number;
   seed?: number;
-  /** Fattore caos 0–1: interpola le probabilità finali verso uniforme. */
+  /** Chaos factor 0–1: interpolates final probabilities toward uniform. */
   chaos?: number;
-  /** Override runtime dei coefficienti modulatori (dalla pagina Admin). */
+  /** Runtime override of the modulator coefficients (from the Admin page). */
   modulators?: ModulatorConfig;
-  /** Callback opzionale di progresso (0–1), chiamato ogni ~1% di run. */
+  /** Optional progress callback (0–1), called roughly every 1% of runs. */
   onProgress?: (fraction: number) => void;
-  /** Callback opzionale: chiamato appena la sample run (run 0) è pronta,
-   *  prima del calcolo degli aggregati. Abilita il flusso "cinema subito". */
+  /** Optional callback fired as soon as the sample run (run 0) is ready, before
+   *  the aggregates are computed. Enables the "cinema starts immediately" flow. */
   onSample?: (sample: SampleRun) => void;
 }
 
-/** Costruisce la mappa forza per squadra, applicando overrides what-if. */
+/** Build the per-team strength map, applying what-if overrides. */
 function buildStrengths(input: SimInput): Map<string, TeamStrength> {
   const map = new Map<string, TeamStrength>();
   for (const t of input.teams) {
@@ -80,22 +80,22 @@ function buildStrengths(input: SimInput): Map<string, TeamStrength> {
   return map;
 }
 
-/** Risolve la composizione effettiva dei gironi applicando le sostituzioni. */
+/** Resolve the actual group composition, applying substitutions. */
 function buildGroups(input: SimInput): Map<string, Team[]> {
   const subs = input.substitutions ?? {};
   const byId = new Map(input.teams.map((t) => [t.id, t]));
   const groups = new Map<string, Team[]>();
   for (const g of GROUPS) groups.set(g, []);
 
-  const replacedOut = new Set(Object.keys(subs)); // squadre uscenti (es. BIH)
-  const incomingIn = new Set(Object.values(subs)); // squadre entranti (es. ITA)
+  const replacedOut = new Set(Object.keys(subs)); // outgoing teams (e.g. BIH)
+  const incomingIn = new Set(Object.values(subs)); // incoming teams (e.g. ITA)
   for (const t of input.teams) {
-    if (!t.active) continue; // entry inattive (Italia di default) escluse
-    if (replacedOut.has(t.id)) continue; // la uscente lascia il girone
-    if (incomingIn.has(t.id)) continue; // l'entrante è gestita sotto
+    if (!t.active) continue; // inactive entries (Italy by default) excluded
+    if (replacedOut.has(t.id)) continue; // outgoing team leaves its group
+    if (incomingIn.has(t.id)) continue; // incoming team handled below
     groups.get(t.group)?.push(t);
   }
-  // Applica sostituzioni: la squadra "in" prende lo slot della "out".
+  // Apply substitutions: the "in" team takes the "out" team's slot.
   for (const [outId, inId] of Object.entries(subs)) {
     const outTeam = byId.get(outId);
     const inTeam = byId.get(inId);
@@ -107,11 +107,11 @@ function buildGroups(input: SimInput): Map<string, Team[]> {
 }
 
 /**
- * Pre-calcola le distribuzioni di scoreline per ogni coppia rilevante.
- * Produce DUE cache:
- *  - `group`: partite dei gironi (con vantaggio campo per le host)
- *  - `ko`: partite a eliminazione diretta (niente campo, ma bonus esperienza KO
- *    sull'intera partita per chi è abituato alle fasi finali)
+ * Precompute scoreline distributions for every relevant pair.
+ * Produces TWO caches:
+ *  - `group`: group-stage matches (home advantage for the hosts)
+ *  - `ko`: knockout matches (no home advantage, but a whole-match KO-experience
+ *    bonus for teams used to the latter stages)
  */
 function buildDistCache(
   strengths: Map<string, TeamStrength>,
@@ -139,7 +139,7 @@ function buildDistCache(
       if (a === b) continue;
       const home = strengths.get(a)!;
       const away = strengths.get(b)!;
-      const homeAdv = hostIds.has(a); // vantaggio campo solo nei gironi
+      const homeAdv = hostIds.has(a); // home advantage in group stage only
       const teamA = teamById.get(a);
       const teamB = teamById.get(b);
       group.set(
@@ -180,15 +180,15 @@ const emptyStanding = (teamId: string): GroupStanding => ({
   goalDifference: 0,
 });
 
-/** Partita di girone con dist già risolto (pre-computata fuori dal loop run). */
+/** Group fixture with its dist resolved (precomputed outside the run loop). */
 interface GroupFixture {
   homeId: string;
   awayId: string;
   dist: ScorelineDist;
 }
 
-/** Pre-risolve le 6 partite × 12 gironi una volta sola: evita il lookup
- *  stringa nel cache ad ogni partita di ogni run (hot-path). */
+/** Pre-resolve the 6 matches × 12 groups once, avoiding a string cache lookup
+ *  for every match of every run (hot path). */
 function buildGroupFixtures(
   groups: Map<string, Team[]>,
   cache: Map<string, ScorelineDist>,
@@ -208,7 +208,7 @@ function buildGroupFixtures(
   return fixtures;
 }
 
-/** Esegue una singola run completa. captureSample → registra dettagli. */
+/** Run one full tournament. capture=true records details for the sample run. */
 function runOnce(
   groups: Map<string, Team[]>,
   groupFixtures: Map<string, GroupFixture[]>,
@@ -220,14 +220,14 @@ function runOnce(
 ): { championId: string; sample?: SampleRun; reached: Map<string, string> } {
   const groupStandings: Record<string, GroupStanding[]> = {};
   const groupResults: Record<string, MatchResult[]> = {};
-  // Per ogni team: round più avanzato raggiunto.
+  // Per team: the furthest round reached.
   const reached = new Map<string, string>();
 
   const winners: Record<string, string> = {};
   const runnersUp: Record<string, string> = {};
   const thirds: { teamId: string; group: string; standing: GroupStanding }[] = [];
 
-  // --- GIRONI ---
+  // --- GROUP STAGE ---
   for (const [g, teams] of groups) {
     const standings = new Map<string, GroupStanding>();
     for (const t of teams) standings.set(t.id, emptyStanding(t.id));
@@ -239,7 +239,7 @@ function runOnce(
       const hg = (idx / dist.cols) | 0;
       const ag = idx % dist.cols;
       if (capture) {
-        // winProb serve solo nella sample run mostrata; evitalo nelle altre.
+        // winProb is only needed for the displayed sample run; skip it otherwise.
         const winProbHome = computeWinProb(dist);
         results.push({ homeId: fx.homeId, awayId: fx.awayId, homeGoals: hg, awayGoals: ag, winProbHome });
       }
@@ -266,7 +266,7 @@ function runOnce(
     }
   }
 
-  // --- MIGLIORI 8 TERZE ---
+  // --- BEST 8 THIRD-PLACED TEAMS ---
   const rankedThirds = thirds
     .sort((a, b) => {
       const x = a.standing, y = b.standing;
@@ -279,7 +279,7 @@ function runOnce(
   const thirdByGroup = new Map(rankedThirds.map((t) => [t.group, t.teamId]));
   const thirdAlloc = allocateThirds(qualifiedGroups);
 
-  // --- COMPONE IL ROUND OF 32 ---
+  // --- BUILD THE ROUND OF 32 ---
   const ro32Pairs: { homeId: string; awayId: string }[] = [];
   for (const slot of RO32) {
     const resolve = (ref: typeof slot.home): string => {
@@ -291,13 +291,13 @@ function runOnce(
     ro32Pairs.push({ homeId: resolve(slot.home), awayId: resolve(slot.away) });
   }
 
-  // Qualificate al R32
+  // Qualified to the R32.
   for (const p of ro32Pairs) {
     if (p.homeId) reached.set(p.homeId, 'ro32');
     if (p.awayId) reached.set(p.awayId, 'ro32');
   }
 
-  // --- ELIMINAZIONE DIRETTA ---
+  // --- KNOCKOUT STAGE ---
   const knockoutRounds: KnockoutRound[] = [];
   const reachedKey = ['ro32', 'ro16', 'quarter', 'semi', 'final'];
   let current = ro32Pairs;
@@ -309,7 +309,7 @@ function runOnce(
     for (const pair of current) {
       const { homeId, awayId } = pair;
       if (!homeId || !awayId) {
-        // bye difensivo (non dovrebbe accadere con bracket valido)
+        // Defensive bye (shouldn't happen with a valid bracket).
         const w = homeId || awayId;
         advancing.push(w);
         matches.push({ homeId, awayId, homeGoals: 0, awayGoals: 0, winnerId: w });
@@ -324,8 +324,8 @@ function runOnce(
       if (hg !== ag) {
         winnerId = hg > ag ? homeId : awayId;
       } else {
-        // Pareggio → supplementari/rigori: coin-flip inclinato verso λ maggiore
-        // + bias esperienza KO (storia + rendimento knockout pesati).
+        // Draw → extra time/penalties: coin flip biased toward the higher λ
+        // plus a KO-experience bias (weighted history + knockout record).
         let pHome = dist.lambdaHome / (dist.lambdaHome + dist.lambdaAway);
         if (teamStats && modulators) {
           const statsHome = teamStats.get(homeId);
@@ -349,9 +349,9 @@ function runOnce(
         matches.push({ homeId, awayId, homeGoals: hg, awayGoals: ag, winnerId, winProbHome, penalties });
       }
       advancing.push(winnerId);
-      // Segna il round raggiunto: vincitore avanza, perdente si ferma qui.
+      // Record the round reached: winner advances, loser stops here.
       const loserId = winnerId === homeId ? awayId : homeId;
-      const currentKey = reachedKey[roundIdx]; // round in cui si sta giocando
+      const currentKey = reachedKey[roundIdx]; // round currently being played
       const nextKey = reachedKey[Math.min(roundIdx + 1, reachedKey.length - 1)];
       reached.set(loserId, currentKey);
       reached.set(winnerId, roundIdx === KNOCKOUT_ROUND_NAMES.length - 1 ? 'champion' : nextKey);
@@ -370,7 +370,7 @@ function runOnce(
           : undefined,
       };
     }
-    // Accoppia i vincitori per il round successivo (coppie adiacenti).
+    // Pair winners for the next round (adjacent pairs).
     const next: { homeId: string; awayId: string }[] = [];
     for (let i = 0; i < advancing.length; i += 2) {
       next.push({ homeId: advancing[i], awayId: advancing[i + 1] });
@@ -378,17 +378,17 @@ function runOnce(
     current = next;
   }
 
-  // Non dovrebbe arrivare qui.
+  // Should be unreachable.
   const championId = current[0]?.homeId ?? '';
   return { championId, reached };
 }
 
-/** Ordine dei round per confronto "ha raggiunto almeno". */
+/** Round order for "reached at least" comparisons. */
 const ROUND_ORDER = ['group', 'ro32', 'ro16', 'quarter', 'semi', 'final', 'champion'];
 const reachedAtLeast = (r: string | undefined, target: string): boolean =>
   r !== undefined && ROUND_ORDER.indexOf(r) >= ROUND_ORDER.indexOf(target);
 
-/** Esegue l'intera simulazione Monte Carlo. */
+/** Run the full Monte Carlo simulation. */
 export function simulate(input: SimInput): SimulationOutput {
   const numRuns = input.numRuns ?? config.numRuns;
   const globalParams = input.params?.global ?? {
@@ -401,7 +401,7 @@ export function simulate(input: SimInput): SimulationOutput {
   const strengths = buildStrengths(input);
   const hostIds = new Set(input.teams.filter((t) => t.isHost).map((t) => t.id));
 
-  // Modulatori: usa override Admin se presenti, altrimenti config di default
+  // Modulators: use Admin overrides if present, else config defaults.
   const modulators: ModulatorConfig = input.modulators ?? {
     formCoeff: config.modulators.formCoeff,
     squadValueCoeff: config.modulators.squadValueCoeff,
@@ -416,14 +416,14 @@ export function simulate(input: SimInput): SimulationOutput {
     whatIf: config.modulators.whatIf,
   };
 
-  // Applica override homeAdv dall'Admin (sovrascrive il valore dal fit bayesiano).
+  // Apply the Admin homeAdv override (overrides the Bayesian-fit value).
   const effectiveGlobalParams = { ...globalParams, homeAdv: modulators.homeAdvBoost };
 
   const { group: groupCache, ko: koCache } = buildDistCache(strengths, effectiveGlobalParams, hostIds, input.teams, input.h2h, input.teamStats, modulators);
 
   const rand = mulberry32(input.seed ?? (Math.random() * 2 ** 32) >>> 0);
 
-  // Contatori per squadra.
+  // Per-team counters.
   const wins = new Map<string, number>();
   const counts: Record<string, Map<string, number>> = {
     final: new Map(), semi: new Map(), quarter: new Map(), ro16: new Map(), ro32: new Map(),
@@ -434,14 +434,14 @@ export function simulate(input: SimInput): SimulationOutput {
     for (const k of Object.keys(counts)) counts[k].set(id, 0);
   }
 
-  // Pre-risolve le partite dei gironi una volta sola (la composizione non
-  // cambia tra run): evita il lookup stringa nel cache nel hot-path.
+  // Pre-resolve group fixtures once (composition doesn't change between runs):
+  // avoids the string cache lookup in the hot path.
   const groupFixtures = buildGroupFixtures(groups, groupCache);
 
-  // Riporta il progresso ~100 volte sul totale (granularità 1%).
+  // Report progress ~100 times over the total (1% granularity).
   const progressStep = Math.max(1, Math.floor(numRuns / 100));
 
-  /** Accumula i contatori di "ha raggiunto almeno la fase X" per una run. */
+  /** Accumulate the "reached at least round X" counters for one run. */
   const accumulate = (championId: string, reached: Map<string, string>) => {
     wins.set(championId, (wins.get(championId) ?? 0) + 1);
     for (const id of allIds) {
@@ -454,8 +454,8 @@ export function simulate(input: SimInput): SimulationOutput {
     }
   };
 
-  // ── Run 0: cattura la sample run e notificala SUBITO (flusso "cinema subito").
-  // L'aggregato continua dopo, ma il cinema può già partire con questa sample.
+  // ── Run 0: capture the sample run and notify it IMMEDIATELY ("cinema now" flow).
+  // The aggregate keeps computing after, but the cinema can already start.
   let sample: SampleRun | undefined;
   {
     const r0 = runOnce(groups, groupFixtures, koCache, rand, true, input.teamStats, modulators);
@@ -464,7 +464,7 @@ export function simulate(input: SimInput): SimulationOutput {
     accumulate(r0.championId, r0.reached);
   }
 
-  // ── Run 1..N: solo aggregati (capture=false, nessun overhead).
+  // ── Runs 1..N: aggregates only (capture=false, no overhead).
   for (let run = 1; run < numRuns; run++) {
     const { championId, reached } = runOnce(groups, groupFixtures, koCache, rand, false, input.teamStats, modulators);
     accumulate(championId, reached);
@@ -484,8 +484,8 @@ export function simulate(input: SimInput): SimulationOutput {
     reachRo32Prob: counts.ro32.get(id)! / numRuns,
   }));
 
-  // Fattore caos: interpola tutte le probabilità verso uniforme (spec §7.4).
-  // Applicato a winProb e a tutti i round intermedi per coerenza interna.
+  // Chaos factor: interpolate all probabilities toward uniform.
+  // Applied to winProb and every intermediate round for internal consistency.
   if (input.chaos && input.chaos > 0) {
     const c = Math.min(1, input.chaos);
     const n = aggregates.length;
@@ -501,7 +501,7 @@ export function simulate(input: SimInput): SimulationOutput {
       reachRo16Prob:    applyChaos(a.reachRo16Prob,    16 / n),
       reachRo32Prob:    applyChaos(a.reachRo32Prob,    32 / n),
     }));
-    // Ri-normalizza solo winProb (è l'unica che deve sommare a 1).
+    // Re-normalize winProb only (it's the only one that must sum to 1).
     const tot = aggregates.reduce((s, a) => s + a.winProb, 0);
     aggregates = aggregates.map((a) => ({ ...a, winProb: a.winProb / tot }));
   }

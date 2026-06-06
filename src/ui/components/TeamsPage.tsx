@@ -38,7 +38,7 @@ function strengthScoreTier(s: number): string {
   return 'tier-outsider';
 }
 
-/* Valore numerico del sort corrente — mostrato nella card come statistica principale */
+/* Numeric value of the current sort — shown on the card as the main stat. */
 function getSortValue(team: Team, sortKey: SortKey, params: ModelParams | null, teamStats: Map<string, TeamStats>, strengthScores: Map<string, TeamStrengthScore>, tFn: (k: string, v?: Record<string, string | number>) => string): { value: string; label: string } | null {
   const tp = params?.teams[team.id];
   const ts = teamStats.get(team.id);
@@ -94,7 +94,7 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
   const listRef = useRef<HTMLDivElement>(null);
 
   const visibleTeams = useMemo(() => teams.filter((t) => {
-    if (!t.active) return t.id === 'ITA'; // Italia sempre visibile (con badge what-if)
+    if (!t.active) return t.id === 'ITA'; // Italy always visible (with what-if badge)
     if (italyActive && t.substituteFor) return false;
     return true;
   }), [teams, italyActive]);
@@ -157,7 +157,7 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
     return { w, d, l, n };
   }, [selected, allIds, h2h]);
 
-  // Classifiche: generano un rank numerico
+  // Rankings: produce a numeric rank.
   const RANK_SORTS: { key: SortKey; labelKey: string; needsParams?: boolean; needsStats?: boolean }[] = [
     { key: 'strength',   labelKey: 'teams.sort.strength' },
     { key: 'elo',        labelKey: 'teams.sort.elo' },
@@ -177,7 +177,7 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
   function handleSelectTeam(id: string) {
     if (selectedId === id) { setSelectedId(null); return; }
     setSelectedId(id);
-    // Scroll la lista in cima quando si apre il dettaglio
+    // Scroll the list to the top when the detail opens.
     if (listRef.current) listRef.current.scrollTop = 0;
   }
 
@@ -186,9 +186,9 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
   return (
     <div className="tp2-root">
 
-      {/* ── Barra filtri ── */}
+      {/* ── Filter bar ── */}
       <div className="tp2-filter-bar">
-        {/* Classifiche (generano rank numerico) */}
+        {/* Rankings (produce a numeric rank) */}
         <div className="tp2-filter-group">
           <span className="tp2-filter-label">{t('teams.rankBy')}</span>
           <div className="tp2-tabs">
@@ -206,9 +206,9 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
           </div>
         </div>
 
-        {/* Raggruppa + Search — a destra */}
+        {/* Group + Search — on the right */}
         <div className="tp2-filter-right">
-          {/* Raggruppa */}
+          {/* Group */}
           <div className="tp2-filter-group tp2-filter-group--group">
             <span className="tp2-filter-label tp2-filter-label--dim">{t('teams.groupBy')}</span>
             <div className="tp2-tabs tp2-tabs--group">
@@ -230,10 +230,10 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
         </div>
       </div>
 
-      {/* ── Corpo ── */}
+      {/* ── Body ── */}
       <div className={`tp2-body ${isGridMode ? 'tp2-body--grid' : 'tp2-body--split'}`}>
 
-        {/* Lista / Griglia */}
+        {/* List / Grid */}
         <div className="tp2-list" ref={listRef}>
           <TeamList
             sorted={sorted}
@@ -248,7 +248,7 @@ export function TeamsPage({ teams, h2h, italyActive, params, paramsSource, teamS
           />
         </div>
 
-        {/* Pannello dettaglio — solo in split mode */}
+        {/* Detail panel — split mode only */}
         {!isGridMode && selected && (
           <div className="tp2-detail">
             <TeamDetail
@@ -291,7 +291,7 @@ function TeamList({ sorted, sortKey, isRankSort, isGridMode, selectedId, params,
 
   const isGroupSort = sortKey === 'group';
 
-  /* Raggruppamento per girone */
+  /* Grouping by group */
   if (isGroupSort) {
     const byGroup = new Map<string, Team[]>();
     for (const t of sorted) {
@@ -321,7 +321,7 @@ function TeamList({ sorted, sortKey, isRankSort, isGridMode, selectedId, params,
     );
   }
 
-  /* Lista piatta con rank (classifica o A→Z) */
+  /* Flat list with rank (ranking or A→Z) */
   return (
     <>
       {sorted.map((team, idx) =>
@@ -333,7 +333,7 @@ function TeamList({ sorted, sortKey, isRankSort, isGridMode, selectedId, params,
   );
 }
 
-/* ── Card (modalità griglia) ── */
+/* ── Card (grid mode) ── */
 interface CardProps {
   team: Team; sortKey: SortKey; rank: number | null;
   params: ModelParams | null; teamStats: Map<string, TeamStats>;
@@ -347,7 +347,7 @@ function TeamCard({ team, sortKey, rank, params, teamStats, strengthScores, onSe
 
   return (
     <button className={`tp2-card ${isItaly ? 'italy' : ''}`} onClick={() => onSelect(team.id)}>
-      {/* Rank prominente */}
+      {/* Prominent rank */}
       {rank !== null && (
         <span className={`tp2-card-rank${rank === 1 ? ' tp2-rank--gold' : rank === 2 ? ' tp2-rank--silver' : rank === 3 ? ' tp2-rank--bronze' : ''}`}>
           {rank}
@@ -368,7 +368,7 @@ function TeamCard({ team, sortKey, rank, params, teamStats, strengthScores, onSe
   );
 }
 
-/* ── Row (modalità split) ── */
+/* ── Row (split mode) ── */
 interface RowProps extends CardProps { isSelected: boolean; }
 function TeamRow({ team, sortKey, rank, isSelected, params, teamStats, strengthScores, onSelect }: RowProps) {
   const { t } = useT();

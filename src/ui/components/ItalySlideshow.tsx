@@ -1,15 +1,15 @@
 /**
- * ItalySlideshow — slideshow fotografico per la card bento Focus Italia.
- * Carica i file da /images/italy/manifest.json.
- * Ogni foto dura SLIDE_DURATION ms con effetto Ken Burns (zoom lento randomizzato)
- * e transizione a dissolvenza tra una foto e l'altra.
+ * ItalySlideshow — photo slideshow for the Italy focus bento card.
+ * Loads files from /images/italy/manifest.json.
+ * Each photo lasts SLIDE_DURATION ms with a Ken Burns effect (randomized slow
+ * zoom) and a crossfade between photos.
  */
 import { useEffect, useRef, useState } from 'react';
 
-const SLIDE_DURATION = 12000; // ms per foto
-const FADE_DURATION  = 1200;  // ms dissolvenza
+const SLIDE_DURATION = 12000; // ms per photo
+const FADE_DURATION  = 1200;  // ms crossfade
 
-// Varianti Ken Burns: ogni foto ha un'animazione CSS diversa
+// Ken Burns variants: each photo gets a different CSS animation.
 const KB_VARIANTS = [
   'kb-zoom-in-tl',
   'kb-zoom-in-tr',
@@ -19,7 +19,7 @@ const KB_VARIANTS = [
 ];
 
 interface SlideshowProps {
-  /** Overlay scuro sulla foto (per rendere leggibile il testo sopra). */
+  /** Dark overlay on the photo (to keep text above it readable). */
   overlay?: boolean;
 }
 
@@ -46,7 +46,7 @@ export function ItalySlideshow({ overlay = true }: SlideshowProps) {
   const [fading, setFading] = useState(false);
   const timerRef = useRef<number | null>(null);
 
-  // Carica il manifest, shuffla subito
+  // Load the manifest, shuffle immediately.
   useEffect(() => {
     fetch('/images/italy/manifest.json')
       .then(r => r.json())
@@ -57,13 +57,13 @@ export function ItalySlideshow({ overlay = true }: SlideshowProps) {
           setKbClass(KB_VARIANTS[Math.floor(Math.random() * KB_VARIANTS.length)]);
         }
       })
-      .catch(() => {}); // silenzioso: nessuna foto → nessun slideshow
+      .catch(() => {}); // silent: no photos → no slideshow
   }, []);
 
-  // Avanza slide in modo randomico
+  // Advance slides randomly.
   useEffect(() => {
     if (photos.length < 2) return;
-    let fadeTimer = 0; // setTimeout interno: va annullato anch'esso allo smontaggio
+    let fadeTimer = 0; // inner setTimeout: must also be cancelled on unmount
     timerRef.current = window.setInterval(() => {
       setFading(true);
       fadeTimer = window.setTimeout(() => {

@@ -1,11 +1,11 @@
 /**
- * SimLaunchOverlay — caricamento scenico mostrato nell'attimo tra "lancia la
- * simulazione" e la partenza del cinema (l'attesa che il worker produca la
- * sample run). Tono ironico, e quando l'Italia è in campo le frasi cambiano.
+ * SimLaunchOverlay — staged loading shown in the moment between "launch the
+ * simulation" and the cinema starting (waiting for the worker to produce the
+ * sample run). Tongue-in-cheek tone; the lines change when Italy is in play.
  *
- * Il progresso è scenico (animato nel tempo), non legato al worker reale: la
- * simulazione vera dura pochi decimi di secondo, ma una micro-attesa "epica"
- * rende l'ingresso più gustoso. Quando la sample è pronta, App smonta l'overlay.
+ * Progress is cosmetic (time-animated), not tied to the real worker: the actual
+ * simulation takes a few tenths of a second, but a short "epic" wait makes the
+ * entrance feel better. Once the sample is ready, App unmounts the overlay.
  */
 import { useEffect, useState } from 'react';
 import { useT } from '../../i18n';
@@ -25,14 +25,14 @@ export function SimLaunchOverlay({ italyActive, favoriteName, numRuns = NUM_RUNS
   const [progress, setProgress] = useState(0);
   const [msgIdx, setMsgIdx] = useState(0);
 
-  // Barra di progresso scenica: avanza fino a ~97% in TOTAL_MS (l'ultimo balzo
-  // al 100% lo dà lo smontaggio quando il cinema parte).
+  // Cosmetic progress bar: advances to ~97% over TOTAL_MS (the final jump to
+  // 100% comes from the unmount when the cinema starts).
   useEffect(() => {
     const start = performance.now();
     let raf = 0;
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / TOTAL_MS);
-      // ease-out per un finale che rallenta (più "vivo")
+      // ease-out so it slows down near the end (feels more "alive")
       const eased = 1 - Math.pow(1 - t, 2.2);
       setProgress(eased * 0.97);
       if (t < 1) raf = requestAnimationFrame(tick);
@@ -41,7 +41,7 @@ export function SimLaunchOverlay({ italyActive, favoriteName, numRuns = NUM_RUNS
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  // Rotazione messaggi sincronizzata sulla durata totale.
+  // Message rotation synced to the total duration.
   useEffect(() => {
     const id = setInterval(() => {
       setMsgIdx((i) => Math.min(messages.length - 1, i + 1));
@@ -56,7 +56,7 @@ export function SimLaunchOverlay({ italyActive, favoriteName, numRuns = NUM_RUNS
     <div className={`simlaunch ${italyActive ? 'simlaunch--italy' : ''}`}>
       <div className="simlaunch-bg" aria-hidden />
       <div className="simlaunch-inner">
-        {/* Pallone che rimbalza + ombra */}
+        {/* Bouncing ball + shadow */}
         <div className="simlaunch-pitch" aria-hidden>
           {italyActive
             ? <span className="fi fi-it simlaunch-ball-flag" />

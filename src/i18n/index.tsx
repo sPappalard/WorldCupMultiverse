@@ -1,17 +1,20 @@
 /**
- * i18n — sistema di traduzione client-side per MonteCalcio.
+ * i18n — client-side translation system for MonteCalcio.
  *
  * Design:
- *  - Dizionari per lingua (it/en/es/fr), chiavi a notazione puntata, valori
- *    stringa o array di stringhe. L'italiano è la fonte di verità.
- *  - `t(key, vars?)` risolve la chiave nella lingua attiva con fallback su EN
- *    e poi IT, e interpola i segnaposto `{nome}`.
- *  - `tList(key)` restituisce un array di stringhe (per liste/hint).
- *  - Numeri formattati con la locale giusta tramite `nf()`.
- *  - La lingua è persistita in localStorage; al primo avvio si rileva quella
- *    del browser (se tra quelle supportate, altrimenti EN — pubblico globale).
+ *  - Per-language dictionaries (it/en/es/fr), dot-notation keys, string or
+ *    string-array values. Italian is the source of truth.
+ *  - `t(key, vars?)` resolves the key in the active language, falling back to
+ *    EN then IT, and interpolates `{name}` placeholders.
+ *  - `tList(key)` returns a string array (for lists/hints).
+ *  - Numbers formatted with the right locale via `nf()`.
+ *  - Language is persisted in localStorage; on first load the browser language
+ *    is detected (if supported, else EN — global audience).
  *
- * Il motore (`src/engine`) resta puro: nessuna dipendenza da qui.
+ * Note: only IT and EN are exposed in the switcher (LANGUAGES); ES/FR
+ * dictionaries exist but are not yet enabled.
+ *
+ * The engine (`src/engine`) stays pure: no dependency on this module.
  */
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { it } from './it';
@@ -23,7 +26,7 @@ export type LangCode = 'it' | 'en' | 'es' | 'fr';
 
 export interface LangMeta {
   code: LangCode;
-  /** Codice flag-icons (rende bene su Windows, non emoji). */
+  /** flag-icons code (renders well on Windows, unlike emoji). */
   flag: string;
   label: string;
 }
@@ -31,11 +34,11 @@ export interface LangMeta {
 export const LANGUAGES: LangMeta[] = [
   { code: 'it', flag: 'it', label: 'Italiano' },
   { code: 'en', flag: 'gb', label: 'English' },
-  // { code: 'es', flag: 'es', label: 'Español' },   // TODO: traduzione da completare
-  // { code: 'fr', flag: 'fr', label: 'Français' },  // TODO: traduzione da completare
+  // { code: 'es', flag: 'es', label: 'Español' },   // TODO: finish translation
+  // { code: 'fr', flag: 'fr', label: 'Français' },  // TODO: finish translation
 ];
 
-/** Locale BCP-47 per la formattazione dei numeri, per lingua. */
+/** BCP-47 locale for number formatting, per language. */
 const NUMBER_LOCALE: Record<LangCode, string> = {
   it: 'it-IT',
   en: 'en-US',
@@ -49,24 +52,24 @@ const DICTS: Record<LangCode, Dict> = { it, en, es, fr };
 
 const STORAGE_KEY = 'mc_lang';
 
-/** Rileva la lingua iniziale: localStorage → lingua browser → 'en'. */
+/** Detect the initial language: localStorage → browser language → 'en'. */
 export function detectInitialLang(): LangCode {
   try {
     const saved = localStorage.getItem(STORAGE_KEY) as LangCode | null;
     if (saved && DICTS[saved]) return saved;
-  } catch { /* localStorage non disponibile */ }
+  } catch { /* localStorage unavailable */ }
   const nav = (typeof navigator !== 'undefined' && (navigator.languages?.[0] || navigator.language)) || 'en';
   const short = nav.slice(0, 2).toLowerCase() as LangCode;
   return DICTS[short] ? short : 'en';
 }
 
-/** Interpola `{nome}` con i valori passati. */
+/** Interpolate `{name}` placeholders with the given values. */
 function interpolate(str: string, vars?: Record<string, string | number>): string {
   if (!vars) return str;
   return str.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? String(vars[k]) : m));
 }
 
-/** Risolve una chiave con fallback lingua → EN → IT → chiave stessa. */
+/** Resolve a key with fallback: language → EN → IT → the key itself. */
 function resolve(lang: LangCode, key: string): string | string[] | undefined {
   return DICTS[lang][key] ?? DICTS.en[key] ?? DICTS.it[key];
 }
@@ -74,13 +77,13 @@ function resolve(lang: LangCode, key: string): string | string[] | undefined {
 export interface I18n {
   lang: LangCode;
   setLang: (l: LangCode) => void;
-  /** Traduce una chiave (stringa) con interpolazione opzionale. */
+  /** Translate a (string) key with optional interpolation. */
   t: (key: string, vars?: Record<string, string | number>) => string;
-  /** Traduce una chiave-array (lista di stringhe). */
+  /** Translate an array key (list of strings). */
   tList: (key: string, vars?: Record<string, string | number>) => string[];
-  /** Formatta un numero secondo la locale attiva. */
+  /** Format a number per the active locale. */
   nf: (n: number) => string;
-  /** Locale BCP-47 attiva (per localeCompare, toLocaleString, ecc.). */
+  /** Active BCP-47 locale (for localeCompare, toLocaleString, etc.). */
   locale: string;
 }
 
@@ -91,10 +94,10 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const setLang = (l: LangCode) => {
     setLangState(l);
-    try { localStorage.setItem(STORAGE_KEY, l); } catch { /* ignora */ }
+    try { localStorage.setItem(STORAGE_KEY, l); } catch { /* ignore */ }
   };
 
-  // Aggiorna l'attributo lang del documento (accessibilità / hyphenation).
+  // Update the document's lang attribute (accessibility / hyphenation).
   useEffect(() => {
     if (typeof document !== 'undefined') document.documentElement.lang = lang;
   }, [lang]);
@@ -104,7 +107,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     const t = (key: string, vars?: Record<string, string | number>): string => {
       const raw = resolve(lang, key);
       if (raw === undefined) {
-        if (import.meta.env?.DEV) console.warn(`[i18n] chiave mancante: ${key}`);
+        if (import.meta.env?.DEV) console.warn(`[i18n] missing key: ${key}`);
         return key;
       }
       const str = Array.isArray(raw) ? raw.join(' ') : raw;
@@ -126,16 +129,16 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
 export function useI18n(): I18n {
   const ctx = useContext(I18nContext);
-  if (!ctx) throw new Error('useI18n deve stare dentro <I18nProvider>');
+  if (!ctx) throw new Error('useI18n must be used inside <I18nProvider>');
   return ctx;
 }
 
-/** Shortcut comodo: restituisce direttamente la funzione t (+ nf via closure). */
+/** Convenience shortcut: returns the i18n object directly (t, nf, etc.). */
 export function useT() {
   return useI18n();
 }
 
-/** Restituisce il nome localizzato di una squadra in base alla lingua attiva. */
+/** Returns a team's localized name based on the active language. */
 export function useTeamName() {
   const { lang } = useI18n();
   return (team: { name: string; nameEn?: string; nameEs?: string; nameFr?: string }) => {

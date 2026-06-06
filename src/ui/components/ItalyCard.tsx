@@ -1,6 +1,6 @@
 /**
- * ItalyCard — pagina Focus Italia. Niente hero foto.
- * Layout: header identità + griglia dati + percorso torneo (o CTA simula).
+ * ItalyCard — Italy focus page. No hero photo.
+ * Layout: identity header + data grid + tournament run (or simulate CTA).
  */
 import { useState, useRef, useEffect } from 'react';
 import type { Team, ModelParams, TeamStats, TeamAggregate } from '../../engine/types';
@@ -15,7 +15,7 @@ interface Props {
   aggregates?: TeamAggregate[];
   numRuns?: number;
   onActivate: () => void;
-  heroImage?: string; // non usato — mantenuto per compatibilità prop
+  heroImage?: string; // unused — kept for prop compatibility
 }
 
 const ITALY_ID = 'ITA';
@@ -59,8 +59,8 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
   const MSG_INTERVAL = LOADING_DURATION / Math.max(1, loadingMessages.length);
   const [loading, setLoading] = useState(false);
   const [msgIdx, setMsgIdx] = useState(0);
-  // Timer del loading: tenuti in ref per poterli annullare allo smontaggio
-  // (evita setState su componente smontato se l'utente chiude la card durante il loading).
+  // Loading timers: kept in refs so they can be cancelled on unmount (avoids
+  // setState on an unmounted component if the user closes the card mid-load).
   const loadTimers = useRef<{ interval: number; timeout: number }>({ interval: 0, timeout: 0 });
   useEffect(() => () => {
     if (loadTimers.current.interval) clearInterval(loadTimers.current.interval);
@@ -117,7 +117,7 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
   return (
     <div className="itc-root">
 
-      {/* ── Header identità ── */}
+      {/* ── Identity header ── */}
       <div className="itc-header">
         <div className="itc-header-top">
           <span className="fi fi-it itc-flag" aria-hidden />
@@ -141,7 +141,7 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
         </p>
       </div>
 
-      {/* ── Risultati simulazione (solo se attiva) — in evidenza prima della griglia ── */}
+      {/* ── Simulation results (only if active) — highlighted before the grid ── */}
       {italyActive && agg && numRuns && (
         <div className="itc-sim-hero">
           <div className="itc-sim-hero-header">
@@ -149,7 +149,7 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
             <span className="itc-sim-badge">{t('italy.sim.badge', { n: nf(numRuns) })}</span>
           </div>
 
-          {/* Stat chiave: Campione + Finale in grande */}
+          {/* Key stats: Champion + Final, large */}
           <div className="itc-sim-hero-stats">
             <div className="itc-sim-hero-stat">
               <span className="itc-sim-hero-val" style={{ color: '#fbbf24' }}>{pctSmart(agg.winProb)}</span>
@@ -170,7 +170,7 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
             </div>
           </div>
 
-          {/* Frase ironica */}
+          {/* Tongue-in-cheek line */}
           {quote && (
             <div className="itc-sim-hero-quote">
               <span className="itc-quote-mark">"</span>
@@ -178,7 +178,7 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
             </div>
           )}
 
-          {/* Percorso completo */}
+          {/* Full run */}
           <div className="itc-phases">
             {PHASES.map((p) => {
               const prob = agg[p.field] as number;
@@ -197,7 +197,7 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
         </div>
       )}
 
-      {/* ── CTA quando Italia non attiva — in cima, subito dopo l'header ── */}
+      {/* ── CTA when Italy is inactive — at the top, right after the header ── */}
       {!italyActive && (
         <div className="itc-tournament-block">
           <div className="itc-cta">
@@ -212,7 +212,7 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
         </div>
       )}
 
-      {/* Citazione ironica quando l'Italia NON è attiva */}
+      {/* Tongue-in-cheek quote when Italy is NOT active */}
       {!italyActive && quote && (
         <div className="itc-quote">
           <span className="itc-quote-mark">"</span>
@@ -220,10 +220,10 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
         </div>
       )}
 
-      {/* ── Griglia dati ── */}
+      {/* ── Data grid ── */}
       <div className="itc-grid">
 
-        {/* Blocco 1: Parametri modello */}
+        {/* Block 1: Model parameters */}
         <div className="itc-block">
           <div className="itc-block-title">{t('italy.block.modelParams')}</div>
           <div className="itc-bars">
@@ -234,7 +234,7 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
           </div>
         </div>
 
-        {/* Blocco 2: Forma e score */}
+        {/* Block 2: Form and scores */}
         <div className="itc-block">
           <div className="itc-block-title">{t('italy.block.formAndIndices')}</div>
           <div className="itc-bars">
@@ -252,7 +252,7 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
           )}
         </div>
 
-        {/* Blocco 3: Palmarès Mondiali */}
+        {/* Block 3: World Cup honours */}
         <div className="itc-block">
           <div className="itc-block-title">{t('italy.block.worldCup')}</div>
           <div className="itc-stats-col">
@@ -266,7 +266,7 @@ export function ItalyCard({ teams, params, teamStats, italyActive, aggregates, n
           </div>
         </div>
 
-        {/* Blocco 4: Palmarès Europei */}
+        {/* Block 4: European Championship honours */}
         <div className="itc-block">
           <div className="itc-block-title">{t('italy.block.euros')}</div>
           <div className="itc-stats-col">

@@ -1,30 +1,30 @@
 /**
- * Geometria del bracket simmetrico, condivisa tra il cinema (animato) e la
- * dashboard (statico). Layout classico playoff: metà match a sinistra, metà a
- * destra, finale al centro; i round interni convergono verso il centro.
+ * Symmetric bracket geometry, shared between the cinema (animated) and the
+ * dashboard (static). Classic playoff layout: half the matches on the left, half
+ * on the right, final in the center; inner rounds converge toward the center.
  */
 
-export const CARD_W   = 150;  // larghezza box partita
-export const CARD_H   = 64;   // altezza box partita
-export const COL_GAP  = 32;   // spazio orizzontale tra colonne
-export const ROW_BASE = 78;   // slot verticale per match del R32
+export const CARD_W   = 150;  // match box width
+export const CARD_H   = 64;   // match box height
+export const COL_GAP  = 32;   // horizontal gap between columns
+export const ROW_BASE = 78;   // vertical slot per R32 match
 
 export interface PlacedMatch {
   roundIdx: number;
   matchIdx: number;
   side: 'L' | 'R' | 'C';
-  x: number; y: number;     // angolo alto-sx
-  cx: number; cy: number;   // centro
+  x: number; y: number;     // top-left corner
+  cx: number; cy: number;   // center
   cardH: number;
   parentRoundIdx: number;
   parentMatchIdx: number;
 }
 
 /**
- * Posiziona ogni match del tabellone in coordinate "mondo".
- *  col 0: R32-L … col finalIdx: Finale … col 2*finalIdx: R32-R
- * Il padre di un match (r, localIdx) è il match (r+1, floor(localIdx/2)) dello
- * stesso lato — usato per disegnare i connettori.
+ * Place every bracket match in "world" coordinates.
+ *  col 0: R32-L … col finalIdx: Final … col 2*finalIdx: R32-R
+ * A match (r, localIdx)'s parent is match (r+1, floor(localIdx/2)) on the same
+ * side — used to draw the connectors.
  */
 export function buildBracketLayout(rounds: { matches: unknown[] }[]) {
   const nRounds  = rounds.length;

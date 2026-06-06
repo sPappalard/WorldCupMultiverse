@@ -1,91 +1,115 @@
-# ⚽ MonteCalcio — Force-Pushing Italy to the World Cup
+# ⚽ World Cup Multiverse — Force-Pushing Italy to the World Cup
 
-Simulatore **interattivo, gratuito e 100% client-side** dei Mondiali 2026.
-Premi *Simula*, guarda il tabellone comporsi dal vivo e ottieni le probabilità
-di vittoria di ogni nazionale, calcolate con una **simulazione Monte Carlo** da
-10.000 run nel browser (~0.6s).
+*(repo codename: **MonteCalcio**)*
 
-> **Feature di punta** 🇮🇹 — L'Italia non si è qualificata (eliminata dalla
-> Bosnia ai rigori nel playoff). Un toggle la rimette nel **Girone B** al posto
-> della Bosnia — lo slot che avrebbe occupato qualificandosi — e ri-esegue
-> tutte le simulazioni. *"L'Italia non c'è ai Mondiali, così l'ho rimessa
-> dentro io."*
+A **free, 100% client-side** interactive simulator of the 2026 FIFA World Cup.
+Hit *Simulate*, watch the bracket fill in live, and get each nation's win
+probability from a **Monte Carlo simulation** of 100,000 runs, computed in your
+browser in a Web Worker.
 
-## Come funziona (in breve)
+> **Flagship feature** 🇮🇹 — Italy didn't qualify (knocked out by Bosnia on
+> penalties in the playoff). A toggle puts them back into **Group B** in Bosnia's
+> place — the slot they'd have taken by qualifying — and re-runs every
+> simulation. *"Italy isn't at the World Cup, so I put them back in myself."*
 
-| Componente | Cosa fa |
+## How it works (in brief)
+
+| Component | What it does |
 |---|---|
-| **Motore-partita** | Poisson bivariato stile **Dixon-Coles**: `λ = exp(intercetta + attacco − difesa [+ casa])`, con correzione DC sui risultati bassi. Da qui escono scoreline realistici e W/D/L. |
-| **Monte Carlo** | In ognuna delle 10.000 run si **estrae** ogni risultato dal modello e avanza il vincitore *estratto* (non il favorito). `P(vittoria) = vittorie / 10.000`. |
-| **Parametri di forza** | Attacco/difesa per squadra stimati **offline** da un modello **bayesiano gerarchico** (PyMC) sui risultati internazionali, con shrinkage informato dall'Elo e time-decay. Il browser usa solo i parametri già stimati. |
-| **What-if** | Fattori euristici impilabili (assenze, infortuni, rientri, squalifiche, caos) che modificano i rating e ri-lanciano la simulazione. |
+| **Match engine** | Bivariate Poisson, **Dixon-Coles** style: `λ = exp(intercept + attack − defense [+ homeAdv])`, with a low-score DC correction. Produces realistic scorelines and W/D/L. Lambdas are then nudged by head-to-head history and by form/value/Elo/KO-experience modulators, plus a shrinkage term that keeps the favorites from over-dominating. |
+| **Monte Carlo** | Each of the 100,000 runs **samples** every result from the model and advances the **sampled** winner (not the favorite). `P(win) = wins / 100,000`. |
+| **Strength parameters** | Per-team attack/defense estimated **offline** by a hierarchical **Bayesian** model (PyMC) on international results, shrunk toward Elo with time-decay. The browser only uses the pre-computed parameters (`model-params.json`); if that file is missing it falls back to deriving strength from Elo. |
+| **What-if** | Stackable heuristic factors (missing star, injuries, returns, suspensions, chaos) that adjust ratings and re-run the simulation. |
 
-## Distinzione importante (onestà metodologica)
+## Important distinction (methodological honesty)
 
-- I **numeri di vittoria** vengono dall'**aggregato** delle 10.000 run.
-- Il **tabellone animato** mostra **una singola simulazione possibile**, etichettata come tale — non è "la previsione".
+- The **win numbers** come from the **aggregate** of the 100,000 runs.
+- The **animated bracket** ("cinema") shows **one possible simulation**, labelled
+  as such — it is not "the prediction". The reveal cards state explicitly that
+  the cinema was 1 run out of 100,000.
 
-L'approccio è **deliberatamente semplice**: l'obiettivo è l'engagement e un
-output condivisibile, non battere i bookmaker. I fattori what-if sono euristiche
-giocose, separate dal motore predittivo. Nessun marchio FIFA ufficiale.
+The approach is **deliberately simple**: the goal is engagement and a shareable
+output, not beating the bookmakers. The what-if factors are playful heuristics,
+separate from the predictive engine. No official FIFA branding.
 
-## Architettura
+## User experience
+
+A short onboarding (Italy in/out + favorite team) → an animated "cinema" of one
+tournament → reveal cards → a card-based dashboard:
+
+- **Monte Carlo results** — win probabilities and a phase-by-phase reach table.
+- **My simulation** — the animated bracket and group results of the sample run.
+- **Teams** — the 48 (or 49 with Italy) teams, sortable, with a **Strength Score**.
+- **Italy focus** — Italy's data and tournament run, or a CTA to activate it.
+- **Matchup** — head-to-head between any two teams.
+- **How it works** — methodology and known limitations.
+
+There's also an **Admin** panel (simple/advanced) to tune the modulator weights,
+and a shareable URL (`?s=…`) that encodes the scenario and auto-runs silently.
+
+## UI languages
+
+The i18n system ships dictionaries for IT/EN/ES/FR with Italian as the source of
+truth, but only **Italian and English** are currently exposed in the switcher
+(ES/FR are work in progress).
+
+## Architecture
 
 ```
 MonteCalcio/
 ├── src/
-│   ├── engine/          # Motore Monte Carlo + Poisson DC (TypeScript, testato)
-│   │   ├── matchModel.ts    # λ, matrice scoreline, correzione Dixon-Coles
-│   │   ├── simulator.ts     # gironi → terze → R32 → finale, aggregazione N run
-│   │   ├── bracket.ts       # struttura ufficiale R32 + allocazione terze
-│   │   └── *.test.ts        # test del motore (vitest)
-│   ├── ui/              # React (interfaccia basic; versione premium in arrivo)
-│   └── config.ts        # num run, prior di fallback, fattori what-if
+│   ├── engine/              # Monte Carlo + Poisson DC engine (pure TypeScript, tested)
+│   │   ├── matchModel.ts        # λ, scoreline matrix, Dixon-Coles correction, H2H + modulators
+│   │   ├── simulator.ts         # groups → best thirds → R32 → final, aggregation over N runs
+│   │   ├── bracket.ts           # official R32 structure + deterministic thirds allocator
+│   │   ├── strengthScore.ts     # synthetic 0–100 Strength Score + factor breakdown
+│   │   ├── rng.ts               # seedable PRNG (mulberry32)
+│   │   └── *.test.ts            # engine tests (vitest)
+│   ├── ui/                  # React UI (App, components, scenario, Web Worker)
+│   ├── i18n/                # client-side translations (it/en/es/fr)
+│   └── config.ts            # run count, fallback priors, what-if factors, modulator weights
 ├── public/data/
-│   ├── teams.json           # 48 squadre + Italia: anagrafica + covariate (Elo, valore rosa)
-│   ├── model-params.json    # OUTPUT della pipeline: attacco/difesa + incertezza
-│   └── validation.json      # OUTPUT della pipeline: RPS/Brier vs baseline
-└── model/               # Pipeline offline Python (build-time, NON in produzione)
-    ├── fit.py               # fitting bayesiano gerarchico (PyMC)
-    ├── validate.py          # back-testing RPS/Brier vs Elo
-    └── README.md            # come rigenerare i parametri
+│   ├── teams.json               # 48 teams + inactive Italy: identity + covariates (Elo, squad value)
+│   ├── model-params.json        # pipeline OUTPUT: per-team attack/defense + global params
+│   ├── h2h.json                 # pipeline OUTPUT: 805 head-to-head pairs
+│   └── team-stats.json          # pipeline OUTPUT: form, knockout and history scores
+└── model/                  # offline Python pipeline (build-time, NOT in production)
+    ├── fit.py                   # hierarchical Bayesian fit (PyMC)
+    ├── build_h2h.py             # head-to-head aggregation
+    ├── build_team_stats.py      # form/knockout/history stats
+    ├── validate.py              # RPS/Brier back-testing vs Elo baseline
+    └── README.md                # how to regenerate the data
 ```
 
-**Runtime** (browser): React + Vite, TypeScript puro per il motore, nessuna API,
-nessun backend. **Pipeline** (Python): gira una tantum, vedi [`model/README.md`](model/README.md).
+**Runtime** (browser): React + Vite, pure TypeScript engine, no API, no backend —
+the page loads only static JSON. **Pipeline** (Python): runs once, see
+[`model/README.md`](model/README.md).
 
-## Sviluppo
+## Development
 
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm run build      # build di produzione in dist/
-npx vitest run     # test del motore
+npm run build      # production build in dist/
+npm run typecheck  # tsc --noEmit
+npx vitest run     # engine tests
 ```
 
-## Validazione del motore-partita
+## Data and sources
 
-Back-test sulle singole partite dei Mondiali **2018 e 2022** (held-out), con
-**RPS** (Ranked Probability Score, standard nel calcio) e **Brier score**,
-confrontati con una baseline Elo. RPS/Brier più bassi = meglio.
+- **2026 group draw**: official (5 Dec 2025), via Wikipedia. Bosnia in Group B.
+- **Round of 32 structure**: Wikipedia "2026 FIFA World Cup knockout stage".
+- **Elo ratings**: snapshot **19 January 2026** (eloratings.net via Wikipedia).
+- **Squad value**: approximate estimates (secondary covariate).
+- **Historical dataset**: "International football results 1872–2026" (Kaggle), ~49k matches.
 
-<!-- VALIDATION_PLACEHOLDER -->
-*(Numeri popolati da `model/validate.py` → `public/data/validation.json`.)*
+## Known limitations (stated honestly)
 
-## Dati e fonti
-
-- **Sorteggio gironi 2026**: ufficiale (5 dic 2025), via Wikipedia. Bosnia nel Girone B.
-- **Struttura Round of 32**: Wikipedia "2026 FIFA World Cup knockout stage".
-- **Elo ratings**: snapshot **19 gennaio 2026** (eloratings.net via Wikipedia).
-- **Valore rosa**: stime approssimative (covariata secondaria).
-- **Dataset storico**: "International football results 1872–2026" (Kaggle), ~49k partite.
-
-## Limiti noti (dichiarati onestamente)
-
-- I fattori what-if sono **euristiche giocose**, non parte del motore "serio".
-- L'allocazione esatta delle 8 migliori terze nel Round of 32 usa un
-  **allocatore deterministico** che rispetta i vincoli reali FIFA (una terza non
-  affronta la vincente del proprio girone, pesca dall'insieme di gironi-candidati
-  del match). Può differire dallo slotting esatto dell'Annex C in combinazioni
-  rare; effetto trascurabile sulle probabilità aggregate. *(Da validare.)*
-- Gli Elo sono uno snapshot; il modello non aggiorna i dati automaticamente (v2).
+- The what-if factors are **playful heuristics**, not part of the "serious" engine.
+- Allocation of the 8 best third-placed teams in the Round of 32 uses a
+  **deterministic allocator** that respects FIFA's real constraints (a third
+  never faces its own group's winner, and draws from the match's candidate
+  groups). It can differ from the exact Annex C slotting in rare combinations;
+  negligible effect on the aggregate probabilities. *(To validate.)*
+- Squad values are estimated, not scraped from Transfermarkt.
+- Elo is a snapshot; the model does not auto-update its data.

@@ -1,13 +1,13 @@
 /**
- * Onboarding — schermata intro a tutto schermo (fase premium).
+ * Onboarding — full-screen intro screen.
  *
- * Obiettivo: catturare l'utente in pochi secondi, senza fargli perdere tempo.
- * Tre passi leggeri, quasi tutti a click singolo (niente "Continua" obbligatorio):
- *   0. Italia DENTRO o FUORI — l'unica scelta vera. Click → avanza da solo.
- *   1. Squadra del cuore — minimale, saltabile. Click su una squadra → avanza.
- *   2. What-if extra — opzionali e NASCOSTI: compaiono solo se l'utente li chiede.
+ * Goal: hook the user in a few seconds without wasting their time.
+ * Three light steps, mostly single-click (no mandatory "Continue"):
+ *   0. Italy IN or OUT — the one real choice. Click → auto-advances.
+ *   1. Favorite team — minimal, skippable. Click a team → advances.
+ *   2. Extra what-ifs — optional and HIDDEN: shown only if the user asks.
  *
- * Produce uno Scenario (riusa i tipi del motore) + favoriteTeam.
+ * Produces a Scenario (reuses the engine types) + favoriteTeam.
  */
 
 import { useMemo, useState } from 'react';
@@ -36,18 +36,18 @@ export function Onboarding({ teams, onComplete }: Props) {
   const teamName = useTeamName();
   const [step, setStep] = useState<Step>(0);
   const [withItaly, setWithItaly] = useState<boolean | null>(null);
-  /** Fattori what-if già configurati (con squadre bersaglio e intensità). */
+  /** What-if factors already configured (with target teams and intensity). */
   const [factors, setFactors] = useState<AppliedFactor[]>([]);
   const [chaos, setChaos] = useState(0);
-  /** Step 2: l'utente ha chiesto di vedere i what-if extra? Altrimenti restano nascosti. */
+  /** Step 2: did the user ask to see the extra what-ifs? Otherwise hidden. */
   const [wantWhatIf, setWantWhatIf] = useState<boolean | null>(null);
   const [favorite, setFavorite] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [leaving, setLeaving] = useState(false);
 
-  // Squadre attive (48) + Italia se inserita. Usate sia come bersaglio what-if
-  // sia come "squadra del cuore". Con l'Italia dentro, la Bosnia esce dal torneo
-  // (sostituita nel Girone B): non deve essere selezionabile.
+  // Active teams (48) + Italy if inserted. Used both as what-if targets and as
+  // the "favorite team". With Italy in, Bosnia leaves the tournament (replaced in
+  // Group B): it must not be selectable.
   const activePool = useMemo(
     () =>
       teams.filter(
@@ -98,7 +98,7 @@ export function Onboarding({ teams, onComplete }: Props) {
     }
   };
 
-  /** Step 0: clic sulla scelta Italia → micro-pausa per far "accendere" la card, poi avanza. */
+  /** Step 0: click the Italy choice → brief pause to let the card "light up", then advance. */
   const pickItaly = (val: boolean) => {
     setWithItaly(val);
     setTimeout(() => setStep(1), 400);
@@ -106,8 +106,8 @@ export function Onboarding({ teams, onComplete }: Props) {
 
   const finish = (favOverride?: string | null) => {
     cinemaAudio.warm();
-    // Teniamo solo i fattori che hanno davvero un bersaglio (gli altri sarebbero
-    // no-op nel motore). Italia + caos + squadra del cuore completano lo scenario.
+    // Keep only factors that actually have a target (others would be no-ops in
+    // the engine). Italy + chaos + favorite team complete the scenario.
     const validFactors = wantWhatIf ? factors.filter((f) => (f.teamIds?.length ?? 0) > 0) : [];
     const scenario: Scenario = {
       ...emptyScenario,
@@ -137,7 +137,7 @@ export function Onboarding({ teams, onComplete }: Props) {
           </div>
         </header>
 
-        {/* ── STEP 0 — Italia dentro o fuori (unica scelta vera) ── */}
+        {/* ── STEP 0 — Italy in or out (the one real choice) ── */}
         {step === 0 && (
           <section className="ob-step">
             <p className="ob-kicker">{tr('ob.step0.kicker')}</p>
@@ -169,7 +169,7 @@ export function Onboarding({ teams, onComplete }: Props) {
                 onClick={() => pickItaly(false)}
               >
                 <span className="ob-choice-icon ob-choice-icon--real">
-                  {/* globo stilizzato */}
+                  {/* stylized globe */}
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <circle cx="12" cy="12" r="10"/>
                     <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
@@ -185,7 +185,7 @@ export function Onboarding({ teams, onComplete }: Props) {
           </section>
         )}
 
-        {/* ── STEP 1 — Squadra del cuore (minimal, saltabile) ── */}
+        {/* ── STEP 1 — Favorite team (minimal, skippable) ── */}
         {step === 1 && (
           <section className="ob-step">
             <p className="ob-kicker">{tr('ob.step1.kicker')}</p>
@@ -220,7 +220,7 @@ export function Onboarding({ teams, onComplete }: Props) {
           </section>
         )}
 
-        {/* ── STEP 2 — What-if extra (opzionali, nascosti finché non richiesti) ── */}
+        {/* ── STEP 2 — Extra what-ifs (optional, hidden until requested) ── */}
         {step === 2 && (
           <section className="ob-step">
             <p className="ob-kicker">{tr('ob.step2.kicker')}</p>
@@ -319,7 +319,7 @@ export function Onboarding({ teams, onComplete }: Props) {
                     );
                   })}
 
-                  {/* Fattore Caos — slider globale */}
+                  {/* Chaos factor — global slider */}
                   <div className={`ob-factor-block ${chaos > 0 ? 'on' : ''}`}>
                     <div className="ob-factor ob-factor--static">
                       <span className="ob-factor-emoji">🎲</span>
@@ -344,7 +344,7 @@ export function Onboarding({ teams, onComplete }: Props) {
           </section>
         )}
 
-        {/* ── Footer azioni: solo Indietro + Salta, niente "Continua" ── */}
+        {/* ── Footer actions: only Back + Skip, no "Continue" ── */}
         <footer className="ob-actions">
           {step > 0 ? (
             <button className="ob-btn ob-btn-ghost" onClick={back}>

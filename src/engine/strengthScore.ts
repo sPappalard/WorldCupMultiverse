@@ -1,18 +1,17 @@
 /**
- * Punteggio Forza: un numero sintetico per squadra che riassume TUTTO ciò che
- * agisce nella simulazione, usando i pesi correnti dei modulatori:
- *   - parametri bayesiani attack/defense (core)
- *   - modulatori Elo, valore rosa, forma
- *   - storico H2H
- *   - equilibratore (lambdaShrink)
- *   - vantaggio campo per le host (peso ridotto: vale solo nei gironi)
- *   - esperienza KO (knockout + storia) che decide i rigori
+ * Strength Score: one synthetic number per team that captures EVERYTHING acting
+ * in the simulation, using the current modulator weights:
+ *   - Bayesian attack/defense parameters (core)
+ *   - Elo, squad-value and form modulators
+ *   - H2H history
+ *   - shrinkage (lambdaShrink)
+ *   - home advantage for the hosts (reduced weight: group stage only)
+ *   - KO experience (knockout + history) that decides shootouts
  *
- * Metodo: per ogni squadra calcoliamo la probabilità media di vittoria contro
- * TUTTE le altre, mescolando lo scenario gironi (con eventuale vantaggio campo)
- * e lo scenario KO (dove i pareggi vanno ai rigori, assegnati con l'edge di
- * esperienza). Poi mappiamo il win-rate medio su scala 0–100. Riflette
- * esattamente la pipeline reale del motore.
+ * Method: for each team, compute its average win probability against ALL others,
+ * blending the group scenario (with possible home advantage) and the KO scenario
+ * (where draws go to penalties, assigned via the experience edge). Then map the
+ * average win rate onto a 0–100 scale. Mirrors the engine's real pipeline.
  */
 
 import type { Team, ModelParams, H2HRecord, TeamStats, ModulatorConfig, GlobalParams } from './types';
@@ -21,11 +20,11 @@ import { config } from '../config';
 
 export interface TeamStrengthScore {
   teamId: string;
-  /** Punteggio normalizzato 0–100 (la squadra più forte ≈ 100). */
+  /** Normalized 0–100 score (the strongest team ≈ 100). */
   score: number;
-  /** Probabilità media di vittoria contro tutte le altre (0–1). */
+  /** Average win probability against all others (0–1). */
   avgWinRate: number;
-  /** Probabilità media di non perdere (vittoria + pareggio), 0–1. */
+  /** Average not-lose probability (win + draw), 0–1. */
   avgNotLoseRate: number;
 }
 
@@ -35,11 +34,11 @@ export interface StrengthInput {
   h2h?: Map<string, H2HRecord>;
   teamStats?: Map<string, TeamStats>;
   modulators: ModulatorConfig;
-  /** Se true include anche l'Italia (ITA) trattandola come attiva. */
+  /** If true, also include Italy (ITA), treating it as active. */
   includeItaly?: boolean;
 }
 
-/** P(home>away) e P(pari) da una distribuzione scoreline cumulata. */
+/** P(home>away) and P(draw) from a cumulative scoreline distribution. */
 function outcomesFrom(flat: Float64Array, cols: number): { win: number; draw: number } {
   let win = 0, draw = 0;
   for (let idx = 0; idx < flat.length; idx++) {
@@ -53,8 +52,8 @@ function outcomesFrom(flat: Float64Array, cols: number): { win: number; draw: nu
 }
 
 /**
- * Probabilità di vincere ai rigori, replicando esattamente la logica del
- * simulatore: base = quota λ, corretta dall'esperienza KO (knockout + storia).
+ * Penalty-shootout win probability, replicating the simulator exactly:
+ * base = λ share, corrected by KO experience (knockout + history).
  */
 function penaltyWinProb(
   a: Team, b: Team,
@@ -72,15 +71,15 @@ function penaltyWinProb(
 }
 
 /**
- * Frazione della "vita" di una squadra nel torneo giocata ai gironi (dove il
- * vantaggio campo conta per le host) vs nei KO. Un torneo ha 3 partite di
- * girone + fino a 7 KO: pesiamo il campo in proporzione ai gironi, scontato.
+ * Fraction of a team's tournament "life" played in the group stage (where home
+ * advantage counts for the hosts) vs the knockouts. A run is 3 group matches +
+ * up to 7 KO matches, so we weight home advantage by the discounted group share.
  */
-const GROUP_SHARE = 3 / 10; // ~3 gironi su ~10 partite totali potenziali
+const GROUP_SHARE = 3 / 10; // ~3 group games out of ~10 potential total
 
 /**
- * Calcola il Punteggio Forza per tutte le squadre rilevanti.
- * Complessità O(n²) sulle ~48 squadre: trascurabile (pochi ms).
+ * Compute the Strength Score for every relevant team.
+ * O(n²) over the ~48 teams: negligible (a few ms).
  */
 export function computeStrengthScores(input: StrengthInput): TeamStrengthScore[] {
   const pool = input.teams.filter((t) => t.active || (input.includeItaly && t.id === 'ITA'));
@@ -91,7 +90,7 @@ export function computeStrengthScores(input: StrengthInput): TeamStrengthScore[]
     rho: config.modelDefaults.rho,
   };
 
-  // Statistiche modulatori calcolate sulle sole squadre attive (coerente col motore).
+  // Modulator stats computed over active teams only (consistent with the engine).
   const activeForStats = input.teams.filter((t) => t.active);
   const modStats = buildModulatorStats(
     activeForStats.map((t) => t.elo),
@@ -110,7 +109,7 @@ export function computeStrengthScores(input: StrengthInput): TeamStrengthScore[]
     for (const b of pool) {
       if (a.id === b.id) continue;
 
-      // --- Scenario KO (neutro, con bonus esperienza sull'intera partita) ---
+      // --- KO scenario (neutral venue, whole-match experience bonus) ---
       const distKo = scorelineDist(
         strengthOf(a), strengthOf(b), globalParams, false,
         a.id, b.id, input.h2h, input.teamStats,
@@ -118,13 +117,13 @@ export function computeStrengthScores(input: StrengthInput): TeamStrengthScore[]
         modStats, mod, /* knockout */ true,
       );
       const ko = outcomesFrom(distKo.flat, distKo.cols);
-      // Nei KO i pareggi vanno ai rigori: assegniamo i pari secondo l'edge
-      // esperienza (knockout + storia), esattamente come nel simulatore.
+      // In KO, draws go to penalties: assign the draws by the experience edge
+      // (knockout + history), exactly as the simulator does.
       const pPenA = penaltyWinProb(a, b, distKo.lambdaHome, distKo.lambdaAway, input.teamStats, mod);
       const koWin = ko.win + ko.draw * pPenA;
-      const koNotLose = ko.win + ko.draw; // non-perdere = non eliminato nei 90'
+      const koNotLose = ko.win + ko.draw; // not-lose = not eliminated in 90'
 
-      // --- Scenario girone (vantaggio campo se a è host) ---
+      // --- Group scenario (home advantage if a is a host) ---
       let grpWin = ko.win;
       let grpNotLose = ko.win + ko.draw;
       if (a.isHost) {
@@ -139,7 +138,7 @@ export function computeStrengthScores(input: StrengthInput): TeamStrengthScore[]
         grpNotLose = g.win + g.draw;
       }
 
-      // Forza complessiva = mix gironi (con campo) + KO (con rigori).
+      // Overall strength = blend of group (with home adv) + KO (with penalties).
       const win = GROUP_SHARE * grpWin + (1 - GROUP_SHARE) * koWin;
       const notLose = GROUP_SHARE * grpNotLose + (1 - GROUP_SHARE) * koNotLose;
       sumWin += win;
@@ -151,7 +150,7 @@ export function computeStrengthScores(input: StrengthInput): TeamStrengthScore[]
     results.push({ teamId: a.id, score: 0, avgWinRate, avgNotLoseRate });
   }
 
-  // Normalizza il win-rate medio su 0–100 (min→0, max→100).
+  // Normalize the average win rate onto 0–100 (min→0, max→100).
   const rates = results.map((r) => r.avgWinRate);
   const min = Math.min(...rates);
   const max = Math.max(...rates);
@@ -164,16 +163,17 @@ export function computeStrengthScores(input: StrengthInput): TeamStrengthScore[]
   return results;
 }
 
-// ─── Scomposizione: quanto pesa ogni componente sul Punteggio Forza ──────────
+// ─── Breakdown: how much each component weighs on the Strength Score ─────────
 
 export interface StrengthComponent {
   key: 'core' | 'elo' | 'value' | 'form' | 'h2h' | 'home' | 'koExp';
+  /** Display label; the UI renders by `key` via i18n, so this is informational. */
   label: string;
-  /** Quota percentuale del contributo (0–100), somma ≈ 100. */
+  /** Percentage share of the contribution (0–100), sums to ≈ 100. */
   pct: number;
 }
 
-/** Deviazione standard di una lista (quanto un fattore differenzia le squadre). */
+/** Standard deviation of a list (how much a factor differentiates teams). */
 function stdev(xs: number[]): number {
   if (xs.length === 0) return 0;
   const m = xs.reduce((a, b) => a + b, 0) / xs.length;
@@ -181,14 +181,13 @@ function stdev(xs: number[]): number {
 }
 
 /**
- * Scompone il Punteggio Forza nei contributi dei singoli fattori.
+ * Decompose the Strength Score into per-factor contributions.
  *
- * Idea: tutti i fattori agiscono in scala log-λ (additiva). Per ciascuno
- * misuriamo quanto FA VARIARE la forza tra le squadre (deviazione standard del
- * suo contributo sul pool): un fattore che dà a tutti lo stesso valore non
- * differenzia nessuno e pesa 0; uno che separa molto le squadre pesa tanto.
- * Le quote sono normalizzate a 100. Reattivo ai pesi: azzerare un coeff in
- * Admin porta la sua fetta a 0.
+ * Idea: all factors act in (additive) log-λ scale. For each one we measure how
+ * much it VARIES strength across teams (std dev of its contribution over the
+ * pool): a factor that gives everyone the same value differentiates nobody and
+ * weighs 0; one that spreads teams far apart weighs a lot. Shares are normalized
+ * to 100. Reactive to the weights: zeroing a coeff in Admin drops its slice to 0.
  */
 export function computeStrengthBreakdown(input: StrengthInput): StrengthComponent[] {
   const pool = input.teams.filter((t) => t.active || (input.includeItaly && t.id === 'ITA'));
@@ -203,8 +202,8 @@ export function computeStrengthBreakdown(input: StrengthInput): StrengthComponen
 
   const strengthOf = (t: Team) => input.params?.teams[t.id] ?? eloToStrength(t.elo);
 
-  // Contributo log-λ di ciascun fattore, per ogni squadra.
-  const core: number[] = [];   // attack + defense bayesiani (forza di gioco)
+  // Log-λ contribution of each factor, per team.
+  const core: number[] = [];   // Bayesian attack + defense (on-pitch strength)
   const elo: number[] = [];
   const value: number[] = [];
   const form: number[] = [];
@@ -218,20 +217,20 @@ export function computeStrengthBreakdown(input: StrengthInput): StrengthComponen
     value.push(((t.squadValue ?? 0) - valueMean) / valueSd * mod.squadValueCoeff);
     const stats = input.teamStats?.get(t.id);
     form.push(stats ? ((stats.form.score - 50) / 50) * mod.formCoeff : 0);
-    // Esperienza KO: agisce sull'intera partita KO (koMatchCoeff, ~70% del
-    // torneo) e sui rigori (koExperienceCoeff, solo i pari). Sommiamo i due
-    // contributi pesati per la loro presenza nel torneo.
+    // KO experience: acts on the whole KO match (koMatchCoeff, ~70% of the
+    // tournament) and on penalties (koExperienceCoeff, draws only). Sum the two
+    // contributions, weighted by their presence in the tournament.
     const koScore = stats
       ? mod.koKnockoutWeight * stats.knockout.score + mod.koHistoryWeight * stats.history.score
       : 50;
     const koCentered = (koScore - 50) / 100;
     koExp.push(koCentered * (mod.koMatchCoeff * (1 - GROUP_SHARE) + mod.koExperienceCoeff * 0.1));
-    // Vantaggio campo: solo host, scontato per la quota gironi.
+    // Home advantage: hosts only, discounted by the group share.
     home.push(t.isHost ? mod.homeAdvBoost * GROUP_SHARE : 0);
   }
 
-  // H2H: stima della magnitudine media (dipende da h2hMaxBoost e dai dati).
-  // Usiamo una proxy: per ogni squadra, lo scarto medio del boost H2H vs 1.
+  // H2H: estimate the average magnitude (depends on h2hMaxBoost and the data).
+  // Proxy: per team, the average deviation of the H2H boost from 1.
   const h2hMag: number[] = pool.map((a) => {
     if (!input.h2h || input.h2h.size === 0) return 0;
     let sum = 0, c = 0;
@@ -239,7 +238,7 @@ export function computeStrengthBreakdown(input: StrengthInput): StrengthComponen
       if (a.id === b.id) continue;
       const rec = input.h2h.get([a.id, b.id].sort().join('|'));
       if (!rec || rec.n < 3) continue;
-      // ampiezza tipica del boost ∝ h2hMaxBoost, pesata da quanti dati ci sono
+      // typical boost size ∝ h2hMaxBoost, weighted by how much data exists
       const w = Math.min(1, Math.sqrt(rec.n / config.h2h.h2hMinMatches));
       sum += mod.h2hMaxBoost * w;
       c++;
@@ -247,7 +246,7 @@ export function computeStrengthBreakdown(input: StrengthInput): StrengthComponen
     return c > 0 ? sum / c : 0;
   });
 
-  // Magnitudine = quanto ogni fattore DIFFERENZIA le squadre.
+  // Magnitude = how much each factor DIFFERENTIATES the teams.
   const mags: Record<StrengthComponent['key'], number> = {
     core: stdev(core),
     elo: stdev(elo),
@@ -260,13 +259,13 @@ export function computeStrengthBreakdown(input: StrengthInput): StrengthComponen
 
   const total = Object.values(mags).reduce((a, b) => a + b, 0) || 1;
   const labels: Record<StrengthComponent['key'], string> = {
-    core: '⚔️ Forza di gioco (att/dif)',
+    core: '⚔️ On-pitch strength (att/def)',
     elo: '📊 Elo',
-    value: '💰 Valore rosa',
-    form: '🔥 Forma',
-    koExp: '🏆 Esperienza KO/storia',
-    home: '🏟️ Vantaggio campo',
-    h2h: '📋 Scontri diretti',
+    value: '💰 Squad value',
+    form: '🔥 Form',
+    koExp: '🏆 KO experience/history',
+    home: '🏟️ Home advantage',
+    h2h: '📋 Head-to-head',
   };
 
   return (Object.keys(mags) as StrengthComponent['key'][])

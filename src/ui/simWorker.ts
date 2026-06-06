@@ -1,15 +1,14 @@
 /**
- * Web Worker: esegue la simulazione Monte Carlo fuori dal main thread, così la
- * UI resta fluida (spinner animato) anche durante le 100k run.
+ * Web Worker: runs the Monte Carlo simulation off the main thread so the UI
+ * stays smooth (animated spinner) even during the 100k runs.
  *
- * Le Map non sono strutturate-clonabili in modo affidabile attraverso i tipi
- * del nostro dominio, quindi le serializziamo come array di entries nel
- * messaggio in ingresso e le ricostruiamo qui.
+ * Maps don't structured-clone reliably through our domain types, so we
+ * serialize them as entry arrays in the request message and rebuild them here.
  */
 import { simulate, type SimInput } from '../engine/simulator';
 import type { H2HRecord, TeamStats, SampleRun } from '../engine/types';
 
-/** Payload del messaggio: SimInput con le Map appiattite in entries. */
+/** Message payload: SimInput with the Maps flattened to entries. */
 export interface SimWorkerRequest {
   teams: SimInput['teams'];
   params: SimInput['params'];
@@ -48,7 +47,7 @@ self.onmessage = (e: MessageEvent<SimWorkerRequest>) => {
         self.postMessage(msg);
       },
       onSample: (sample) => {
-        // Notifica la sample run appena pronta: il cinema può già partire.
+        // Notify the sample run as soon as it's ready: the cinema can start.
         const msg: SimWorkerMessage = { type: 'sample', sample };
         self.postMessage(msg);
       },

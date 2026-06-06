@@ -1,8 +1,8 @@
 /**
- * RevealCards — traghetto narrativo dal cinema alla dashboard.
- * Sequenza di schede che, una dopo l'altra, riportano l'utente dall'emozione
- * della singola run ai numeri aggregati. Onestà metodologica (invariante §6):
- * la prima scheda dichiara esplicitamente che il cinema era 1 run su 100.000.
+ * RevealCards — narrative bridge from the cinema to the dashboard.
+ * A sequence of cards that walk the user from the single-run thrill to the
+ * aggregate numbers. Methodological honesty: the first card states explicitly
+ * that the cinema was 1 run out of 100,000.
  */
 import { useState } from 'react';
 import type { TeamAggregate, Team } from '../../engine/types';
@@ -17,7 +17,7 @@ interface Props {
   championId: string;
   italyActive: boolean;
   onDone: () => void;
-  /** Solo se italyActive: apre la card Focus Italia nella dashboard. */
+  /** Only if italyActive: opens the Italy focus card in the dashboard. */
   onOpenItaly?: () => void;
 }
 
@@ -31,14 +31,14 @@ export function RevealCards({
   const champ = teamsById.get(championId);
   const champAgg = aggregates.find((a) => a.teamId === championId);
 
-  // Posizione e dati dell'Italia nell'aggregato (solo se attiva e fuori dalla top5).
+  // Italy's rank and data in the aggregate (only if active and outside the top 5).
   const italyRank = italyActive ? aggregates.findIndex((a) => a.teamId === 'ITA') : -1;
   const italyAgg  = italyRank >= 0 ? aggregates[italyRank] : undefined;
   const italyTeam = teamsById.get('ITA');
   const showItalyRow = italyActive && italyAgg && italyTeam && italyRank >= 5;
 
   const cards = [
-    // 1. Frame onesto
+    // 1. Honest framing
     {
       key: 'honest',
       render: () => (
@@ -58,7 +58,7 @@ export function RevealCards({
         </>
       ),
     },
-    // 2. Probabilità reali
+    // 2. Real probabilities
     {
       key: 'probs',
       render: () => (
@@ -90,7 +90,7 @@ export function RevealCards({
                 </div>
               );
             })}
-            {/* Riga Italia se è fuori dalla top 5 */}
+            {/* Italy row if outside the top 5 */}
             {showItalyRow && (
               <>
                 <div className="rev-top5-separator" aria-hidden>···</div>
@@ -110,7 +110,7 @@ export function RevealCards({
         </>
       ),
     },
-    // 3. Percorso
+    // 3. Run
     {
       key: 'path',
       render: () => (

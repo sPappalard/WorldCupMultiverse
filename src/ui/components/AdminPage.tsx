@@ -1,12 +1,12 @@
 /**
- * Pagina Admin — due livelli.
+ * Admin page — two levels.
  *
- * SEMPLICE (default): poche "leve" concettuali con Basso/Medio/Alto, pensate
- * per chi non mastica dati. All'apertura un avviso una-tantum rassicura che
- * tutto è già calibrato. In fondo, "Opzioni avanzate" (con conferma) sblocca…
+ * SIMPLE (default): a few conceptual "levers" with Low/Medium/High, for users
+ * who aren't into data. A one-time notice on open reassures that everything is
+ * already calibrated. At the bottom, "Advanced options" (with confirm) unlocks…
  *
- * AVANZATA: il pannello tecnico completo (slider coefficienti, effetti %, mix
- * KO, classifica forza), pensato per chi di dati ne capisce.
+ * ADVANCED: the full technical panel (coefficient sliders, % effects, KO mix,
+ * strength ranking), for users comfortable with data.
  */
 
 import { useState, useCallback, useMemo } from 'react';
@@ -19,18 +19,18 @@ import { useT } from '../../i18n';
 interface Props {
   modulators: ModulatorConfig;
   onChange: (m: ModulatorConfig) => void;
-  /** Applica i pesi E rilancia la simulazione (chiude il pannello). */
+  /** Apply the weights AND re-run the simulation (closes the panel). */
   onApplyAndSimulate?: (m: ModulatorConfig) => void;
-  /** Applica i pesi correnti e apre la classifica forza nella pagina Squadre. */
+  /** Apply the current weights and open the strength ranking in the Teams page. */
   onGenerateRanking?: (m: ModulatorConfig) => void;
-  /** Dati per scomporre il Punteggio Forza nel grafico a torta. */
+  /** Data to decompose the Strength Score in the pie chart. */
   teams: Team[];
   params: ModelParams | null;
   h2h: Map<string, H2HRecord>;
   teamStats: Map<string, TeamStats>;
 }
 
-/** Sezioni del pannello, per la navigazione ad ancore. */
+/** Panel sections, for anchor navigation. */
 const ADM_SECTION_IDS = [
   { id: 'adm-sec-lambda', key: 'admin.nav.lambda' },
   { id: 'adm-sec-h2h',    key: 'admin.nav.h2h' },
@@ -40,7 +40,7 @@ const ADM_SECTION_IDS = [
   { id: 'adm-sec-ranking',key: 'admin.nav.ranking' },
 ];
 
-/** Converte un coefficiente log-lambda in percentuale di variazione gol. */
+/** Convert a log-lambda coefficient into a goal-change percentage. */
 function toGolPct(coeff: number, maxAdj: number): string {
   const pct = (Math.exp(maxAdj * coeff) - 1) * 100;
   return `±${pct.toFixed(1)}%`;
@@ -76,7 +76,7 @@ interface SliderProps {
   resetTitle: string;
   resetLabel: string;
   coeffLabel: string;
-  /** Override del testo a sinistra (default: "coeff: X.XXX"). */
+  /** Override for the left-hand text (default: "coeff: X.XXX"). */
   valueLabel?: React.ReactNode;
 }
 
@@ -124,7 +124,7 @@ function ModSlider({
   );
 }
 
-/** Mostra un esempio concreto di partita con i modulatori correnti. */
+/** Show a concrete example match with the current modulators. */
 function LiveExample({ mod }: { mod: ModulatorConfig }) {
   const { t } = useT();
   const formBoostHot  = (Math.exp(((85 - 50) / 50) * mod.formCoeff) - 1) * 100;
@@ -201,7 +201,7 @@ function LiveExample({ mod }: { mod: ModulatorConfig }) {
 
 type LeverLevel = 'low' | 'mid' | 'high';
 
-/* Icone line-art minimali (stile premium del sito), niente emoji decorative. */
+/* Minimal line-art icons (matching the site style), no decorative emoji. */
 const svgProps = {
   width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none',
   stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
@@ -227,7 +227,7 @@ const IconSpark = () => (
 const IconCard = () => (
   <svg {...svgProps}><rect x="6" y="3" width="12" height="18" rx="2"/></svg>
 );
-/* Icone grandi per i dialog (32px). */
+/* Large icons for the dialogs (32px). */
 const IconSliders = () => (
   <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.3" fill="var(--surface-1)"/><circle cx="15" cy="12" r="2.3" fill="var(--surface-1)"/><circle cx="8" cy="17" r="2.3" fill="var(--surface-1)"/></svg>
 );
@@ -263,7 +263,7 @@ const SIMPLE_LEVER_DEFS: SimpleLeverDef[] = [
   },
 ];
 
-/** Selettore a 3 livelli, stile segmented-control premium. */
+/** 3-level selector, segmented-control style. */
 function LeverCard({ def, mod, onPick }: {
   def: SimpleLeverDef;
   mod: ModulatorConfig;
@@ -302,7 +302,7 @@ function LeverCard({ def, mod, onPick }: {
   );
 }
 
-/** Card scenario what-if (intuitivo): mostra solo l'intensità, niente "pt Elo". */
+/** What-if scenario card (intuitive): shows intensity only, no "Elo pts". */
 function SimpleWhatIf({ mod, onChange }: { mod: ModulatorConfig; onChange: (m: ModulatorConfig) => void }) {
   const { t } = useT();
   const items: { key: keyof ModulatorConfig['whatIf']; icon: React.ReactNode; labelKey: string; sign: 'neg' | 'pos' }[] = [
@@ -408,7 +408,7 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
   const resetLabel = t('admin.reset');
   const coeffLabel = t('admin.coeff');
 
-  // ── DIALOG condivisi ──
+  // ── Shared dialogs ──
   const dialogs = (
     <>
       {showIntro && (
@@ -458,7 +458,7 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
   );
 
   // ════════════════════════════════════════════════════════════════
-  // VISTA SEMPLICE
+  // SIMPLE VIEW
   // ════════════════════════════════════════════════════════════════
   if (mode === 'simple') {
     return (
@@ -508,7 +508,7 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
   }
 
   // ════════════════════════════════════════════════════════════════
-  // VISTA AVANZATA — pannello tecnico completo.
+  // ADVANCED VIEW — full technical panel.
   // ════════════════════════════════════════════════════════════════
   return (
     <div className="adm-page">
@@ -533,7 +533,7 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
         </div>
       </div>
 
-      {/* Navigazione rapida tra le sezioni */}
+      {/* Quick navigation between sections */}
       <nav className="adm-nav">
         {ADM_SECTION_IDS.map((s) => (
           <a key={s.id} href={`#${s.id}`} className="adm-nav-link">
@@ -544,7 +544,7 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
 
       <div className="adm-sections">
 
-        {/* SEZIONE 1: Modulatori su ogni partita */}
+        {/* SECTION 1: Per-match modulators */}
         <section className="adm-section" id="adm-sec-lambda">
           <h3 className="adm-section-title">
             {t('admin.sec.lambda.title.pre')}<em>{t('admin.sec.lambda.title.em')}</em>{t('admin.sec.lambda.title.post')}
@@ -608,7 +608,7 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
           />
         </section>
 
-        {/* SEZIONE 2: Scontri diretti H2H */}
+        {/* SECTION 2: Head-to-head H2H */}
         <section className="adm-section" id="adm-sec-h2h">
           <h3 className="adm-section-title">
             {t('admin.sec.h2h.title.pre')}<em>{t('admin.sec.h2h.title.em')}</em>
@@ -629,7 +629,7 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
           />
         </section>
 
-        {/* SEZIONE 3: Vantaggio campo */}
+        {/* SECTION 3: Home advantage */}
         <section className="adm-section" id="adm-sec-home">
           <h3 className="adm-section-title">
             {t('admin.sec.home.title.pre')}<em>{t('admin.sec.home.title.em')}</em>
@@ -651,7 +651,7 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
           />
         </section>
 
-        {/* SEZIONE 4: Esperienza KO */}
+        {/* SECTION 4: KO experience */}
         <section className="adm-section" id="adm-sec-ko">
           <h3 className="adm-section-title">
             {t('admin.sec.ko.title.pre')}<em>{t('admin.sec.ko.title.em')}</em>
@@ -715,7 +715,7 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
           </div>
         </section>
 
-        {/* SEZIONE 5: Pesi degli scenari what-if */}
+        {/* SECTION 5: What-if scenario weights */}
         <section className="adm-section" id="adm-sec-whatif">
           <h3 className="adm-section-title">
             {t('admin.sec.whatif.title.pre')}<em>{t('admin.sec.whatif.title.em')}</em>
@@ -780,7 +780,7 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
           />
         </section>
 
-        {/* SEZIONE 6: Genera classifica forza */}
+        {/* SECTION 6: Generate strength ranking */}
         <section className="adm-section" id="adm-sec-ranking">
           <h3 className="adm-section-title">
             {t('admin.sec.ranking.title.pre')}<em>{t('admin.sec.ranking.title.em')}</em>
@@ -803,10 +803,10 @@ export function AdminPage({ modulators, onChange, onApplyAndSimulate, onGenerate
           </button>
         </section>
 
-        {/* Anteprima effetti live */}
+        {/* Live effects preview */}
         <LiveExample mod={localMod} />
 
-        {/* Tasto applica in fondo */}
+        {/* Apply button at the bottom */}
         <div className="adm-footer-actions">
           {isModified && (
             <button className="adm-btn-reset" onClick={resetAll}>{t('admin.adv.resetAllDefaults')}</button>

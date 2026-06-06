@@ -1,29 +1,27 @@
 /**
- * Motore-partita: Poisson bivariato in stile Dixon-Coles (spec §5.3).
+ * Match engine: bivariate Poisson, Dixon-Coles style.
  *
  *   λ_home = exp(intercept + attack_home − defense_away + homeAdv)
  *   λ_away = exp(intercept + attack_away − defense_home)
  *
- * I lambda vengono poi aggiustati con lo storico H2H (head-to-head): se
- * Francia e Italia si sono incontrate 13 volte e la Francia ha vinto 7,
- * il lambda francese riceve un bonus e quello italiano un malus, proporzionale
- * a quante partite ci sono (pochi dati → aggiustamento piccolo).
+ * The lambdas are then nudged by head-to-head history: if France and Italy have
+ * met 13 times and France won 7, France's lambda gets a boost and Italy's a
+ * penalty, scaled by sample size (little data → small adjustment).
  */
 
 import type { GlobalParams, TeamStrength, H2HRecord, ModulatorConfig, TeamStats } from './types';
 import { config } from '../config';
 
-const MAX_GOALS = 8; // troncamento: P(>8 gol) è trascurabile.
+const MAX_GOALS = 8; // truncation: P(>8 goals) is negligible.
 
-/** Poisson PMF: P(X = k | λ). */
+/** Poisson PMF: P(X = k | λ) = exp(-λ) · λ^k / k! */
 function poissonPmf(k: number, lambda: number): number {
-  // exp(-λ) * λ^k / k!
   let p = Math.exp(-lambda);
   for (let i = 1; i <= k; i++) p *= lambda / i;
   return p;
 }
 
-/** Correzione Dixon-Coles τ sui risultati bassi. */
+/** Dixon-Coles τ correction for low-scoring results. */
 function dcTau(i: number, j: number, lambda: number, mu: number, rho: number): number {
   if (i === 0 && j === 0) return 1 - lambda * mu * rho;
   if (i === 0 && j === 1) return 1 + lambda * rho;
@@ -33,26 +31,26 @@ function dcTau(i: number, j: number, lambda: number, mu: number, rho: number): n
 }
 
 export interface ScorelineDist {
-  /** Matrice cumulata appiattita per campionamento O(log n) o lineare. */
+  /** Flattened cumulative matrix for O(log n) sampling. */
   flat: Float64Array;
-  /** Numero di colonne (MAX_GOALS+1) per decodificare indice → (i,j). */
+  /** Column count (MAX_GOALS+1) to decode index → (i,j). */
   cols: number;
-  /** Gol attesi, utili per inclinare il coin-flip dei rigori. */
+  /** Expected goals, used to bias the penalty-shootout coin flip. */
   lambdaHome: number;
   lambdaAway: number;
 }
 
 /**
- * Aggiustamento H2H dei lambda: se esiste uno storico tra homeId e awayId,
- * spostiamo i lambda verso la distribuzione storica (win rate osservato).
+ * H2H lambda adjustment: when history exists for homeId vs awayId, pull the
+ * lambdas toward the observed historical win rate.
  *
- * Meccanica:
- *   - Calcoliamo il win-rate storico di home (wRate) e away (1−wRate−dRate).
- *   - Confrontiamo col win-rate implicito nei lambda Poisson.
- *   - Se lo storico dice che home vince di più di quanto Elo suggerisca,
- *     moltiplichiamo λ_home per un bonus > 1 (e viceversa per λ_away).
- *   - Il peso dell'aggiustamento cresce con sqrt(n): con n=4 è debole,
- *     con n≥25 pesa fino al massimo configurato (H2H_MAX_BOOST in config).
+ * Mechanics:
+ *   - Compute home's and away's historical win rates.
+ *   - Compare against the win rate implied by the Poisson lambdas.
+ *   - If history says home wins more than Elo suggests, scale λ_home by a
+ *     factor > 1 (and λ_away down), and vice versa.
+ *   - Adjustment weight grows with sqrt(n): weak at n=4, up to the configured
+ *     cap (h2hMaxBoost) around n≥25.
  */
 function applyH2H(
   lambdaHome: number,
@@ -87,8 +85,7 @@ function applyH2H(
 }
 
 /**
- * Statistiche pre-calcolate una volta sola per i modulatori.
- * Evita di ricalcolare media/sd O(n) per ogni coppia di squadre.
+ * Modulator stats precomputed once, so mean/sd aren't recomputed O(n) per pair.
  */
 export interface ModulatorStats {
   eloMean: number;
@@ -96,7 +93,7 @@ export interface ModulatorStats {
   valueSd: number;
 }
 
-/** Calcola le statistiche aggregate una volta sola sulle squadre attive. */
+/** Compute aggregate stats once over the active teams. */
 export function buildModulatorStats(activeElos: number[], activeValues: number[]): ModulatorStats {
   const n = activeElos.length || 1;
   const eloMean = activeElos.reduce((a, b) => a + b, 0) / n;
@@ -108,8 +105,8 @@ export function buildModulatorStats(activeElos: number[], activeValues: number[]
 }
 
 /**
- * Calcola il log-aggiustamento modulatori per una squadra.
- * Riceve statistiche pre-calcolate per evitare ricalcoli O(n) per ogni coppia.
+ * Log-space modulator adjustment for one team.
+ * Takes precomputed stats to avoid O(n) recompute per pair.
  */
 function computeModulatorAdj(
   teamId: string,
@@ -121,21 +118,21 @@ function computeModulatorAdj(
 ): number {
   const stats = statsMap.get(teamId);
 
-  // --- Forma recente ---
+  // --- Recent form ---
   const formScore = stats?.form.score ?? 50;
   const formAdj = ((formScore - 50) / 50) * mod.formCoeff;
 
-  // --- Valore rosa (z-score sulle squadre attive) ---
+  // --- Squad value (z-score over active teams) ---
   const zValue = (teamValue - ms.valueMean) / ms.valueSd;
   const valueAdj = zValue * mod.squadValueCoeff;
 
-  // --- Elo corrente (distanza dalla media in unità 200 punti) ---
+  // --- Current Elo (distance from mean, in 200-point units) ---
   const eloAdj = ((teamElo - ms.eloMean) / 200) * mod.eloCoeff;
 
   return formAdj + valueAdj + eloAdj;
 }
 
-/** Calcola la distribuzione di scoreline per una partita home vs away. */
+/** Build the scoreline distribution for a home vs away match. */
 export function scorelineDist(
   home: TeamStrength,
   away: TeamStrength,
@@ -151,7 +148,7 @@ export function scorelineDist(
   awayValue?: number,
   modStats?: ModulatorStats,
   modulators?: ModulatorConfig,
-  /** True nelle fasi a eliminazione diretta: applica il bonus esperienza KO. */
+  /** True in knockout rounds: applies the KO-experience bonus. */
   knockout?: boolean,
 ): ScorelineDist {
   let lambdaHome = Math.exp(
@@ -159,12 +156,12 @@ export function scorelineDist(
   );
   let lambdaAway = Math.exp(g.intercept + away.attack - home.defense);
 
-  // Aggiusta con lo storico H2H se disponibile
+  // Apply H2H history when available.
   if (homeId && awayId && h2h && h2h.size > 0) {
     [lambdaHome, lambdaAway] = applyH2H(lambdaHome, lambdaAway, homeId, awayId, h2h, modulators?.h2hMaxBoost);
   }
 
-  // Applica modulatori forma/valore/elo se disponibili (statistiche pre-calcolate)
+  // Apply form/value/elo modulators when available (precomputed stats).
   if (homeId && awayId && statsMap && modStats && modulators &&
       homeElo !== undefined && awayElo !== undefined &&
       homeValue !== undefined && awayValue !== undefined) {
@@ -174,26 +171,26 @@ export function scorelineDist(
     lambdaAway *= Math.exp(adjAway);
   }
 
-  // Bonus esperienza KO sull'INTERA partita a eliminazione diretta: chi è
-  // abituato alle fasi finali (storia + rendimento knockout) gioca un po'
-  // meglio la gara secca, non solo i rigori. Piccolo, non ribalta i valori.
+  // KO-experience bonus on the WHOLE knockout match: teams used to the latter
+  // stages (history + knockout record) play the one-off game slightly better,
+  // not just penalties. Small — it doesn't overturn the underlying ratings.
   if (knockout && homeId && awayId && statsMap && modulators) {
     const sh = statsMap.get(homeId);
     const sa = statsMap.get(awayId);
     const koHome = sh ? modulators.koKnockoutWeight * sh.knockout.score + modulators.koHistoryWeight * sh.history.score : 50;
     const koAway = sa ? modulators.koKnockoutWeight * sa.knockout.score + modulators.koHistoryWeight * sa.history.score : 50;
-    // edge in [-1,1] × coeff → aggiustamento log-λ simmetrico.
+    // edge in [-1,1] × coeff → symmetric log-λ adjustment.
     const edge = ((koHome - koAway) / 100) * modulators.koMatchCoeff;
     lambdaHome *= Math.exp(edge);
     lambdaAway *= Math.exp(-edge);
   }
 
-  // Shrinkage: tira i due lambda verso la loro media geometrica, riducendo lo
-  // scarto fra favorita e sfavorita. Aumenta la varianza degli esiti (più
-  // sorprese) → la distribuzione di vittoria del torneo non si concentra
-  // eccessivamente sulle big (es. evita Spagna al 28%, più vicina al ~16-18%
-  // dei bookmaker). I singoli match restano coerenti, ma su 7 turni i piccoli
-  // vantaggi non si compongono in modo esagerato.
+  // Shrinkage: pull both lambdas toward their geometric mean, narrowing the gap
+  // between favorite and underdog. This raises outcome variance (more upsets) so
+  // the tournament win distribution doesn't over-concentrate on the big teams
+  // (e.g. keeps Spain near the bookmakers' ~16-18% instead of 28%). Individual
+  // matches stay coherent, but small edges don't compound excessively over 7
+  // rounds.
   const shrink = modulators?.lambdaShrink ?? 0;
   if (shrink > 0) {
     const mean = Math.sqrt(lambdaHome * lambdaAway);
@@ -209,12 +206,12 @@ export function scorelineDist(
     for (let j = 0; j <= MAX_GOALS; j++) {
       const pj = poissonPmf(j, lambdaAway);
       const p = pi * pj * dcTau(i, j, lambdaHome, lambdaAway, g.rho);
-      const v = p > 0 ? p : 0; // τ può rendere P leggermente negativa: clamp.
+      const v = p > 0 ? p : 0; // τ can make P slightly negative: clamp.
       flat[i * cols + j] = v;
       total += v;
     }
   }
-  // Normalizza in cumulata per campionamento.
+  // Normalize into a cumulative distribution for sampling.
   let acc = 0;
   for (let k = 0; k < flat.length; k++) {
     acc += flat[k] / total;
@@ -223,19 +220,10 @@ export function scorelineDist(
   return { flat, cols, lambdaHome, lambdaAway };
 }
 
-/** Campiona uno scoreline (gol home, gol away) dalla distribuzione. */
-export function sampleScoreline(
-  dist: ScorelineDist,
-  rand: () => number,
-): [number, number] {
-  const k = sampleScorelineIndex(dist, rand);
-  return [Math.floor(k / dist.cols), k % dist.cols];
-}
-
 /**
- * Variante hot-path: restituisce l'indice piatto della cella campionata
- * (niente allocazione di tuple). Usa ricerca binaria sulla cumulata.
- * Il chiamante decodifica con Math.floor(idx/cols) e idx%cols.
+ * Hot-path sampler: returns the flat index of the sampled cell (no tuple
+ * allocation), via binary search on the cumulative distribution. Caller decodes
+ * with Math.floor(idx/cols) and idx%cols.
  */
 export function sampleScorelineIndex(
   dist: ScorelineDist,
@@ -243,7 +231,7 @@ export function sampleScorelineIndex(
 ): number {
   const u = rand();
   const flat = dist.flat;
-  // Ricerca binaria sulla cumulata (monotòna crescente).
+  // Binary search on the (monotonically increasing) cumulative distribution.
   let lo = 0;
   let hi = flat.length - 1;
   while (lo < hi) {
@@ -255,8 +243,8 @@ export function sampleScorelineIndex(
 }
 
 /**
- * Converte Elo → forza attacco/difesa (fallback finché model-params.json non
- * esiste). Vedi config.eloToStrength.
+ * Convert Elo → attack/defense strength (fallback used until model-params.json
+ * exists). See config.eloToStrength.
  */
 export function eloToStrength(elo: number): TeamStrength {
   const { referenceElo, scalePer100Elo, attackShare } = config.eloToStrength;

@@ -7,12 +7,6 @@ export const Analytics = {
   italyToggleOn: () =>
     track('italy_toggle_on'),
 
-  shareCardOpened: () =>
-    track('share_card_opened'),
-
   bracketViewed: () =>
     track('bracket_viewed'),
-
-  whatifChanged: (key: string) =>
-    track('whatif_changed', { key }),
 };

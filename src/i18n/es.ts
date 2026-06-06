@@ -167,18 +167,6 @@ export const es: Record<string, string | string[]> = {
   'launch.runs': '{done} / {total} mundiales simulados',
   'launch.fav': 'Todos los ojos en {name} ♥',
 
-  // ── SimLoadingOverlay ───────────────────────────────────────────────────
-  'simloading.title': 'Simulación en curso',
-  'simloading.messages': [
-    '⚽ Sorteo de los grupos…',
-    '🥅 Se juega la fase de grupos…',
-    '📊 Calculando los mejores terceros…',
-    '🏟️ Eliminación directa…',
-    '🔥 Cuartos y semifinales…',
-    '🏆 Rumbo a la final…',
-  ],
-  'simloading.runs': '{done} / {total} mundiales',
-
   // ── Cinema ──────────────────────────────────────────────────────────────
   'cinema.tl.kickoff': 'Pitido inicial',
   'cinema.tl.groups': 'Grupos',

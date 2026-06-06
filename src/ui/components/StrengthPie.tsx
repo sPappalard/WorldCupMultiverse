@@ -5,7 +5,7 @@ interface Props {
   components: StrengthComponent[];
 }
 
-/** Colori per ciascun componente (coerenti con i temi degli slider). */
+/** Color per component (consistent with the slider themes). */
 const COLORS: Record<StrengthComponent['key'], string> = {
   core: '#46d39a',
   h2h: '#8b5cf6',
@@ -17,12 +17,12 @@ const COLORS: Record<StrengthComponent['key'], string> = {
 };
 
 /**
- * Grafico a torta (conic-gradient, nessuna libreria) che mostra quanto pesa
- * ogni componente sul Punteggio Forza. Si aggiorna quando cambiano i pesi.
+ * Pie chart (conic-gradient, no library) showing how much each component weighs
+ * on the Strength Score. Updates when the weights change.
  */
 export function StrengthPie({ components }: Props) {
   const { t } = useT();
-  // Costruisce gli stop del conic-gradient cumulando le percentuali.
+  // Build the conic-gradient stops by accumulating the percentages.
   let acc = 0;
   const stops: string[] = [];
   for (const c of components) {
