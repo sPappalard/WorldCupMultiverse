@@ -1063,20 +1063,28 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
   overflow-y: auto;
   animation: obIn 0.5s var(--ease-out);
 }
-/* Su 14" (altezza bassa): blocca lo scroll esterno, la shell occupa tutta l'altezza
-   e la grid delle squadre diventa flex per assorbire lo spazio rimanente. */
 /* Schermi bassi (laptop 14"): layout a tutta altezza con footer ancorato in
-   fondo. Header + titolo restano fissi, SOLO la lista (squadre / what-if) scrolla
-   nello spazio rimanente. Niente scroll della pagina, niente sovrapposizioni. */
+   fondo, attivo SOLO per gli step con lista scrollabile (squadre / what-if).
+   Header + titolo restano fissi, la lista scrolla nello spazio rimanente.
+   Lo step 0 (scelta Italia, card alte) resta a scroll di pagina normale, così
+   l'header non si sovrappone mai al titolo. */
 @media (max-height: 860px) and (min-width: 601px) {
-  .ob { overflow: hidden; align-items: stretch; }
+  /* Step 0 (scelta Italia): su desktop le due card stanno affiancate ed entrano
+     sempre, quindi niente scroll inutile. */
+  .ob:has(.ob-choices) { overflow: hidden; }
+  .ob:has(.ob-team-grid),
+  .ob:has(.ob-factors) {
+    overflow: hidden; align-items: stretch;
+  }
   /* Shell a tutta altezza: header (auto) + step (cresce) + footer (auto). */
-  .ob-shell {
+  .ob:has(.ob-team-grid) .ob-shell,
+  .ob:has(.ob-factors) .ob-shell {
     height: 100%; margin: 0; gap: var(--sp-3);
     justify-content: flex-start;
   }
   /* Lo step occupa lo spazio tra header e footer e delega lo scroll alla lista. */
-  .ob-step {
+  .ob:has(.ob-team-grid) .ob-step,
+  .ob:has(.ob-factors) .ob-step {
     flex: 1 1 auto; min-height: 0;
     display: flex; flex-direction: column; gap: var(--sp-2);
   }
@@ -1091,12 +1099,11 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
     mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%);
   }
   /* Footer sempre visibile in fondo, mai sovrapposto al contenuto.
-     Annulla lo sticky (serve solo quando la pagina scrolla): qui il footer è
-     già un flex-item in fondo alla shell a tutta altezza. */
-  .ob-actions { flex: none; position: static; margin-top: 0; }
-  /* Step 0 (scelta Italia) e step 2 senza what-if: non hanno liste lunghe,
-     centrali nel loro spazio invece di stirarsi. */
-  .ob-step:has(.ob-choices) { justify-content: center; flex: 1 1 auto; }
+     Annulla lo sticky (serve solo quando la pagina scrolla). */
+  .ob:has(.ob-team-grid) .ob-actions,
+  .ob:has(.ob-factors) .ob-actions {
+    flex: none; position: static; margin-top: 0;
+  }
 }
 @keyframes obIn { from { opacity: 0; } to { opacity: 1; } }
 .ob--leaving { animation: obOut 0.42s var(--ease) forwards; }
@@ -1156,12 +1163,29 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
 .ob-choices { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin-top: var(--sp-2); }
 @media (max-width: 620px) {
   .ob-choices { grid-template-columns: 1fr; }
-  /* Layout a tutta altezza: header in alto, footer ancorato in basso, SOLO la
-     lista (squadre / what-if) scrolla nello spazio rimanente. Stesso schema del
-     laptop 14": niente scroll di pagina, niente footer sovrapposto. */
-  .ob { padding: 14px; align-items: stretch; overflow: hidden; }
-  .ob-shell { gap: var(--sp-3); padding-bottom: 0; margin: 0; height: 100%; justify-content: flex-start; }
-  .ob-step { gap: var(--sp-2); flex: 1 1 auto; min-height: 0; }
+  .ob { padding: 14px; }
+  .ob-shell { gap: var(--sp-3); }
+  .ob-step { gap: var(--sp-2); }
+  .ob-factors { gap: 6px; }
+  /* Niente slide verticale su mobile: evita il "fade nero" che entra dal basso. */
+  .ob-step { animation: obStepFade 0.35s var(--ease-out); }
+
+  /* Layout a tutta altezza SOLO per gli step con lista scrollabile (squadre,
+     what-if): header in alto, footer in basso, lista che scrolla nel mezzo.
+     Lo step 0 (scelta Italia, card alte) resta a scroll di pagina normale, così
+     l'header non si sovrappone al titolo. */
+  .ob:has(.ob-team-grid),
+  .ob:has(.ob-factors) {
+    align-items: stretch; overflow: hidden;
+  }
+  .ob:has(.ob-team-grid) .ob-shell,
+  .ob:has(.ob-factors) .ob-shell {
+    margin: 0; height: 100%; justify-content: flex-start; padding-bottom: 0;
+  }
+  .ob:has(.ob-team-grid) .ob-step,
+  .ob:has(.ob-factors) .ob-step {
+    flex: 1 1 auto; min-height: 0;
+  }
   .ob-team-grid,
   .ob-factors {
     flex: 1 1 auto; min-height: 0; max-height: none;
@@ -1170,13 +1194,27 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
     -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%);
     mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%);
   }
-  .ob-factors { gap: 6px; }
   /* Footer: annulla lo sticky, è già un flex-item in fondo alla shell. */
-  .ob-actions { flex: none; position: static; margin-top: 0; }
-  /* Step senza lista lunga (scelta Italia, scelta what-if sì/no): centrati. */
-  .ob-step:has(.ob-choices) { justify-content: center; }
-  /* Niente slide verticale su mobile: evita il "fade nero" che entra dal basso. */
-  .ob-step { animation: obStepFade 0.35s var(--ease-out); }
+  .ob:has(.ob-team-grid) .ob-actions,
+  .ob:has(.ob-factors) .ob-actions {
+    flex: none; position: static; margin-top: 0;
+  }
+
+  /* Step 0 (scelta Italia): titolo, lead e card più compatti così tutto entra
+     nello schermo senza scroll. Lo step 0 NON forza il layout a tutta altezza
+     (causerebbe la sovrapposizione header/titolo). */
+  .ob-step:has(.ob-choices) .ob-title { font-size: clamp(1.5rem, 7vw, 2rem); line-height: 1.08; }
+  .ob-step:has(.ob-choices) .ob-lead { font-size: 0.9rem; line-height: 1.4; }
+  /* Kicker ridondante col brand header: nascosto su mobile per recuperare spazio. */
+  .ob-step:has(.ob-choices) .ob-kicker { display: none; }
+  .ob-choices { gap: 10px; margin-top: 6px; }
+  .ob-choice { padding: 12px 14px; gap: 5px; border-radius: var(--r-lg); }
+  .ob-choice-icon { width: 34px; height: 34px; border-radius: 10px; }
+  .ob-choice-icon svg { width: 20px; height: 20px; }
+  .ob-choice-icon .fi { width: 24px; height: 17px; }
+  .ob-choice-title { font-size: 1rem; }
+  .ob-choice-desc { font-size: 0.78rem; line-height: 1.3; }
+  .ob-choice-tag { margin-top: 1px; }
 }
 @keyframes obStepFade { from { opacity: 0; } to { opacity: 1; } }
 
