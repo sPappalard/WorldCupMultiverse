@@ -1,4 +1,4 @@
-# ⚽ World Cup Multiverse — Force-Pushing Italy to the World Cup
+# ⚽ World Cup Multiverse: Force-Pushing Italy to the World Cup
 
 <a name="readme-top"></a>
 
@@ -28,13 +28,36 @@
 
 ---
 
+## Why does this exist? (a tiny therapy session)
+
+On the night Italy got knocked out of the **third** World Cup in a row, I had two
+options: process the grief like a functioning adult, or open a code editor at 2 AM.
+
+Reader, I opened the code editor.
+
+Other people journal. Some go to therapy. I built a **100,000-run Monte Carlo
+simulator** of a parallel universe where the Azzurri are exactly where they
+belong (at the World Cup) just to watch the numbers tell me they'd probably
+lose in the Round of 32 anyway. Catharsis is a flag toggle now.
+
+So this is, technically, a statistical-football engine. Emotionally, it's a
+**digital coping mechanism with a Bayesian model attached**. There's a button
+that puts Italy back into Group B in Bosnia's place. I press it a lot. It helps.
+
+*"Italy isn't at the World Cup, so I put them back in myself."* (me, healing.)
+
+> If you also need to grieve a footballing tragedy through excessive engineering,
+> the simulator is live: **[word-cup-multiverse.vercel.app](https://word-cup-multiverse.vercel.app/)**.
+
+---
+
 ## 🌟 Overview
 
-**World Cup Multiverse** is a free, fully client-side interactive simulator of the **2026 FIFA World Cup** (48 teams). Hit *Simulate*, watch the animated bracket fill in live, and get each nation's win probability from a **Monte Carlo simulation of 100,000 runs** — all computed directly in your browser via a Web Worker, with no backend and no API.
+**World Cup Multiverse** is a free, fully client-side interactive simulator of the **2026 FIFA World Cup** (48 teams). Hit *Simulate*, watch the animated bracket fill in live, and get each nation's win probability from a **Monte Carlo simulation of 100,000 runs**, all computed directly in your browser via a Web Worker, with no backend and no API.
 
 ### What Makes It Special?
 
-- **🇮🇹 Flagship What-If**: Italy didn't qualify (knocked out by Bosnia on penalties in the playoff). A toggle puts them back into **Group B** in Bosnia's place — the slot they'd have taken by qualifying — and re-runs every simulation. *"Italy isn't at the World Cup, so I put them back in myself."*
+- **Flagship What-If**: Italy didn't qualify (knocked out by Bosnia on penalties in the playoff). A toggle puts them back into **Group B** in Bosnia's place (the slot they'd have taken by qualifying) and re-runs every simulation. *"Italy isn't at the World Cup, so I put them back in myself."*
 - **Honest Monte Carlo**: every run samples real match results and advances the *sampled* winner, never the favorite. `P(win) = wins / 100,000`. Repeated runs produce different winners.
 - **Bayesian Engine Under the Hood**: per-team attack/defense estimated offline via a hierarchical **PyMC** model on ~49k historical matches, with Elo-anchored priors and time-decay.
 - **Shareable What-If Scenarios**: stack heuristic modifiers (injuries, returns, suspensions, chaos) and share the exact scenario via a `?s=…` URL.
@@ -45,7 +68,7 @@
 
 <div align="center">
 
-### ▶️ The app is live and usable by anyone — no setup required
+### ▶️ The app is live and usable by anyone, no setup required
 
 **[🌍 word-cup-multiverse.vercel.app](https://word-cup-multiverse.vercel.app/)**
 
@@ -57,27 +80,32 @@ Open the link, hit **Simulate**, and explore 100,000 possible World Cups in seco
 
 ## 📸 Screenshots
 
-### Onboarding — Italy IN or OUT?
+### Home Dashboard: every feature one click away
+<div align="center">
+  <img src="public/0.png" alt="Home dashboard with all clickable features" width="100%">
+</div>
+
+### Onboarding: Italy IN or OUT?
 <div align="center">
   <img src="public/1.png" alt="Onboarding screen" width="100%">
 </div>
 
-### Pre-Simulation — Configure your scenario
+### Pre-Simulation: Configure your scenario
 <div align="center">
   <img src="public/2.png" alt="Pre-simulation screen" width="100%">
 </div>
 
-### Tournament Cinema — Watch the bracket live
+### Tournament Cinema: Watch the bracket live
 <div align="center">
   <img src="public/3.png" alt="Tournament cinema animation" width="100%">
 </div>
 
-### Monte Carlo Dashboard — Win probabilities
+### Monte Carlo Dashboard: Win probabilities
 <div align="center">
   <img src="public/4.png" alt="Monte Carlo results dashboard" width="100%">
 </div>
 
-### Teams — 48 squads with Strength Score
+### Teams: 48 squads with Strength Score
 <div align="center">
   <img src="public/5.png" alt="Teams page with Strength Score" width="100%">
 </div>
@@ -92,12 +120,12 @@ Open the link, hit **Simulate**, and explore 100,000 possible World Cups in seco
 ## ✨ Key Features
 
 ### 🎬 Animated Tournament Cinema
-Watch one full possible World Cup play out bracket by bracket in a cinematic animation — group stages, Round of 32, all the way to the final. Clearly labelled as "1 run out of 100,000."
+Watch one full possible World Cup play out bracket by bracket in a cinematic animation: group stages, Round of 32, all the way to the final. Clearly labelled as "1 run out of 100,000."
 
 ### 📊 Monte Carlo Dashboard
 - **Win probabilities** for all 48 teams, derived from the aggregate of 100,000 simulated tournaments.
 - **Phase-by-phase reach table**: probability of reaching the Round of 32, QF, SF, Final, and winning.
-- **Strength Score** — a synthetic 0–100 index per team combining Elo, squad value, form, KO experience, and H2H record.
+- **Strength Score**: a synthetic 0–100 index per team combining Elo, squad value, form, KO experience, and H2H record.
 
 ### 🔀 What-If Scenarios
 Stack playful heuristic modifiers on any team:
@@ -134,7 +162,7 @@ Each match is modelled as a **bivariate Poisson** (Dixon-Coles style):
 The raw Poisson lambdas are then adjusted by:
 - **Dixon-Coles low-score correction** (reduces overestimation of 0-0 and 1-0 scorelines).
 - **H2H lambda nudge**: ±1–3pp based on direct head-to-head history (805 pairs pre-computed).
-- **Modulators**: form, squad value, Elo, KO experience — weighted and configurable.
+- **Modulators**: form, squad value, Elo, KO experience (weighted and configurable).
 - **Lambda shrinkage**: keeps favorites from over-dominating in extreme cases.
 
 ### Monte Carlo Simulation
@@ -152,7 +180,7 @@ The raw Poisson lambdas are then adjusted by:
 Team attack and defense parameters are estimated **offline** (not at runtime) by a hierarchical Bayesian model (`model/fit.py`) using PyMC on ~49k international match results from 1872–2026, with:
 - **Time-decay weighting** (recent matches count more).
 - **Elo-anchored priors** (partial-pooling toward the global mean).
-- **Exported as `model-params.json`**: the browser loads static JSON — no Python, no fitting at runtime.
+- **Exported as `model-params.json`**: the browser loads static JSON, with no Python and no fitting at runtime.
 
 ---
 
@@ -160,13 +188,13 @@ Team attack and defense parameters are estimated **offline** (not at runtime) by
 
 The project is split into two completely independent components: a **runtime** (browser) and an **offline pipeline** (Python, build-time only).
 
-### Runtime — Browser, 100% Client-Side
+### Runtime: Browser, 100% Client-Side
 
 ```
 TypeScript + React 18 + Vite
 ```
 
-### Offline Pipeline — Python, Build-Time Only
+### Offline Pipeline: Python, Build-Time Only
 
 ```
 PyMC · PyTensor · NumPy · pandas
@@ -254,7 +282,7 @@ The app works out-of-the-box with the pre-computed JSON files in `public/data/`.
 
 The offline pipeline produces the JSON files consumed by the browser. Run it only if you want to retrain the Bayesian model on updated match data.
 
-> **Prerequisites**: Python 3.11–3.13 (NOT 3.14 — PyMC wheels not yet available), and `g++` on PATH for PyTensor compilation (on Windows, install MinGW-w64 via `winget install BrechtSanders.WinLibs.POSIX.UCRT` and add `mingw64\bin` to PATH).
+> **Prerequisites**: Python 3.11–3.13 (NOT 3.14, since PyMC wheels are not yet available), and `g++` on PATH for PyTensor compilation (on Windows, install MinGW-w64 via `winget install BrechtSanders.WinLibs.POSIX.UCRT` and add `mingw64\bin` to PATH).
 
 ```bash
 cd model
@@ -270,7 +298,7 @@ py -3.12 -m venv .venv
 .venv\Scripts\python.exe validate.py         # → public/data/validation.json
 ```
 
-> Without `g++`, PyTensor runs in pure Python — correct but very slow. With MinGW it compiles a C extension and is orders of magnitude faster.
+> Without `g++`, PyTensor runs in pure Python: correct but very slow. With MinGW it compiles a C extension and is orders of magnitude faster.
 
 ---
 
@@ -315,7 +343,7 @@ These are stated honestly in the UI as well.
 
 ## 📄 License
 
-This project is released under the **MIT License** — use it, fork it, build on it.
+This project is released under the **MIT License**. Use it, fork it, build on it.
 
 ---
 
