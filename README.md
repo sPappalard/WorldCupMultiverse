@@ -4,6 +4,8 @@
 
 <div align="center">
 
+  ![World Cup Multiverse Banner](public/banner.png)
+
   [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178c6.svg)](https://www.typescriptlang.org/)
   [![React](https://img.shields.io/badge/React-18.0+-61dafb.svg)](https://reactjs.org/)
@@ -28,7 +30,7 @@
 
 ## 🌟 Overview
 
-**World Cup Multiverse** *(repo codename: MonteCalcio)* is a free, fully client-side interactive simulator of the **2026 FIFA World Cup** (48 teams). Hit *Simulate*, watch the animated bracket fill in live, and get each nation's win probability from a **Monte Carlo simulation of 100,000 runs** — all computed directly in your browser via a Web Worker, with no backend and no API.
+**World Cup Multiverse** is a free, fully client-side interactive simulator of the **2026 FIFA World Cup** (48 teams). Hit *Simulate*, watch the animated bracket fill in live, and get each nation's win probability from a **Monte Carlo simulation of 100,000 runs** — all computed directly in your browser via a Web Worker, with no backend and no API.
 
 ### What Makes It Special?
 
@@ -49,6 +51,40 @@
 
 Open the link, hit **Simulate**, and explore 100,000 possible World Cups in seconds.
 
+</div>
+
+---
+
+## 📸 Screenshots
+
+### Onboarding — Italy IN or OUT?
+<div align="center">
+  <img src="public/1.png" alt="Onboarding screen" width="100%">
+</div>
+
+### Pre-Simulation — Configure your scenario
+<div align="center">
+  <img src="public/2.png" alt="Pre-simulation screen" width="100%">
+</div>
+
+### Tournament Cinema — Watch the bracket live
+<div align="center">
+  <img src="public/3.png" alt="Tournament cinema animation" width="100%">
+</div>
+
+### Monte Carlo Dashboard — Win probabilities
+<div align="center">
+  <img src="public/4.png" alt="Monte Carlo results dashboard" width="100%">
+</div>
+
+### Teams — 48 squads with Strength Score
+<div align="center">
+  <img src="public/5.png" alt="Teams page with Strength Score" width="100%">
+</div>
+
+### Head-to-Head Matchup
+<div align="center">
+  <img src="public/6.png" alt="Head-to-head matchup page" width="100%">
 </div>
 
 ---
@@ -244,8 +280,8 @@ py -3.12 -m venv .venv
 |---|---|---|
 | **2026 group draw** | Wikipedia (official draw, 5 Dec 2025) | Bosnia in Group B |
 | **Round of 32 structure** | Wikipedia "2026 FIFA World Cup knockout stage" | Matches 73–88 |
-| **Elo ratings** | eloratings.net via Wikipedia | Snapshot **19 January 2026** |
-| **Squad value** | Estimates inspired by Transfermarkt | Secondary covariate |
+| **Elo ratings** | eloratings.net via Wikipedia | Snapshot **1 June 2026** |
+| **Squad value** | Transfermarkt | Secondary covariate |
 | **Historical match results** | Kaggle "International football results 1872–2026" | ~49,000 matches |
 | **Head-to-head** | Pre-computed by `build_h2h.py` | 805 pairs, ±1–3pp lambda adjustment |
 
@@ -257,8 +293,8 @@ These are stated honestly in the UI as well.
 
 - **What-if modifiers are heuristics**, not part of the predictive model. They are playful and clearly labelled as such.
 - **Third-place allocation** uses a deterministic allocator that respects FIFA's real bracket constraints (no team faces its own group winner). It can differ from the exact Annex C table in rare combinations; the effect on aggregate probabilities is negligible. *(To validate.)*
-- **Squad values are estimated**, not scraped from Transfermarkt — they are a secondary covariate with limited weight.
-- **Elo is a snapshot** (19 Jan 2026). The model does not auto-update.
+- **Squad values** are sourced from Transfermarkt but are a secondary covariate with limited weight in the model.
+- **Elo is a snapshot** (1 June 2026). The model does not auto-update.
 - **`rho` (Dixon-Coles correlation)** is currently 0 in `model-params.json`; the config fallback uses −0.05.
 
 ---

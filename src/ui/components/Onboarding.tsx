@@ -127,7 +127,7 @@ export function Onboarding({ teams, onComplete }: Props) {
       <div className="ob-shell">
         <header className="ob-top">
           <div className="ob-brand">
-            <span className="ob-logo">⚽</span>
+            <img src="/logo.png" alt="World Cup Multiverse" className="ob-logo-img" />
             <span className="ob-brand-name">World Cup Multiverse</span>
           </div>
           <div className="ob-progress">

@@ -107,8 +107,8 @@ py -3.12 -m venv .venv          # use Python 3.11–3.13, NOT 3.14 (PyMC wheels)
 
 - **2026 groups**: official draw 5 Dec 2025 (via Wikipedia). Bosnia in Group B.
 - **R32 structure**: Wikipedia "2026 FIFA World Cup knockout stage".
-- **Elo**: snapshot **19 January 2026** (eloratings.net via Wikipedia).
-- **Squad value**: approximate estimates inspired by Transfermarkt (secondary covariate).
+- **Elo**: snapshot **1 June 2026** (eloratings.net via Wikipedia).
+- **Squad value**: sourced from Transfermarkt (secondary covariate).
 - **Historical dataset**: Kaggle "International football results 1872–2026" (~49k matches).
 - **H2H**: pre-computed by `model/build_h2h.py` → `public/data/h2h.json` (805 pairs).
   Adjusts the engine's λ: ±1–3pp vs Elo-only depending on direct history.
@@ -118,7 +118,7 @@ py -3.12 -m venv .venv          # use Python 3.11–3.13, NOT 3.14 (PyMC wheels)
 - Thirds allocation in the R32 = deterministic allocator that respects FIFA
   constraints, not the exact Annex C table (495 combinations). Negligible effect
   on the aggregates. **To validate.**
-- Squad values are estimated, not scraped from Transfermarkt.
+- Squad values are sourced from Transfermarkt but are a secondary covariate with limited weight.
 - `rho` (Dixon-Coles) is in `model-params.json` (currently 0); the config
   fallback uses -0.05.
 

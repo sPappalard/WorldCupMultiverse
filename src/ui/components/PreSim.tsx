@@ -42,7 +42,13 @@ export function PreSim({
       <div className="presim-stadium" aria-hidden />
 
       <div className="presim-inner">
-        <p className="presim-kicker">{tr('presim.kicker')}</p>
+        <div className="presim-brand">
+          <img src="/logo.png" alt="World Cup Multiverse" className="presim-brand-logo" />
+          <div className="presim-brand-text">
+            <span className="presim-brand-title">World Cup Multiverse</span>
+            <span className="presim-brand-sub">{tr('presim.kicker')}</span>
+          </div>
+        </div>
         <h1 className="presim-title">{tr('presim.title')}</h1>
         <p className="presim-sub">
           {tr('presim.sub.line1')}<br />{tr('presim.sub.line2')}

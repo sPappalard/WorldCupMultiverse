@@ -1063,6 +1063,41 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
   overflow-y: auto;
   animation: obIn 0.5s var(--ease-out);
 }
+/* Su 14" (altezza bassa): blocca lo scroll esterno, la shell occupa tutta l'altezza
+   e la grid delle squadre diventa flex per assorbire lo spazio rimanente. */
+/* Schermi bassi (laptop 14"): layout a tutta altezza con footer ancorato in
+   fondo. Header + titolo restano fissi, SOLO la lista (squadre / what-if) scrolla
+   nello spazio rimanente. Niente scroll della pagina, niente sovrapposizioni. */
+@media (max-height: 860px) and (min-width: 601px) {
+  .ob { overflow: hidden; align-items: stretch; }
+  /* Shell a tutta altezza: header (auto) + step (cresce) + footer (auto). */
+  .ob-shell {
+    height: 100%; margin: 0; gap: var(--sp-3);
+    justify-content: flex-start;
+  }
+  /* Lo step occupa lo spazio tra header e footer e delega lo scroll alla lista. */
+  .ob-step {
+    flex: 1 1 auto; min-height: 0;
+    display: flex; flex-direction: column; gap: var(--sp-2);
+  }
+  /* Le liste crescono e scrollano internamente; gli altri elementi dello step
+     (kicker, titolo, lead, search) restano alla loro dimensione naturale. */
+  .ob-team-grid,
+  .ob-factors {
+    flex: 1 1 auto; min-height: 0; max-height: none;
+    overflow-y: auto; padding-right: 4px; padding-bottom: 18px;
+    /* Fade-out in fondo: qui le liste sono vincolate, quindi scrollano sempre. */
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%);
+  }
+  /* Footer sempre visibile in fondo, mai sovrapposto al contenuto.
+     Annulla lo sticky (serve solo quando la pagina scrolla): qui il footer è
+     già un flex-item in fondo alla shell a tutta altezza. */
+  .ob-actions { flex: none; position: static; margin-top: 0; }
+  /* Step 0 (scelta Italia) e step 2 senza what-if: non hanno liste lunghe,
+     centrali nel loro spazio invece di stirarsi. */
+  .ob-step:has(.ob-choices) { justify-content: center; flex: 1 1 auto; }
+}
 @keyframes obIn { from { opacity: 0; } to { opacity: 1; } }
 .ob--leaving { animation: obOut 0.42s var(--ease) forwards; }
 @keyframes obOut { to { opacity: 0; transform: scale(1.02); } }
@@ -1087,9 +1122,9 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
 }
 
 .ob-top { display: flex; align-items: center; justify-content: space-between; }
-.ob-brand { display: flex; align-items: center; gap: 10px; }
+.ob-brand { display: flex; align-items: center; gap: 12px; }
 .ob-logo { font-size: 1.6rem; }
-.ob-brand-name { font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; }
+.ob-brand-name { font-weight: 800; font-size: 1.45rem; letter-spacing: -0.02em; }
 
 .ob-progress { display: flex; gap: 8px; }
 .ob-dot {
@@ -1121,11 +1156,25 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
 .ob-choices { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); margin-top: var(--sp-2); }
 @media (max-width: 620px) {
   .ob-choices { grid-template-columns: 1fr; }
-  /* Compatta il flusso così gli step entrano in viewport senza scroll inutile. */
-  .ob { padding: 14px; align-items: stretch; }
-  .ob-shell { gap: var(--sp-3); padding-bottom: 0; margin: auto 0; }
-  .ob-step { gap: var(--sp-2); }
+  /* Layout a tutta altezza: header in alto, footer ancorato in basso, SOLO la
+     lista (squadre / what-if) scrolla nello spazio rimanente. Stesso schema del
+     laptop 14": niente scroll di pagina, niente footer sovrapposto. */
+  .ob { padding: 14px; align-items: stretch; overflow: hidden; }
+  .ob-shell { gap: var(--sp-3); padding-bottom: 0; margin: 0; height: 100%; justify-content: flex-start; }
+  .ob-step { gap: var(--sp-2); flex: 1 1 auto; min-height: 0; }
+  .ob-team-grid,
+  .ob-factors {
+    flex: 1 1 auto; min-height: 0; max-height: none;
+    overflow-y: auto; padding-bottom: 18px;
+    /* Fade-out in fondo: qui le liste sono vincolate, quindi scrollano sempre. */
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%);
+  }
   .ob-factors { gap: 6px; }
+  /* Footer: annulla lo sticky, è già un flex-item in fondo alla shell. */
+  .ob-actions { flex: none; position: static; margin-top: 0; }
+  /* Step senza lista lunga (scelta Italia, scelta what-if sì/no): centrati. */
+  .ob-step:has(.ob-choices) { justify-content: center; }
   /* Niente slide verticale su mobile: evita il "fade nero" che entra dal basso. */
   .ob-step { animation: obStepFade 0.35s var(--ease-out); }
 }
@@ -1215,7 +1264,12 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
 /* Bottone CTA a tutta larghezza (chiude lo step what-if espanso) */
 .ob-btn--block { display: block; width: 100%; margin-top: var(--sp-3); text-align: center; padding: 14px; font-size: 1rem; }
 
-.ob-factors { display: flex; flex-direction: column; gap: 8px; margin-top: var(--sp-2); }
+.ob-factors {
+  display: flex; flex-direction: column; gap: 8px; margin-top: var(--sp-2);
+  overflow-y: auto;
+}
+.ob-factors::-webkit-scrollbar { width: 7px; }
+.ob-factors::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
 .ob-factor {
   display: flex; align-items: center; gap: 14px; text-align: left; cursor: pointer;
   background: var(--surface-2); border: 1.5px solid var(--border);
@@ -1240,6 +1294,7 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
 .ob-factor-block {
   border: 1.5px solid var(--border); border-radius: var(--r-md);
   background: var(--surface-2); overflow: hidden; transition: border-color 0.16s;
+  flex-shrink: 0;
 }
 .ob-factor-block.on { border-color: var(--green); }
 .ob-factor-block .ob-factor {
@@ -1286,9 +1341,13 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
 .ob-team-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 8px; max-height: 36vh; overflow-y: auto; padding: 4px; margin-top: 4px;
+  padding-bottom: 18px;
+  /* Fade-out in fondo: segnala che la lista è scrollabile. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 26px), transparent 100%);
 }
-.ob-team-grid::-webkit-scrollbar { width: 5px; }
-.ob-team-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.ob-team-grid::-webkit-scrollbar { width: 7px; }
+.ob-team-grid::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
 .ob-team {
   display: flex; align-items: center; gap: 9px; cursor: pointer; text-align: left;
   background: var(--surface-2); border: 1.5px solid var(--border);
@@ -2184,6 +2243,42 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
   background: radial-gradient(120% 90% at 50% 0%, #0c1626, var(--surface-0));
   overflow: auto; animation: cinIn 0.5s var(--ease-out);
 }
+/* Laptop 14" (altezza ~800-860px): compresso per entrare senza scroll. */
+@media (max-height: 860px) and (min-width: 601px) {
+  .rev { align-items: flex-start; overflow: hidden; }
+  .rev-card { padding: 8px 28px 4px; gap: 5px; }
+  .rev-title { font-size: clamp(1.4rem, 4vw, 2rem); }
+  .rev-body { font-size: 0.9rem; line-height: 1.35; }
+  .rev-top5 { gap: 3px; margin-top: 2px; }
+  .rev-top5-row { padding: 5px 10px; }
+  .rev-actions { margin-top: 5px; }
+  .rev-next { padding: 10px 28px; font-size: 0.95rem; }
+}
+/* Altezze più basse (~700-800px): ulteriore compressione. */
+@media (max-height: 780px) and (min-width: 601px) {
+  .rev-card { padding: 6px 28px 2px; gap: 4px; }
+  .rev-title { font-size: clamp(1.2rem, 3.5vw, 1.7rem); }
+  .rev-body { font-size: 0.82rem; line-height: 1.3; }
+  .rev-top5 { gap: 2px; margin-top: 0; }
+  .rev-top5-head { display: none; }
+  .rev-top5-row { padding: 4px 10px; }
+  .rev-kicker { font-size: 0.68rem; }
+  .rev-actions { margin-top: 3px; }
+  .rev-next { padding: 9px 24px; font-size: 0.9rem; }
+}
+/* Altezze molto basse (≤620px, es. 14" con barra browser): compressione massima. */
+@media (max-height: 620px) and (min-width: 601px) {
+  .rev-card { padding: 4px 28px 2px; gap: 3px; }
+  .rev-title { font-size: 1.3rem; }
+  .rev-body { font-size: 0.78rem; line-height: 1.25; white-space: nowrap; }
+  .rev-kicker { font-size: 0.62rem; letter-spacing: 0.1em; }
+  .rev-top5 { gap: 1px; margin-top: 0; }
+  .rev-top5-row { padding: 3px 10px; }
+  .rev-top5-head { display: none; }
+  .rev-separator { padding: 0; }
+  .rev-actions { margin-top: 3px; }
+  .rev-next { padding: 8px 22px; font-size: 0.88rem; }
+}
 .rev-stadium {
   position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
   background:
@@ -2209,6 +2304,7 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
   font-size: 0.66rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--muted);
 }
+.rev-top5-head .rev-top5-bar { visibility: hidden; }
 .rev-top5-row {
   display: grid; grid-template-columns: 24px 26px 1fr 1fr 56px 52px; align-items: center; gap: 8px;
   padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm);
@@ -5141,5 +5237,58 @@ h1, h2, h3, .num, .stat-value, [class*="-prob"], [class*="-pct"],
   grid-column: 1 / -1; text-align: center;
   font-size: 0.64rem; color: var(--muted); font-variant-numeric: tabular-nums;
   padding-top: 3px;
+}
+
+/* ── Logo img: home header ── */
+.home-brand-logo {
+  width: 56px; height: 56px;
+  object-fit: contain;
+  border-radius: 12px;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+  flex: none;
+}
+@media (max-width: 600px) {
+  .home-brand-logo { width: 46px; height: 46px; }
+}
+
+/* ── Logo img: onboarding header ── */
+.ob-logo-img {
+  width: 48px; height: 48px;
+  object-fit: contain;
+  border-radius: 10px;
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,0.4));
+  flex: none;
+}
+
+/* ── Logo + brand: PreSim ── */
+.presim-brand {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 4px;
+}
+.presim-brand-logo {
+  width: 64px; height: 64px;
+  object-fit: contain;
+  border-radius: 14px;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+  flex: none;
+}
+.presim-brand-text {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+}
+.presim-brand-title {
+  font-family: var(--font-display); font-size: 1.5rem; font-weight: 800;
+  letter-spacing: -0.03em; line-height: 1; color: var(--text);
+}
+.presim-brand-sub {
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--cyan);
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  .presim-brand { flex-direction: column; align-items: center; gap: 10px; }
+  .presim-brand-logo { width: 64px; height: 64px; }
+  .presim-brand-text { align-items: center; text-align: center; }
+  .presim-brand-title { font-size: 1.35rem; }
+  .presim-brand-sub { white-space: normal; text-align: center; font-size: 0.7rem; letter-spacing: 0.1em; }
 }
 

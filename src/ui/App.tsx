@@ -443,7 +443,7 @@ export function App() {
       {/* Header */}
       <header className="home-header">
         <div className="home-brand">
-          <span className="home-brand-ball">⚽</span>
+          <img src="/logo.png" alt="World Cup Multiverse" className="home-brand-logo" />
           <div>
             <h1 className="home-brand-name">World Cup Multiverse</h1>
             <span className="home-tagline">{t('header.tagline')}</span>
