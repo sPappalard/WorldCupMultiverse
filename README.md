@@ -203,7 +203,7 @@ PyMC · PyTensor · NumPy · pandas
 ### Repository Structure
 
 ```text
-MonteCalcio/
+WorldCupMultiverse/
 │
 ├── src/
 │   ├── engine/                  # Pure TypeScript Monte Carlo engine (tested, no React)
@@ -255,8 +255,8 @@ MonteCalcio/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/sPappalard/MonteCalcio.git
-cd MonteCalcio
+git clone https://github.com/sPappalard/WorldCupMultiverse.git
+cd WorldCupMultiverse
 
 # 2. Install dependencies
 npm install
