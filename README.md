@@ -47,7 +47,7 @@ that puts Italy back into Group B in Bosnia's place. I press it a lot. It helps.
 *"Italy isn't at the World Cup, so I put them back in myself."* (me, healing.)
 
 > If you also need to grieve a footballing tragedy through excessive engineering,
-> the simulator is live: **[word-cup-multiverse.vercel.app](https://world-cup-multiverse.vercel.app/)**.
+> the simulator is live: **[world-cup-multiverse.vercel.app](https://world-cup-multiverse.vercel.app/)**.
 
 ---
 
@@ -70,7 +70,7 @@ that puts Italy back into Group B in Bosnia's place. I press it a lot. It helps.
 
 ### ▶️ The app is live and usable by anyone, no setup required
 
-**[🌍 word-cup-multiverse.vercel.app](https://world-cup-multiverse.vercel.app/)**
+**[🌍 world-cup-multiverse.vercel.app](https://world-cup-multiverse.vercel.app/)**
 
 Open the link, hit **Simulate**, and explore 100,000 possible World Cups in seconds.
 
