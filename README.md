@@ -10,7 +10,7 @@
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178c6.svg)](https://www.typescriptlang.org/)
   [![React](https://img.shields.io/badge/React-18.0+-61dafb.svg)](https://reactjs.org/)
   [![Vite](https://img.shields.io/badge/Vite-5.0+-646cff.svg)](https://vitejs.dev/)
-  [![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://word-cup-multiverse.vercel.app/)
+  [![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://world-cup-multiverse.vercel.app/)
 
   **Free, 100% client-side 2026 FIFA World Cup simulator powered by Monte Carlo & Bayesian statistics**
 
