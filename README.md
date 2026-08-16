@@ -27,6 +27,9 @@
 </div>
 
 ---
+<!-- WorldCupMultiverse -->
+> 📖 **[Read the full case study →](https://salvatorepappalardo.dev/en/projects/worldcupmultiverse)**
+> Design decisions, architecture and what I learned building this.
 
 ## Why does this exist? (a tiny therapy session)
 
